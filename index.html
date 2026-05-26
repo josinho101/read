@@ -515,6 +515,8 @@
 
     .canvas-controls {
       display: flex;
+      flex-wrap: wrap;
+      align-items: center;
       gap: 0.5rem;
       pointer-events: auto;
     }
@@ -530,6 +532,18 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .canvas-btn#ignite-btn {
+      min-width: 150px;
+    }
+
+    .canvas-btn.engine-running {
+      background: rgba(255, 51, 102, 0.95);
+      border-color: rgba(255, 51, 102, 0.8);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(255, 51, 102, 0.35);
     }
 
     .canvas-btn:hover {
@@ -541,6 +555,13 @@
       background: var(--color-primary);
       color: var(--bg-base);
       border-color: var(--color-primary);
+    }
+
+    .canvas-btn.engine-running.active {
+      background: rgba(255, 51, 102, 0.95);
+      color: #fff;
+      border-color: rgba(255, 51, 102, 0.8);
+      box-shadow: 0 0 15px rgba(255, 51, 102, 0.35);
     }
 
     /* Equation Tab Content */
@@ -905,14 +926,6 @@
         </div>
       </div>
 
-      <div style="margin-top: auto; padding-top: 1rem;">
-        <button class="btn-primary" onclick="calculate()">
-          <span style="font-size: 1.1rem;">⚙</span>COMPUTE
-        </button>
-        <button class="btn-danger" id="ignite-btn" onclick="toggleEngineIgnition()">
-          🔥 IGNITE ENGINE
-        </button>
-      </div>
     </aside>
 
     <!-- Right Workspace Area -->
@@ -923,7 +936,7 @@
         <div class="tab-headers">
           <div class="tab-header active" onclick="switchTab(0)">Engine Contour CAD</div>
           <div class="tab-header" onclick="switchTab(1)">Calculated Steps & Equations</div>
-          <div class="tab-header" onclick="switchTab(2)">Textbook Reference Manual</div>
+          <div class="tab-header" onclick="switchTab(2)">Reference</div>
         </div>
 
         <!-- Tab 0: Canvas CAD -->
@@ -945,6 +958,7 @@
                 <button class="canvas-btn" id="reset-view-btn" onclick="resetView()">Reset View</button>
                 <button class="canvas-btn active" id="overlay-toggle" onclick="toggleOverlay()">Dimension Overlay</button>
                 <button class="canvas-btn" id="nozzle-type-toggle" onclick="toggleNozzleType()">Bell Nozzle Shape</button>
+                <button class="canvas-btn" id="ignite-btn" onclick="toggleEngineIgnition()">🔥 IGNITE ENGINE</button>
               </div>
             </div>
           </div>
@@ -1190,9 +1204,6 @@
 
   <!-- Bottom status/metadata bar -->
   <footer>
-    <div class="footer-item">
-      <span>REF DATA: Sutton Rocket Propulsion Elements, 9th Ed.</span>
-    </div>
     <div class="footer-item">
       <span>UNIT SYSTEM: METRIC (cm, kN, kg/s, K, MPa)</span>
     </div>
@@ -2462,7 +2473,7 @@
     const btn = document.getElementById('ignite-btn');
     if (isIgnited) {
       btn.textContent = '⏹ HALT ENGINE';
-      btn.classList.add('active');
+      btn.classList.add('active', 'engine-running');
       plumeParticles = [];
       // Calculate once when igniting, then just animate particles
       if (activeTab === 0) {
@@ -2470,12 +2481,7 @@
       }
     } else {
       btn.textContent = '🔥 IGNITE ENGINE';
-      btn.classList.remove('active');
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
-      calculate(); // Redraw static
+      btn.classList.remove('active', 'engine-running');
     }
   }
 
