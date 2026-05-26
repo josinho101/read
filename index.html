@@ -743,13 +743,8 @@
   <header>
     <div class="brand">
       <div class="brand-logo">Δ</div>
-      <div class="brand-title">Dimension-X</div>
-    </div>
-    <div class="system-status">
-      <div class="status-indicator">
-        <span class="status-dot"></span>
-        <span>PROPULSION SIMULATOR ISENTROPIC-V1.0</span>
-      </div>
+      <div class="brand-title">READ</div>
+      <div class="brand-subtitle">[Rocket Engine Analysis and Design]</div>
     </div>
   </header>
 
@@ -758,9 +753,6 @@
     
     <!-- Controls Sidebar -->
     <aside class="controls-panel">
-      <div class="section-title">
-        <span>DESIGN TARGET</span>
-      </div>
       <div class="toggle-container" id="target-toggle-group">
         <button class="toggle-btn active" id="target-thrust-btn" onclick="setTargetType('thrust')">Thrust Target</button>
         <button class="toggle-btn" id="target-payload-btn" onclick="setTargetType('payload')">Payload Estimator</button>
@@ -915,7 +907,7 @@
 
       <div style="margin-top: auto; padding-top: 1rem;">
         <button class="btn-primary" onclick="calculate()">
-          <span style="font-size: 1.1rem;">⚙</span> RECALCULATE ENGINE
+          <span style="font-size: 1.1rem;">⚙</span>COMPUTE
         </button>
         <button class="btn-danger" id="ignite-btn" onclick="toggleEngineIgnition()">
           🔥 IGNITE ENGINE
@@ -2130,16 +2122,16 @@
     ctx.fillStyle = 'rgba(0, 240, 255, 0.7)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(x - 15, y);
-    ctx.lineTo(x, y);
-    ctx.lineTo(x - 4, y - 3);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x - 4, y + 3);
+    ctx.moveTo(x - 70, y);
+    ctx.lineTo(x - 32, y);
+    ctx.lineTo(x - 36, y - 3);
+    ctx.moveTo(x - 32, y);
+    ctx.lineTo(x - 36, y + 3);
     ctx.stroke();
 
     ctx.font = '500 9px var(--font-mono)';
     ctx.fillStyle = 'var(--text-muted)';
-    ctx.fillText('FLOW', x - 15, y - 6);
+    ctx.fillText('FLOW', x - 70, y - 6);
   }
 
   // Dimension Overlay Rulers
@@ -2149,85 +2141,8 @@
     ctx.lineWidth = 1.0;
     ctx.font = '500 10.5px var(--font-mono)';
 
-    const labelOffset = 22;
+    const labelOffsetPx = 22; // keep label distance constant in screen pixels
     const arrowSize = 4.5;
-
-    // Dimension Line Helper
-    const drawDimLineY = (x, y1, y2, label) => {
-      const sx = toScreenX(x);
-      const sy1 = toScreenY(y1);
-      const sy2 = toScreenY(y2);
-
-      // Main line
-      ctx.beginPath();
-      ctx.moveTo(sx, sy1);
-      ctx.lineTo(sx, sy2);
-      ctx.stroke();
-
-      // Arrowheads
-      ctx.beginPath();
-      ctx.moveTo(sx, sy1);
-      ctx.lineTo(sx - arrowSize / 1.5, sy1 + arrowSize);
-      ctx.lineTo(sx + arrowSize / 1.5, sy1 + arrowSize);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(sx, sy2);
-      ctx.lineTo(sx - arrowSize / 1.5, sy2 - arrowSize);
-      ctx.lineTo(sx + arrowSize / 1.5, sy2 - arrowSize);
-      ctx.closePath();
-      ctx.fill();
-
-      // Text label
-      ctx.save();
-      ctx.translate(sx - 6, (sy1 + sy2) / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.textAlign = 'center';
-      ctx.fillText(label, 0, 0);
-      ctx.restore();
-    };
-
-    const drawDimLineX = (x1, x2, y, label) => {
-      const sx1 = toScreenX(x1);
-      const sx2 = toScreenX(x2);
-      const sy = toScreenY(y);
-
-      // Extension lines
-      ctx.strokeStyle = 'rgba(255, 170, 0, 0.25)';
-      ctx.beginPath();
-      ctx.moveTo(sx1, sy);
-      ctx.lineTo(sx1, toScreenY(0));
-      ctx.moveTo(sx2, sy);
-      ctx.lineTo(sx2, toScreenY(0));
-      ctx.stroke();
-
-      // Dimension line
-      ctx.strokeStyle = 'rgba(255, 170, 0, 0.65)';
-      ctx.beginPath();
-      ctx.moveTo(sx1, sy);
-      ctx.lineTo(sx2, sy);
-      ctx.stroke();
-
-      // Arrowheads
-      ctx.beginPath();
-      ctx.moveTo(sx1, sy);
-      ctx.lineTo(sx1 + arrowSize, sy - arrowSize / 1.5);
-      ctx.lineTo(sx1 + arrowSize, sy + arrowSize / 1.5);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(sx2, sy);
-      ctx.lineTo(sx2 - arrowSize, sy - arrowSize / 1.5);
-      ctx.lineTo(sx2 - arrowSize, sy + arrowSize / 1.5);
-      ctx.closePath();
-      ctx.fill();
-
-      // Text label
-      ctx.textAlign = 'center';
-      ctx.fillText(label, (sx1 + sx2) / 2, sy - 5);
-    };
 
     // Max Y for positioning horizontal rulers
     const maxRadius = Math.max(rc, re);
@@ -2235,27 +2150,98 @@
       (canvas.width / (window.devicePixelRatio || 1) - 2 * (canvas.width / (window.devicePixelRatio || 1) * 0.15)) / totalLength,
       (canvas.height / (window.devicePixelRatio || 1) - 2 * (canvas.height / (window.devicePixelRatio || 1) * 0.20)) / (2 * maxRadius)
     );
+    const labelOffset = labelOffsetPx / scale;
 
-    // Vertical diameters:
-    // Chamber Diameter (Dc)
-    drawDimLineY(0 - labelOffset, rc, -rc, `Dc = ${(2 * rc).toFixed(2)} cm`);
-    
-    // Throat Diameter (Dt)
-    drawDimLineY(lcyl + lconv, rt, -rt, `Dt = ${(2 * rt).toFixed(2)} cm`);
+    // Dimension Line Helper
+    const drawDimLineY = (x, y1, y2, label) => {
+      const sx = toScreenX(x);
+      const sy1 = toScreenY(y1);
+      const sy2 = toScreenY(y2);
 
-    // Exit Diameter (De)
-    drawDimLineY(totalLength + labelOffset, re, -re, `De = ${(2 * re).toFixed(2)} cm`);
+        // Main line
+        ctx.beginPath();
+        ctx.moveTo(sx, sy1);
+        ctx.lineTo(sx, sy2);
+        ctx.stroke();
 
-    // Horizontal lengths:
-    const rulerY = maxRadius + labelOffset / scale;
-    const rulerY2 = maxRadius + (labelOffset + 18) / scale;
-    
-    // ABOVE ENGINE: Component subdivisions
-    // Cylinder length Lcyl
-    drawDimLineX(0, lcyl, rulerY, `Lcyl = ${lcyl.toFixed(1)} cm`);
+        // Arrowheads
+        ctx.beginPath();
+        ctx.moveTo(sx, sy1);
+        ctx.lineTo(sx - arrowSize / 1.5, sy1 + arrowSize);
+        ctx.lineTo(sx + arrowSize / 1.5, sy1 + arrowSize);
+        ctx.closePath();
+        ctx.fill();
 
-    // Convergent length Lconv
-    drawDimLineX(lcyl, lcyl + lconv, rulerY, `Lconv = ${lconv.toFixed(1)} cm`);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy2);
+        ctx.lineTo(sx - arrowSize / 1.5, sy2 - arrowSize);
+        ctx.lineTo(sx + arrowSize / 1.5, sy2 - arrowSize);
+        ctx.closePath();
+        ctx.fill();
+
+        // Text label
+        ctx.save();
+        ctx.translate(sx - 6, (sy1 + sy2) / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+      };
+
+      const drawDimLineX = (x1, x2, y, label) => {
+        const sx1 = toScreenX(x1);
+        const sx2 = toScreenX(x2);
+        const sy = toScreenY(y);
+
+        // Extension lines
+        ctx.strokeStyle = 'rgba(255, 170, 0, 0.25)';
+        ctx.beginPath();
+        ctx.moveTo(sx1, sy);
+        ctx.lineTo(sx1, toScreenY(0));
+        ctx.moveTo(sx2, sy);
+        ctx.lineTo(sx2, toScreenY(0));
+        ctx.stroke();
+
+        // Dimension line
+        ctx.strokeStyle = 'rgba(255, 170, 0, 0.65)';
+        ctx.beginPath();
+        ctx.moveTo(sx1, sy);
+        ctx.lineTo(sx2, sy);
+        ctx.stroke();
+
+        // Arrowheads
+        ctx.beginPath();
+        ctx.moveTo(sx1, sy);
+        ctx.lineTo(sx1 + arrowSize, sy - arrowSize / 1.5);
+        ctx.lineTo(sx1 + arrowSize, sy + arrowSize / 1.5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(sx2, sy);
+        ctx.lineTo(sx2 - arrowSize, sy - arrowSize / 1.5);
+        ctx.lineTo(sx2 - arrowSize, sy + arrowSize / 1.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Text label
+        ctx.textAlign = 'center';
+        ctx.fillText(label, (sx1 + sx2) / 2, sy - 5);
+      };
+
+      // Vertical diameters:
+      // Chamber Diameter (Dc)
+      drawDimLineY(0 - labelOffset, rc, -rc, `Dc = ${(2 * rc).toFixed(2)} cm`);
+      
+      // Throat Diameter (Dt)
+      drawDimLineY(lcyl + lconv, rt, -rt, `Dt = ${(2 * rt).toFixed(2)} cm`);
+
+      // Exit Diameter (De)
+      drawDimLineY(totalLength + labelOffset, re, -re, `De = ${(2 * re).toFixed(2)} cm`);
+
+      // Horizontal lengths:
+      const rulerY = maxRadius + labelOffset;
+      const rulerY2 = maxRadius + (labelOffsetPx + 18) / scale;
 
     // Divergent length Lnozzle (also labeled as Ldiv subdivision)
     drawDimLineX(lcyl + lconv, totalLength, rulerY, `Ldiv = ${lnozzle.toFixed(1)} cm`);
