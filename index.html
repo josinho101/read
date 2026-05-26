@@ -501,6 +501,18 @@
       gap: 0.5rem;
     }
 
+    .canvas-hint {
+      background: rgba(10, 13, 20, 0.75);
+      border: 1px solid rgba(255, 170, 0, 0.3);
+      padding: 0.3rem 0.6rem;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--color-secondary);
+      backdrop-filter: blur(4px);
+      pointer-events: auto;
+    }
+
     .canvas-controls {
       display: flex;
       gap: 0.5rem;
@@ -931,7 +943,14 @@
                 <span style="color: var(--color-accent);">●</span>
                 <span>GRID SCALING: 1 DIV = <span id="grid-spacing-val">1.0</span> cm</span>
               </div>
+              <div class="canvas-hint">
+                <span>🖱 Scroll: Zoom | Middle-Click+Drag: Pan | Ctrl+Drag: Pan</span>
+              </div>
               <div class="canvas-controls">
+                <button class="canvas-btn" id="zoom-out-btn" onclick="handleZoomOut()">−</button>
+                <button class="canvas-btn" id="zoom-display" style="min-width: 50px; cursor: default;">100%</button>
+                <button class="canvas-btn" id="zoom-in-btn" onclick="handleZoomIn()">+</button>
+                <button class="canvas-btn" id="reset-view-btn" onclick="resetView()">Reset View</button>
                 <button class="canvas-btn active" id="overlay-toggle" onclick="toggleOverlay()">Dimension Overlay</button>
                 <button class="canvas-btn" id="nozzle-type-toggle" onclick="toggleNozzleType()">Bell Nozzle Shape</button>
               </div>
@@ -1208,14 +1227,70 @@
   let animationFrameId = null;
   let plumeParticles = [];
   let currentResults = {};
+  
+  // Pan and Zoom variables
+  let zoomLevel = 1.0;
+  let panX = 0;
+  let panY = 0;
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let lastPanX = 0;
+  let lastPanY = 0;
 
   // DOM Elements
   const canvas = document.getElementById('engine-canvas');
   const ctx = canvas.getContext('2d');
 
+  // Pan and Zoom Helper Functions
+  function resetView() {
+    zoomLevel = 1.0;
+    panX = 0;
+    panY = 0;
+    updateZoomDisplay();
+    if (activeTab === 0) {
+      calculate();
+    }
+  }
+
+  function updateZoomDisplay() {
+    const zoomPercent = Math.round(zoomLevel * 100);
+    document.getElementById('zoom-display').textContent = zoomPercent + '%';
+  }
+
+  function handleZoomIn() {
+    zoomLevel = Math.min(zoomLevel * 1.2, 5.0);
+    updateZoomDisplay();
+    if (activeTab === 0) {
+      if (isIgnited) {
+        drawEngineWithPlume(currentResults);
+      } else {
+        drawEngine(currentResults);
+      }
+    }
+  }
+
+  function handleZoomOut() {
+    zoomLevel = Math.max(zoomLevel / 1.2, 0.5);
+    updateZoomDisplay();
+    if (activeTab === 0) {
+      if (isIgnited) {
+        drawEngineWithPlume(currentResults);
+      } else {
+        drawEngine(currentResults);
+      }
+    }
+  }
+
+  function applyViewTransform() {
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
+  }
+
   // Initialization
   window.addEventListener('load', () => {
     setupCanvas();
+    attachCanvasEventListeners();
     applyPreset();
     window.addEventListener('resize', () => {
       setupCanvas();
@@ -1232,6 +1307,85 @@
     ctx.scale(dpr, dpr);
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
+  }
+
+  function attachCanvasEventListeners() {
+    canvas.addEventListener('wheel', handleCanvasWheel, { passive: false });
+    canvas.addEventListener('mousedown', handleCanvasMouseDown);
+    canvas.addEventListener('mousemove', handleCanvasMouseMove);
+    canvas.addEventListener('mouseup', handleCanvasMouseUp);
+    canvas.addEventListener('mouseleave', handleCanvasMouseLeave);
+  }
+
+  function handleCanvasWheel(e) {
+    e.preventDefault();
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Zoom in/out: scroll up zooms in, scroll down zooms out
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.min(Math.max(zoomLevel * zoomFactor, 0.5), 5.0); // Clamp between 0.5x and 5x
+    
+    // Pan to maintain the mouse position as the zoom center
+    const scale = newZoom / zoomLevel;
+    panX = mouseX - (mouseX - panX) * scale;
+    panY = mouseY - (mouseY - panY) * scale;
+    
+    zoomLevel = newZoom;
+    updateZoomDisplay();
+    
+    if (activeTab === 0) {
+      if (isIgnited) {
+        drawEngineWithPlume(currentResults);
+      } else {
+        drawEngine(currentResults);
+      }
+    }
+  }
+
+  function handleCanvasMouseDown(e) {
+    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) { // Middle mouse button or Ctrl+Left
+      isPanning = true;
+      panStartX = e.clientX;
+      panStartY = e.clientY;
+      lastPanX = panX;
+      lastPanY = panY;
+      canvas.style.cursor = 'grabbing';
+    }
+  }
+
+  function handleCanvasMouseMove(e) {
+    if (isPanning) {
+      const dx = e.clientX - panStartX;
+      const dy = e.clientY - panStartY;
+      
+      panX = lastPanX + dx;
+      panY = lastPanY + dy;
+      
+      if (activeTab === 0) {
+        if (isIgnited) {
+          drawEngineWithPlume(currentResults);
+        } else {
+          drawEngine(currentResults);
+        }
+      }
+    }
+  }
+
+  function handleCanvasMouseUp(e) {
+    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
+      isPanning = false;
+      canvas.style.cursor = 'default';
+    }
+  }
+
+  function handleCanvasMouseLeave(e) {
+    if (isPanning) {
+      isPanning = false;
+      canvas.style.cursor = 'default';
+    }
   }
 
   function switchTab(index) {
@@ -1658,6 +1812,7 @@
 
     // 5. Redraw Canvas Engine
     drawEngine(currentResults);
+    updateZoomDisplay();
   }
 
   // Update math variables in Tab 1
@@ -1713,6 +1868,12 @@
   function drawEngine(res) {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Save context before applying transforms
+    ctx.save();
+    
+    // Apply pan and zoom transformations
+    applyViewTransform();
 
     // Compute bounding sizes
     const lcyl = res.lcyl;
@@ -1958,6 +2119,9 @@
     if (showOverlay) {
       drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
     }
+    
+    // Restore context after transforms
+    ctx.restore();
   }
 
   // Draw arrow indicating propellant inlet direction
@@ -2343,6 +2507,12 @@
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Save context before applying transforms
+    ctx.save();
+    
+    // Apply pan and zoom transformations
+    applyViewTransform();
+
     // Compute bounding sizes
     const lcyl = res.lcyl;
     const lconv = res.lconv;
@@ -2557,6 +2727,9 @@
     if (showOverlay) {
       drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
     }
+    
+    // Restore context after transforms
+    ctx.restore();
   }
 
   function updateAndDrawParticles(ctx, exitSx, topSy, bottomSy, originY, maxDistPx, expAngle) {
