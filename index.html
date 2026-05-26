@@ -2314,7 +2314,10 @@
       btn.textContent = '⏹ HALT ENGINE';
       btn.classList.add('active');
       plumeParticles = [];
-      animateEngine();
+      // Calculate once when igniting, then just animate particles
+      if (activeTab === 0) {
+        animateEngine();
+      }
     } else {
       btn.textContent = '🔥 IGNITE ENGINE';
       btn.classList.remove('active');
@@ -2327,8 +2330,233 @@
   }
 
   function animateEngine() {
-    calculate(); // Trigger math update and contour redraw
-    animationFrameId = requestAnimationFrame(animateEngine);
+    // Only redraw the canvas with plume particles, don't recalculate
+    if (activeTab === 0) {
+      drawEngineWithPlume(currentResults);
+      animationFrameId = requestAnimationFrame(animateEngine);
+    } else {
+      animationFrameId = null;
+    }
+  }
+
+  function drawEngineWithPlume(res) {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Compute bounding sizes
+    const lcyl = res.lcyl;
+    const lconv = res.lconv;
+    const lnozzle = res.lnozzle;
+    const rc = res.rc;
+    const rt = res.rt;
+    const re = res.re;
+    const totalLength = lcyl + lconv + lnozzle;
+    const maxRadius = Math.max(rc, re);
+
+    // Dynamic grid scaling
+    const canvasW = canvas.width / (window.devicePixelRatio || 1);
+    const canvasH = canvas.height / (window.devicePixelRatio || 1);
+    
+    const padX = canvasW * 0.15;
+    const padY = canvasH * 0.20;
+    
+    const availableW = canvasW - 2 * padX;
+    const availableH = canvasH - 2 * padY;
+
+    const scaleX = availableW / totalLength;
+    const scaleY = (availableH / 2) / maxRadius;
+    const scale = Math.min(scaleX, scaleY);
+
+    let gridSpacingCm = 1.0;
+    if (scale < 5) gridSpacingCm = 10.0;
+    else if (scale < 15) gridSpacingCm = 5.0;
+    else if (scale < 30) gridSpacingCm = 2.0;
+    else if (scale > 100) gridSpacingCm = 0.5;
+
+    const originX = padX + (availableW - totalLength * scale) / 2;
+    const originY = canvasH / 2;
+
+    // Draw grid background
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvasW; x += gridSpacingCm * scale) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvasH);
+      ctx.stroke();
+    }
+    for (let y = originY % (gridSpacingCm * scale); y < canvasH; y += gridSpacingCm * scale) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvasW, y);
+      ctx.stroke();
+    }
+
+    const x0 = 0;
+    const x1 = lcyl;
+    const x2 = lcyl + lconv;
+    const x3 = totalLength;
+
+    const pointsUpper = [];
+
+    const stepsChamber = 10;
+    for (let i = 0; i <= stepsChamber; i++) {
+      const x = (lcyl * i) / stepsChamber;
+      pointsUpper.push({ x: x, y: rc });
+    }
+
+    const r1 = res.r1;
+    const thetaconv = res.thetaconv;
+    const xu_arc = -r1 * Math.sin(thetaconv);
+    const yu_arc = rt + r1 * (1 - Math.cos(thetaconv));
+
+    const xConeEnd = lcyl + (lconv - Math.abs(xu_arc));
+    const stepsCone = 10;
+    for (let i = 0; i < stepsCone; i++) {
+      const t = i / stepsCone;
+      const x = x1 + t * (xConeEnd - x1);
+      const y = rc - (rc - yu_arc) * t;
+      pointsUpper.push({ x: x, y: y });
+    }
+
+    const stepsArc1 = 15;
+    for (let i = stepsArc1; i >= 0; i--) {
+      const angle = (thetaconv * i) / stepsArc1;
+      const x = x2 - r1 * Math.sin(angle);
+      const y = rt + r1 * (1 - Math.cos(angle));
+      pointsUpper.push({ x: x, y: y });
+    }
+
+    const r2 = res.r2;
+    if (nozzleType === 'conical') {
+      const thetaDiv = 15 * Math.PI / 180;
+      const xi = r2 * Math.sin(thetaDiv);
+      const yi = rt + r2 * (1 - Math.cos(thetaDiv));
+      
+      const stepsArc2 = 10;
+      for (let i = 1; i <= stepsArc2; i++) {
+        const angle = (thetaDiv * i) / stepsArc2;
+        const x = x2 + r2 * Math.sin(angle);
+        const y = rt + r2 * (1 - Math.cos(angle));
+        pointsUpper.push({ x: x, y: y });
+      }
+
+      pointsUpper.push({ x: x3, y: re });
+    } 
+    else {
+      const thetaN = res.thetaN;
+      const thetaE = res.thetaE;
+      
+      const xi = r2 * Math.sin(thetaN);
+      const yi = rt + r2 * (1 - Math.cos(thetaN));
+
+      const stepsArc2 = 10;
+      for (let i = 1; i <= stepsArc2; i++) {
+        const angle = (thetaN * i) / stepsArc2;
+        const x = x2 + r2 * Math.sin(angle);
+        const y = rt + r2 * (1 - Math.cos(angle));
+        pointsUpper.push({ x: x, y: y });
+      }
+
+      const p0 = { x: x2 + xi, y: yi };
+      const p2 = { x: x3, y: re };
+      
+      const slope0 = Math.tan(thetaN);
+      const slope2 = Math.tan(thetaE);
+      
+      const p1_x = (p2.y - p0.y + p0.x * slope0 - p2.x * slope2) / (slope0 - slope2);
+      const p1_y = p0.y + slope0 * (p1_x - p0.x);
+      
+      const stepsBell = 25;
+      for (let i = 1; i <= stepsBell; i++) {
+        const t = i / stepsBell;
+        const mt = 1 - t;
+        const x = mt * mt * p0.x + 2 * mt * t * p1_x + t * t * p2.x;
+        const y = mt * mt * p0.y + 2 * mt * t * p1_y + t * t * p2.y;
+        pointsUpper.push({ x: x, y: y });
+      }
+    }
+
+    const pointsLower = pointsUpper.map(pt => ({ x: pt.x, y: -pt.y }));
+
+    const toScreenX = (x) => originX + x * scale;
+    const toScreenY = (y) => originY - y * scale;
+
+    // Draw plume if ignited
+    if (isIgnited) {
+      drawPlume(ctx, toScreenX, toScreenY, x3, re, scale, res.pe, res.pa);
+    }
+
+    // Draw Solid Metal Engine Body Fill
+    ctx.beginPath();
+    ctx.moveTo(toScreenX(pointsUpper[0].x), toScreenY(pointsUpper[0].y));
+    for (let i = 1; i < pointsUpper.length; i++) {
+      ctx.lineTo(toScreenX(pointsUpper[i].x), toScreenY(pointsUpper[i].y));
+    }
+    for (let i = pointsLower.length - 1; i >= 0; i--) {
+      ctx.lineTo(toScreenX(pointsLower[i].x), toScreenY(pointsLower[i].y));
+    }
+    ctx.closePath();
+    
+    const bodyGrad = ctx.createLinearGradient(originX, 0, originX + totalLength * scale, 0);
+    bodyGrad.addColorStop(0, 'rgba(30, 45, 60, 0.45)');
+    bodyGrad.addColorStop(0.3, 'rgba(15, 25, 35, 0.55)');
+    bodyGrad.addColorStop(x2 / totalLength, 'rgba(40, 20, 20, 0.65)');
+    bodyGrad.addColorStop(1, 'rgba(20, 35, 50, 0.45)');
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+
+    // Draw Outer Walls Outline
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+    ctx.lineWidth = 3.5;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(0, 240, 255, 0.5)';
+    
+    ctx.beginPath();
+    ctx.moveTo(toScreenX(pointsUpper[0].x), toScreenY(pointsUpper[0].y));
+    for (let i = 1; i < pointsUpper.length; i++) {
+      ctx.lineTo(toScreenX(pointsUpper[i].x), toScreenY(pointsUpper[i].y));
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(toScreenX(pointsLower[0].x), toScreenY(pointsLower[0].y));
+    for (let i = 1; i < pointsLower.length; i++) {
+      ctx.lineTo(toScreenX(pointsLower[i].x), toScreenY(pointsLower[i].y));
+    }
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+    ctx.lineWidth = 1.5;
+    
+    ctx.beginPath();
+    ctx.moveTo(toScreenX(0), toScreenY(rc));
+    ctx.lineTo(toScreenX(0), toScreenY(-rc));
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(toScreenX(totalLength), toScreenY(re));
+    ctx.lineTo(toScreenX(totalLength), toScreenY(-re));
+    ctx.stroke();
+
+    // Draw Symmetry Centerline
+    ctx.strokeStyle = 'rgba(255, 170, 0, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([8, 4, 2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(originX - 30, originY);
+    ctx.lineTo(originX + totalLength * scale + 50, originY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw flow directional arrow
+    drawFlowArrow(ctx, originX - 25, originY);
+
+    // Draw Dimension Rulers Overlay
+    if (showOverlay) {
+      drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
+    }
   }
 
   function updateAndDrawParticles(ctx, exitSx, topSy, bottomSy, originY, maxDistPx, expAngle) {
