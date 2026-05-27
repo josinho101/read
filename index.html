@@ -2272,14 +2272,14 @@
       drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
     }
 
-    // Draw abbreviation legend placed parallel to the FLOW label with a 30px gap
-    drawAbbreviationLegend(ctx, canvasW, canvasH, originX - 25, originY);
-    
     // Restore context after transforms
     ctx.restore();
+
+    // Draw abbreviation legend fixed to the canvas bottom-left corner
+    drawAbbreviationLegend(ctx, canvasW, canvasH);
   }
 
-  // Draw Abbreviation Legend placed parallel to FLOW label (with gap)
+  // Draw Abbreviation Legend anchored to the left-bottom corner of the canvas
   function drawAbbreviationLegend(ctx, canvasW, canvasH, flowX, flowY) {
     const legendData = [
       { abbr: 'Dc', full: 'Chamber Diameter' },
@@ -2298,21 +2298,10 @@
     const boxWidth = 210;
     const itemHeight = 14;
     const totalHeight = legendData.length * itemHeight + 2 * padding + 20;
+    const margin = 12;
 
-    // Compute legend position to the right of the FLOW label with a 30px gap
-    ctx.save();
-    ctx.font = '500 9px var(--font-mono)';
-    const flowText = 'FLOW';
-    // drawFlowArrow places text at (flowX - 70, flowY - 6) so compute that x
-    const flowTextX = (typeof flowX === 'number') ? (flowX - 70) : null;
-    const flowTextWidth = (flowTextX !== null) ? ctx.measureText(flowText).width : 0;
-    const gapPx = 30; // requested gap in pixels
-    const desiredX = (flowTextX !== null) ? Math.round(flowTextX + flowTextWidth + gapPx) : (canvasW - boxWidth - 40);
-    const legendX = Math.max(8, Math.min(canvasW - boxWidth - 8, desiredX - 300));
-    // Vertically center legend on FLOW label
-    let legendY = (typeof flowY === 'number') ? Math.round(flowY - totalHeight / 2) : 20;
-    legendY = Math.max(8, Math.min(canvasH - totalHeight - 8, legendY));
-    ctx.restore();
+    const legendX = margin;
+    const legendY = Math.max(margin, canvasH - totalHeight - margin);
 
     // Draw semi-transparent background box
     ctx.save();
@@ -2958,11 +2947,11 @@
       drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
     }
 
-    // Draw abbreviation legend placed parallel to the FLOW label with a 30px gap
-    drawAbbreviationLegend(ctx, canvasW, canvasH, originX - 25, originY);
-    
     // Restore context after transforms
     ctx.restore();
+
+    // Draw abbreviation legend fixed to the canvas bottom-left corner
+    drawAbbreviationLegend(ctx, canvasW, canvasH);
   }
 
   function updateAndDrawParticles(ctx, exitSx, topSy, bottomSy, originY, maxDistPx, expAngle) {
