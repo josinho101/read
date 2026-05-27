@@ -2271,12 +2271,101 @@
     if (showOverlay) {
       drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
     }
+
+    // Draw abbreviation legend placed parallel to the FLOW label with a 30px gap
+    drawAbbreviationLegend(ctx, canvasW, canvasH, originX - 25, originY);
     
     // Restore context after transforms
     ctx.restore();
   }
 
-  // Draw arrow indicating propellant inlet direction
+  // Draw Abbreviation Legend placed parallel to FLOW label (with gap)
+  function drawAbbreviationLegend(ctx, canvasW, canvasH, flowX, flowY) {
+    const legendData = [
+      { abbr: 'Dc', full: 'Chamber Diameter' },
+      { abbr: 'Dt', full: 'Throat Diameter' },
+      { abbr: 'De', full: 'Exit Diameter' },
+      { abbr: 'Lnozzle', full: 'Divergent Nozzle Length' },
+      { abbr: 'Ltotal', full: 'Total Engine Length' },
+      { abbr: 'Lchamber', full: 'Combustion Chamber Length' },
+      { abbr: 'θconv', full: 'Convergent Half-Angle' },
+      { abbr: 'θn', full: 'Bell Nozzle Initial Angle' },
+      { abbr: 'θe', full: 'Bell Nozzle Exit Angle' },
+      { abbr: 'Ldiv', full: 'Divergent Section Length' }
+    ];
+
+    const padding = 12;
+    const boxWidth = 210;
+    const itemHeight = 14;
+    const totalHeight = legendData.length * itemHeight + 2 * padding + 20;
+
+    // Compute legend position to the right of the FLOW label with a 30px gap
+    ctx.save();
+    ctx.font = '500 9px var(--font-mono)';
+    const flowText = 'FLOW';
+    // drawFlowArrow places text at (flowX - 70, flowY - 6) so compute that x
+    const flowTextX = (typeof flowX === 'number') ? (flowX - 70) : null;
+    const flowTextWidth = (flowTextX !== null) ? ctx.measureText(flowText).width : 0;
+    const gapPx = 30; // requested gap in pixels
+    const desiredX = (flowTextX !== null) ? Math.round(flowTextX + flowTextWidth + gapPx) : (canvasW - boxWidth - 40);
+    const legendX = Math.max(8, Math.min(canvasW - boxWidth - 8, desiredX - 300));
+    // Vertically center legend on FLOW label
+    let legendY = (typeof flowY === 'number') ? Math.round(flowY - totalHeight / 2) : 20;
+    legendY = Math.max(8, Math.min(canvasH - totalHeight - 8, legendY));
+    ctx.restore();
+
+    // Draw semi-transparent background box
+    ctx.save();
+    ctx.fillStyle = 'rgba(10, 13, 20, 0.92)';
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(0, 240, 255, 0.2)';
+    
+    // Draw rounded rectangle
+    const cornerRadius = 6;
+    ctx.beginPath();
+    ctx.moveTo(legendX + cornerRadius, legendY);
+    ctx.lineTo(legendX + boxWidth - cornerRadius, legendY);
+    ctx.quadraticCurveTo(legendX + boxWidth, legendY, legendX + boxWidth, legendY + cornerRadius);
+    ctx.lineTo(legendX + boxWidth, legendY + totalHeight - cornerRadius);
+    ctx.quadraticCurveTo(legendX + boxWidth, legendY + totalHeight, legendX + boxWidth - cornerRadius, legendY + totalHeight);
+    ctx.lineTo(legendX + cornerRadius, legendY + totalHeight);
+    ctx.quadraticCurveTo(legendX, legendY + totalHeight, legendX, legendY + totalHeight - cornerRadius);
+    ctx.lineTo(legendX, legendY + cornerRadius);
+    ctx.quadraticCurveTo(legendX, legendY, legendX + cornerRadius, legendY);
+    ctx.closePath();
+    
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw title
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.95)';
+    ctx.font = '600 11px var(--font-display)';
+    ctx.textAlign = 'left';
+    ctx.fillText('LEGENDS', legendX + padding, legendY + padding + 10);
+
+    // Draw legend entries
+    ctx.fillStyle = 'rgba(255, 170, 0, 0.85)';
+    ctx.font = '500 9px var(--font-mono)';
+    
+    let yPos = legendY + padding + 20;
+    for (const item of legendData) {
+      // Abbreviation in orange
+      ctx.fillStyle = 'rgba(255, 170, 0, 0.95)';
+      ctx.font = '600 9px var(--font-mono)';
+      ctx.fillText(item.abbr + ':', legendX + padding , yPos + 10);
+      
+      // Full form in cyan
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.75)';
+      ctx.font = '400 8.5px var(--font-sans)';
+      ctx.fillText(item.full, legendX + padding + 55, yPos + 10);
+      
+      yPos += itemHeight;
+    }
+
+    ctx.restore();
+  }
   function drawFlowArrow(ctx, x, y) {
     ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
     ctx.fillStyle = 'rgba(0, 240, 255, 0.7)';
@@ -2868,6 +2957,9 @@
     if (showOverlay) {
       drawDimensions(ctx, toScreenX, toScreenY, lcyl, lconv, lnozzle, rc, rt, re, totalLength);
     }
+
+    // Draw abbreviation legend placed parallel to the FLOW label with a 30px gap
+    drawAbbreviationLegend(ctx, canvasW, canvasH, originX - 25, originY);
     
     // Restore context after transforms
     ctx.restore();
