@@ -227,6 +227,65 @@
       box-sizing: border-box;
     }
 
+    /* Header action buttons (import/export) */
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .icon-btn {
+      background: rgba(0,0,0,0.25);
+      border: 3px solid var(--color-primary);
+      color: var(--text-main);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-panel-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,240,255,0.06);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      display: block;
+    }
+
+    /* Distinct visual styles for import/export buttons */
+    .icon-btn.import {
+      background: linear-gradient(135deg, rgba(0,240,255,0.08), rgba(0,240,255,0.03));
+      border-color: rgba(0,240,255,0.12);
+      color: var(--color-primary);
+      width: 44px;
+      height: 44px;
+      box-shadow: 0 6px 18px rgba(0,240,255,0.04);
+    }
+
+    .icon-btn.export {
+      background: linear-gradient(135deg, rgba(0,240,255,0.08), rgba(0,240,255,0.03));
+      border-color: rgba(0,240,255,0.12);
+      color: var(--color-primary);
+      width: 44px;
+      height: 44px;
+      box-shadow: 0 6px 18px rgba(0,240,255,0.04);
+    }
+
+    .icon-btn:focus {
+      outline: none;
+      box-shadow: 0 8px 24px rgba(0,240,255,0.12);
+      transform: translateY(-2px);
+    }
+
     .status-indicator {
       display: flex;
       align-items: center;
@@ -301,6 +360,18 @@
     }
 
     input[type="number"], select {
+      width: 100%;
+      background: rgba(10, 13, 20, 0.6);
+      border: 1px solid var(--border-glow);
+      border-radius: 4px;
+      color: var(--text-main);
+      padding: 0.5rem 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    input[type="text"] {
       width: 100%;
       background: rgba(10, 13, 20, 0.6);
       border: 1px solid var(--border-glow);
@@ -604,6 +675,30 @@
       gap: 0.5rem;
     }
 
+    .canvas-badge.engine-info {
+      background: rgba(5, 8, 12, 0.7);
+      color: var(--text-main);
+      font-size: 0.82rem;
+      padding: 0.3rem 0.6rem;
+      margin-left: 0.6rem;
+      letter-spacing: 0.6px;
+      text-transform: none;
+    }
+
+    .canvas-badge.engine-info .engine-name {
+      color: var(--color-primary);
+      font-weight: 700;
+      font-family: var(--font-display);
+      margin-right: 6px;
+    }
+
+    .canvas-badge.engine-info .engine-version {
+      color: var(--color-primary);
+      font-weight: 600;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
     .canvas-hint {
       background: rgba(10, 13, 20, 0.75);
       border: 1px solid rgba(255, 170, 0, 0.3);
@@ -870,6 +965,23 @@
       <div class="brand-title">READ</div>
       <div class="brand-subtitle">[Rocket Engine Analysis and Design]</div>
     </div>
+    <div class="header-actions">
+      <button class="icon-btn import" id="import-btn" onclick="triggerImport()" title="Import configuration" aria-label="Import configuration">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="7 10 12 15 17 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="12" y1="15" x2="12" y2="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="icon-btn export" id="export-btn" onclick="exportConfig()" title="Export configuration" aria-label="Export configuration">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 10l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 5v10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(event)">
+    </div>
   </header>
 
   <!-- Main Grid Workspace -->
@@ -886,6 +998,21 @@
       <div class="toggle-container" id="target-toggle-group">
         <button class="toggle-btn active" id="target-thrust-btn" onclick="setTargetType('thrust')">Thrust Target</button>
         <button class="toggle-btn" id="target-payload-btn" onclick="setTargetType('payload')">Payload Estimator</button>
+      </div>      
+
+      <!-- Engine identification inputs -->
+      <div class="form-group">
+        <label for="input-engine-name">Engine Name</label>
+        <div class="input-wrapper">
+          <input type="text" id="input-engine-name" value="Engine" oninput="updateEngineLabel()">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="input-engine-version">Engine Version</label>
+        <div class="input-wrapper">
+          <input type="text" id="input-engine-version" value="0.1" oninput="updateEngineLabel()">
+        </div>
       </div>
 
       <!-- Thrust target input -->
@@ -1054,10 +1181,10 @@
           <div class="canvas-container">
             <canvas id="engine-canvas"></canvas>
             <div class="canvas-toolbar">
+              <div class="canvas-badge engine-info" id="engine-label">READ v0.1</div>
               <div class="canvas-badge">
-                <span style="color: var(--color-accent);">●</span>
                 <span>GRID SCALING: 1 DIV = <span id="grid-spacing-val">1.0</span> cm</span>
-              </div>
+              </div>              
               <div class="canvas-hint">
                 <span>🖱 Scroll: Zoom | Middle-Click+Drag: Pan | Ctrl+Drag: Pan</span>
               </div>
@@ -1300,11 +1427,11 @@
           <span class="result-label">Exit Diameter (De)</span>
           <span class="result-value" id="res-de">-- <span class="unit">cm</span></span>
         </div>
-        <div class="result-card accent-amber">
+        <div class="result-card">
           <span class="result-label">Expansion Ratio (ε)</span>
           <span class="result-value" id="res-epsilon">--</span>
         </div>
-        <div class="result-card accent-emerald">
+        <div class="result-card">
           <span class="result-label">Total Engine Length</span>
           <span class="result-value" id="res-length">-- <span class="unit">cm</span></span>
         </div>
@@ -1369,6 +1496,125 @@
     }
   }
 
+  // Import / Export handlers for configuration
+  function triggerImport() {
+    const fi = document.getElementById('import-file');
+    if (fi) fi.click();
+  }
+
+  function handleImportFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const cfg = JSON.parse(ev.target.result);
+        applyImportedConfig(cfg);
+        alert('Configuration imported successfully.');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to import configuration: invalid JSON.');
+      }
+    };
+    reader.readAsText(file);
+    // reset input so same file can be re-picked later
+    e.target.value = '';
+  }
+
+  function collectConfig() {
+    return {
+      engineName: document.getElementById('input-engine-name')?.value || '',
+      engineVersion: document.getElementById('input-engine-version')?.value || '',
+      thrust_kN: parseFloat(document.getElementById('input-thrust')?.value) || 0,
+      payload_kg: parseFloat(document.getElementById('input-payload')?.value) || 0,
+      preset: document.getElementById('preset-select')?.value || '',
+      sliders: {
+        pc: parseFloat(document.getElementById('slider-pc')?.value) || 7,
+        tc: parseFloat(document.getElementById('slider-tc')?.value) || 3570,
+        gamma: parseFloat(document.getElementById('slider-gamma')?.value) || 1.22,
+        mw: parseFloat(document.getElementById('slider-mw')?.value) || 22,
+        lstar: parseFloat(document.getElementById('slider-lstar')?.value) || 100,
+        betac: parseFloat(document.getElementById('slider-betac')?.value) || 2.5,
+        thetaconv: parseFloat(document.getElementById('slider-thetaconv')?.value) || 30
+      },
+      expansionMode: document.getElementById('expansion-criterion')?.value || 'optimum',
+      fixedRatio: parseFloat(document.getElementById('slider-fixed-ratio')?.value) || null,
+      fixedPe_kPa: parseFloat(document.getElementById('slider-fixed-pe')?.value) || null,
+      altitude_m: parseFloat(document.getElementById('input-altitude')?.value) || 0,
+      pressure_kPa: parseFloat(document.getElementById('input-pressure')?.value) || 101.325,
+      overlay: !!showOverlay,
+      nozzleType: nozzleType,
+      targetType: targetType
+    };
+  }
+
+  function exportConfig() {
+    try {
+      const cfg = collectConfig();
+      const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const name = (cfg.engineName || 'engine').replace(/[^a-z0-9-_]/gi, '_');
+      a.download = `${name}-config.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to export configuration.');
+    }
+  }
+
+  function applyImportedConfig(cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    if (cfg.engineName !== undefined) document.getElementById('input-engine-name').value = cfg.engineName;
+    if (cfg.engineVersion !== undefined) document.getElementById('input-engine-version').value = cfg.engineVersion;
+    if (cfg.thrust_kN !== undefined) document.getElementById('input-thrust').value = cfg.thrust_kN;
+    if (cfg.payload_kg !== undefined) document.getElementById('input-payload').value = cfg.payload_kg;
+    if (cfg.preset !== undefined) document.getElementById('preset-select').value = cfg.preset;
+    const s = cfg.sliders || {};
+    if (s.pc !== undefined) document.getElementById('slider-pc').value = s.pc;
+    if (s.tc !== undefined) document.getElementById('slider-tc').value = s.tc;
+    if (s.gamma !== undefined) document.getElementById('slider-gamma').value = s.gamma;
+    if (s.mw !== undefined) document.getElementById('slider-mw').value = s.mw;
+    if (s.lstar !== undefined) document.getElementById('slider-lstar').value = s.lstar;
+    if (s.betac !== undefined) document.getElementById('slider-betac').value = s.betac;
+    if (s.thetaconv !== undefined) document.getElementById('slider-thetaconv').value = s.thetaconv;
+    if (cfg.expansionMode !== undefined) document.getElementById('expansion-criterion').value = cfg.expansionMode;
+    if (cfg.fixedRatio !== undefined) document.getElementById('slider-fixed-ratio').value = cfg.fixedRatio;
+    if (cfg.fixedPe_kPa !== undefined) document.getElementById('slider-fixed-pe').value = cfg.fixedPe_kPa;
+    if (cfg.altitude_m !== undefined) document.getElementById('input-altitude').value = cfg.altitude_m;
+    if (cfg.pressure_kPa !== undefined) document.getElementById('input-pressure').value = cfg.pressure_kPa;
+    if (cfg.overlay !== undefined) showOverlay = !!cfg.overlay;
+    if (cfg.nozzleType !== undefined) nozzleType = cfg.nozzleType;
+    if (cfg.targetType !== undefined) targetType = cfg.targetType;
+
+    // Update UI to reflect sliders and computed labels
+    updateSliderLabels();
+    // Update toggle buttons UI
+    document.getElementById('target-thrust-btn').classList.toggle('active', targetType === 'thrust');
+    document.getElementById('target-payload-btn').classList.toggle('active', targetType === 'payload');
+    document.getElementById('nozzle-type-toggle').classList.toggle('active', nozzleType === 'bell');
+
+    // Ensure preset selection applies sliders if a preset was selected
+    if (cfg.preset) {
+      try { document.getElementById('preset-select').value = cfg.preset; } catch (e) {}
+      applyPreset();
+    }
+
+    // Sync overlay and nozzle button text
+    try { document.getElementById('overlay-toggle').classList.toggle('active', !!showOverlay); } catch (e) {}
+    try { document.getElementById('nozzle-type-toggle').textContent = nozzleType === 'bell' ? 'Bell Nozzle Shape' : 'Conical Nozzle (15°)'; } catch (e) {}
+
+    // Update engine name/version label shown in canvas
+    updateEngineLabel();
+
+    // Recalculate after applying imported values
+    calculate();
+  }
+
   function updateZoomDisplay() {
     const zoomPercent = Math.round(zoomLevel * 100);
     document.getElementById('zoom-display').textContent = zoomPercent + '%';
@@ -1408,6 +1654,12 @@
     setupCanvas();
     attachCanvasEventListeners();
     applyPreset();
+  // Initialize engine label inputs
+  updateEngineLabel();
+  const en = document.getElementById('input-engine-name');
+  const ev = document.getElementById('input-engine-version');
+  if (en) en.addEventListener('input', updateEngineLabel);
+  if (ev) ev.addEventListener('input', updateEngineLabel);
     // Ensure arrow button shows correct initial glyph
     const btn = document.getElementById('hamburger-btn');
     const panel = document.querySelector('.controls-panel');
@@ -2014,6 +2266,22 @@
     if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
       MathJax.typesetPromise();
     }
+  }
+
+  // Update engine name/version label shown in canvas overlay
+  function updateEngineLabel() {
+    const name = (document.getElementById('input-engine-name') && document.getElementById('input-engine-name').value) || '';
+    const ver = (document.getElementById('input-engine-version') && document.getElementById('input-engine-version').value) || '';
+    const labelEl = document.getElementById('engine-label');
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    let displayName = name.trim() || 'Engine';
+    let html = `<span class="engine-name">${escapeHtml(displayName)}</span>`;
+    if (ver.trim().length) html += `<span class="engine-version"> v${escapeHtml(ver.trim())}</span>`;
+    if (labelEl) labelEl.innerHTML = html;
   }
 
   // 2D ENGINE PLOTTER AND DIMENSION OVERLAY
