@@ -124,6 +124,109 @@
       font-size: 0.9rem;
     }
 
+    /* Hamburger menu button (toggles left controls panel) */
+    .hamburger-btn {
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      margin-left: 0.5rem;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.12);
+    }
+
+    .hamburger-btn:hover {
+      background: rgba(0, 240, 255, 0.22);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.25);
+    }
+
+    .hamburger-icon {
+      width: 18px;
+      height: 14px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .hamburger-icon span {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--text-main);
+      border-radius: 2px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .hamburger-icon span:nth-child(1) { top: 0; }
+    .hamburger-icon span:nth-child(2) { top: 6px; }
+    .hamburger-icon span:nth-child(3) { top: 12px; }
+
+    .arrow-icon {
+      display: inline-block;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1;
+      color: var(--text-main);
+    }
+
+    .hamburger-btn.active .hamburger-icon span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+    .hamburger-btn.active .hamburger-icon span:nth-child(2) { opacity: 0; }
+    .hamburger-btn.active .hamburger-icon span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+
+    /* Collapsed controls behavior: keep a narrow visible strip for the hamburger */
+    .controls-panel.collapsed {
+      width: 64px !important;
+      padding: 0 !important;
+      border-right: 1px solid var(--border-glow);
+      overflow: hidden;
+      opacity: 1;
+      pointer-events: auto;
+      transition: all 0.18s ease;
+      position: relative;
+    }
+
+    /* Hide inner panel contents but keep the hamburger visible */
+    .controls-panel.collapsed .controls-inner {
+      display: none;
+    }
+
+    /* Show arrow icon when collapsed */
+    .controls-panel.collapsed .hamburger-btn .hamburger-icon {
+      display: none;
+    }
+    .controls-panel.collapsed .hamburger-btn .arrow-icon {
+      display: inline-block;
+      transform: translateX(1px);
+    }
+
+    /* When collapsed, shrink left column to a small strip so the button remains clickable */
+    .workspace.controls-collapsed {
+      grid-template-columns: 64px 1fr;
+    }
+
+    .hamburger-btn {
+      margin: 0;
+      padding: 6px;
+      min-width: 40px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .controls-panel {
+      box-sizing: border-box;
+    }
+
     .status-indicator {
       display: flex;
       align-items: center;
@@ -774,6 +877,12 @@
     
     <!-- Controls Sidebar -->
     <aside class="controls-panel">
+      <div style="display:flex; justify-content:flex-end; margin:0.5rem;">
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle controls" title="Toggle controls" onclick="toggleControls()">
+          <span class="arrow-icon">←</span>
+        </button>
+      </div>
+      <div class="controls-inner">
       <div class="toggle-container" id="target-toggle-group">
         <button class="toggle-btn active" id="target-thrust-btn" onclick="setTargetType('thrust')">Thrust Target</button>
         <button class="toggle-btn" id="target-payload-btn" onclick="setTargetType('payload')">Payload Estimator</button>
@@ -925,6 +1034,7 @@
           </div>
         </div>
       </div>
+      </div>
 
     </aside>
 
@@ -934,7 +1044,7 @@
       <!-- Outer Tabs System -->
       <div class="tabs-outer">
         <div class="tab-headers">
-          <div class="tab-header active" onclick="switchTab(0)">Engine Contour CAD</div>
+          <div class="tab-header active" onclick="switchTab(0)">Engine Contour</div>
           <div class="tab-header" onclick="switchTab(1)">Calculated Steps & Equations</div>
           <div class="tab-header" onclick="switchTab(2)">Reference</div>
         </div>
@@ -1207,6 +1317,9 @@
     <div class="footer-item">
       <span>UNIT SYSTEM: METRIC (cm, kN, kg/s, K, MPa)</span>
     </div>
+    <div class="footer-item">
+      <span>Version - 0.1</span>
+    </div>
   </footer>
 </div>
 
@@ -1295,6 +1408,21 @@
     setupCanvas();
     attachCanvasEventListeners();
     applyPreset();
+    // Ensure arrow button shows correct initial glyph
+    const btn = document.getElementById('hamburger-btn');
+    const panel = document.querySelector('.controls-panel');
+    if (btn && panel) {
+      const arrow = btn.querySelector('.arrow-icon');
+      if (panel.classList.contains('collapsed')) {
+        if (arrow) arrow.textContent = '→';
+        btn.setAttribute('title', 'Open controls');
+        btn.setAttribute('aria-label', 'Open controls');
+      } else {
+        if (arrow) arrow.textContent = '←';
+        btn.setAttribute('title', 'Close controls');
+        btn.setAttribute('aria-label', 'Close controls');
+      }
+    }
     window.addEventListener('resize', () => {
       setupCanvas();
       calculate();
@@ -1470,6 +1598,27 @@
     const panel = document.getElementById('adv-panel');
     btn.classList.toggle('expanded');
     panel.classList.toggle('expanded');
+  }
+
+  // Toggle left controls panel visibility (hamburger)
+  function toggleControls() {
+    const panel = document.querySelector('.controls-panel');
+    const workspace = document.querySelector('.workspace');
+    const btn = document.getElementById('hamburger-btn');
+    if (!panel || !workspace || !btn) return;
+    const isNowCollapsed = panel.classList.toggle('collapsed');
+    workspace.classList.toggle('controls-collapsed', isNowCollapsed);
+    // Update arrow glyph and accessible labels
+    const arrow = btn.querySelector('.arrow-icon');
+    if (isNowCollapsed) {
+      if (arrow) arrow.textContent = '→';
+      btn.setAttribute('title', 'Open controls');
+      btn.setAttribute('aria-label', 'Open controls');
+    } else {
+      if (arrow) arrow.textContent = '←';
+      btn.setAttribute('title', 'Close controls');
+      btn.setAttribute('aria-label', 'Close controls');
+    }
   }
 
   function toggleOverlay() {
