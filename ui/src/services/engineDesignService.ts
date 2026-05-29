@@ -21,7 +21,7 @@ interface ValueUnit {
   unit: string;
 }
 
-interface MixtureRatioSweepEntry {
+export interface MixtureRatioSweepEntry {
   mixtureRatio: number;
   specificImpulse: number;
   chamberTemperature: number;
