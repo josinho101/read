@@ -5,7 +5,9 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
+import MrGraph from '../mrGraph/MrGraph';
 import './mainContent.css';
 import Reference from '../reference/reference';
 
@@ -28,12 +30,12 @@ const SWEEP_COLUMNS: { key: keyof MixtureRatioSweepEntry; label: string; decimal
   { key: 'chamberTemperature',         label: 'Tc',        decimals: 0 },
   { key: 'characteristicVelocityCstar',label: 'C*',        decimals: 1 },
   { key: 'thrustCoefficientCf',        label: 'Cf',        decimals: 4 },
-  { key: 'specificHeatRatioGamma',     label: 'γ',    decimals: 4 },
+  { key: 'specificHeatRatioGamma',     label: 'γ',         decimals: 4 },
   { key: 'combustionMolecularWeight',  label: 'Mol. Wt.',  decimals: 2 },
-  { key: 'expansionRatio',             label: 'ε',    decimals: 3 },
-  { key: 'totalMassFlow',              label: 'ṁ Tot',decimals: 2 },
-  { key: 'oxidizerMassFlow',           label: 'ṁ Ox', decimals: 2 },
-  { key: 'fuelMassFlow',               label: 'ṁ Fuel',decimals: 2 },
+  { key: 'expansionRatio',             label: 'ε',         decimals: 3 },
+  { key: 'totalMassFlow',              label: 'ṁ Tot',     decimals: 2 },
+  { key: 'oxidizerMassFlow',           label: 'ṁ Ox',      decimals: 2 },
+  { key: 'fuelMassFlow',               label: 'ṁ Fuel',    decimals: 2 },
   { key: 'throatRadius',               label: 'Rt',        decimals: 3 },
   { key: 'exitRadius',                 label: 'Re',        decimals: 3 },
   { key: 'chamberRadius',              label: 'Rc',        decimals: 3 },
@@ -47,14 +49,13 @@ interface MainContentProps {
 export default function MainContent({ engineDesignResult }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [zoom, setZoom] = useState(100);
-  const [dimensionOverlay, setDimensionOverlay] = useState(true);
   const [sweepOpen, setSweepOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
   const [dialogSelectedRow, setDialogSelectedRow] = useState<MixtureRatioSweepEntry | null>(null);
   const [confirmedRow, setConfirmedRow] = useState<MixtureRatioSweepEntry | null>(null);
   const [sortCol, setSortCol] = useState<keyof MixtureRatioSweepEntry>('mixtureRatio');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  // Reset selection when a new engine design result arrives
   useEffect(() => {
     setConfirmedRow(null);
     setDialogSelectedRow(null);
@@ -128,13 +129,13 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
     : null;
 
   const stats = [
-    { label: 'SPECIFIC IMPULSE',    value: displayValues ? fmt(displayValues.specificImpulse, 1) : '--',                   unit: 's'   },
-    { label: 'MASS FLOW RATE',       value: displayValues ? fmt(displayValues.totalMassFlow / 1000, 2) : '--',              unit: 'kg/s'},
-    { label: 'CHAMBER DIAMETER (DC)',value: displayValues ? fmt(displayValues.chamberRadius * 2 / 10, 2) : '--',           unit: 'cm'  },
-    { label: 'THROAT DIAMETER (DT)', value: displayValues ? fmt(displayValues.throatRadius * 2 / 10, 2) : '--',            unit: 'cm'  },
-    { label: 'EXIT DIAMETER (DE)',   value: displayValues ? fmt(displayValues.exitRadius * 2 / 10, 2) : '--',              unit: 'cm'  },
-    { label: 'EXPANSION RATIO (E)',  value: displayValues ? fmt(displayValues.expansionRatio, 2) : '--',                   unit: ''    },
-    { label: 'CHAMBER TEMPERATURE', value: displayValues ? fmt(displayValues.chamberTemperature, 0) : '--',               unit: 'K'   },
+    { label: 'SPECIFIC IMPULSE',     value: displayValues ? fmt(displayValues.specificImpulse, 1) : '--',               unit: 's'    },
+    { label: 'MASS FLOW RATE',        value: displayValues ? fmt(displayValues.totalMassFlow / 1000, 2) : '--',          unit: 'kg/s' },
+    { label: 'CHAMBER DIAMETER (DC)', value: displayValues ? fmt(displayValues.chamberRadius * 2 / 10, 2) : '--',       unit: 'cm'   },
+    { label: 'THROAT DIAMETER (DT)',  value: displayValues ? fmt(displayValues.throatRadius * 2 / 10, 2) : '--',        unit: 'cm'   },
+    { label: 'EXIT DIAMETER (DE)',    value: displayValues ? fmt(displayValues.exitRadius * 2 / 10, 2) : '--',          unit: 'cm'   },
+    { label: 'EXPANSION RATIO (E)',   value: displayValues ? fmt(displayValues.expansionRatio, 2) : '--',               unit: ''     },
+    { label: 'CHAMBER TEMPERATURE',  value: displayValues ? fmt(displayValues.chamberTemperature, 0) : '--',            unit: 'K'    },
   ];
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 10, 300));
@@ -190,23 +191,10 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
             Reset View
           </Button>
 
-          <Button
-            onClick={() => setDimensionOverlay(!dimensionOverlay)}
-            className={`toolbar-btn toolbar-btn--toggle ${dimensionOverlay ? 'toolbar-btn--active' : ''}`}
-            variant="outlined"
-            size="small"
-          >
-            Dimension Overlay
-          </Button>
-
-          <Button className="toolbar-btn" variant="outlined" size="small">
-            Bell Nozzle Shape
-          </Button>
-
           <Tooltip title={sweep ? 'View mixture ratio sweep data' : 'Run engine design first'}>
             <span>
               <Button
-                className={`toolbar-btn toolbar-btn--sweep`}
+                className="toolbar-btn toolbar-btn--sweep"
                 variant="outlined"
                 size="small"
                 startIcon={<TableChartIcon sx={{ fontSize: 14 }} />}
@@ -214,6 +202,21 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
                 disabled={!sweep}
               >
                 MR SWEEP
+              </Button>
+            </span>
+          </Tooltip>
+
+          <Tooltip title={sweep ? 'View performance trade-off graph' : 'Run engine design first'}>
+            <span>
+              <Button
+                className="toolbar-btn toolbar-btn--sweep"
+                variant="outlined"
+                size="small"
+                startIcon={<ShowChartIcon sx={{ fontSize: 14 }} />}
+                onClick={() => setGraphOpen(true)}
+                disabled={!sweep}
+              >
+                MR GRAPH
               </Button>
             </span>
           </Tooltip>
@@ -242,9 +245,7 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
             <div className="canvas-label">Calculated steps and equations will appear here</div>
           </div>
         )}
-        {activeTab === 'REFERENCE' && (
-          <Reference />
-        )}
+        {activeTab === 'REFERENCE' && <Reference />}
       </div>
 
       {/* Stats bar */}
@@ -270,7 +271,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
             aria-modal="true"
             aria-label="MR Sweep Data"
           >
-            {/* Modal header */}
             <div className="sweep-modal-header">
               <TableChartIcon sx={{ fontSize: 15, color: '#00e5ff', flexShrink: 0 }} />
               <span className="sweep-modal-title">MR SWEEP DATA</span>
@@ -280,7 +280,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
               </button>
             </div>
 
-            {/* Scrollable table */}
             <div className="sweep-modal-body">
               <div className="sweep-table-scroll">
                 <table className="sweep-table">
@@ -337,7 +336,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
               </div>
             </div>
 
-            {/* Modal footer */}
             <div className="sweep-modal-footer">
               <span className="sweep-selection-hint">
                 {dialogSelectedRow
@@ -361,6 +359,16 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MR Graph Dialog */}
+      {graphOpen && sweep && (
+        <MrGraph
+          values={sweep.values}
+          units={sweep.units}
+          optimumRow={optimumRow}
+          onClose={() => setGraphOpen(false)}
+        />
       )}
     </div>
   );

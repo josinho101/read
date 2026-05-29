@@ -1,0 +1,199 @@
+.mrgraph-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 10, 18, 0.82);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.mrgraph-modal {
+  background: #0d1520;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  box-shadow: 0 0 40px rgba(0, 229, 255, 0.08), 0 24px 64px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  width: min(96vw, 860px);
+  height: min(86vh, 560px);
+  overflow: hidden;
+}
+
+/* ─── Header ───────────────────────────────────────────────────────────────── */
+.mrgraph-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #111a27;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.mrgraph-title {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #00e5ff;
+}
+
+.mrgraph-subtitle {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.mrgraph-close-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(200, 220, 230, 0.15);
+  border-radius: 4px;
+  color: rgba(200, 220, 230, 0.5);
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.mrgraph-close-btn:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.06);
+}
+
+/* ─── Chart body ───────────────────────────────────────────────────────────── */
+.mrgraph-body {
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0 0;
+}
+
+/* ─── Tooltip ──────────────────────────────────────────────────────────────── */
+.mrgraph-tooltip {
+  background: #111a27;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.mrgraph-tooltip-label {
+  color: rgba(200, 220, 230, 0.55);
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  margin-bottom: 5px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+.mrgraph-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 3px;
+}
+
+.mrgraph-tooltip-val {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Footer legend ────────────────────────────────────────────────────────── */
+.mrgraph-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #111a27;
+  border-top: 1px solid rgba(0, 229, 255, 0.12);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.mrgraph-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.mrgraph-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.mrgraph-legend-item svg {
+  flex-shrink: 0;
+}
+
+.mrgraph-close-action {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  border-radius: 4px;
+  padding: 6px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  border: 1px solid rgba(200, 220, 230, 0.2);
+  color: rgba(200, 220, 230, 0.55);
+  flex-shrink: 0;
+}
+
+.mrgraph-close-action:hover {
+  border-color: rgba(200, 220, 230, 0.4);
+  color: rgba(200, 220, 230, 0.85);
+  background: rgba(200, 220, 230, 0.04);
+}
+
+/* ─── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .mrgraph-modal {
+    width: 98vw;
+    height: min(92vh, 500px);
+  }
+
+  .mrgraph-title {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mrgraph-modal {
+    height: min(95vh, 460px);
+  }
+
+  .mrgraph-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .mrgraph-close-action {
+    align-self: flex-end;
+  }
+
+  .mrgraph-legend {
+    gap: 10px;
+  }
+}
