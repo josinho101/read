@@ -1,10 +1,14 @@
 import os
 from flask import Flask
+from flask_cors import CORS
 from flasgger import Swagger
 from controllers.propellants_controller import propellants_controller
 from controllers.engine_controller import engine_controller
 
 app = Flask(__name__)
+
+# Allow all origins
+CORS(app, origins="*")
 
 swagger_template_path = os.path.join(os.path.dirname(__file__), 'docs', 'swagger.yml')
 swagger_config = {
