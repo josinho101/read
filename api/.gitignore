@@ -1,0 +1,82 @@
+# ==============================================================================
+# Python Core Files
+# ==============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# ==============================================================================
+# Virtual Environments (DO NOT COMMIT)
+# ==============================================================================
+.venv/
+venv/
+ENV/
+env/
+pythonenv/
+
+# ==============================================================================
+# Sensitive Files & API Keys
+# ==============================================================================
+.env
+.env.*
+secrets.toml
+
+# ==============================================================================
+# Packaging, Distributions, & Dependencies
+# ==============================================================================
+# Downloaded libraries
+lib/
+lib64/
+
+# Pipenv, Poetry, and Pip artifacts
+.eggs/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==============================================================================
+# IDEs, Code Editors, & OS Files
+# ==============================================================================
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# ==============================================================================
+# Testing & Code Quality
+# ==============================================================================
+.cache
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/

@@ -1,0 +1,88 @@
+swagger: "2.0"
+info:
+  title: "Rocket CEA API"
+  version: "1.0.0"
+  description: "Swagger documentation for Rocket CEA controller endpoints."
+host: "localhost:5000"
+basePath: "/"
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /api/v1/propellants:
+    get:
+      summary: "Get supported propellants"
+      description: "Returns all available propellants supported by the Rocket CEA service."
+      tags:
+        - "Propellants"
+      responses:
+        200:
+          description: "A JSON array of propellant definitions."
+          schema:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+  /api/v1/engine/design:
+    get:
+      summary: "Generate an engine design"
+      description: "Generates rocket engine design parameters based on oxidizer, fuel, chamber and exit conditions."
+      tags:
+        - "Engine"
+      parameters:
+        - name: "ox_code"
+          in: "query"
+          required: false
+          type: "string"
+          default: "LOX"
+          description: "Oxidizer code"
+        - name: "fuel_code"
+          in: "query"
+          required: false
+          type: "string"
+          default: "RP1"
+          description: "Fuel code"
+        - name: "pc_bar"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 20.0
+          description: "Chamber pressure in bar"
+        - name: "pe_bar"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 1.013
+          description: "Exit pressure in bar"
+        - name: "target_thrust_N"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 500.0
+          description: "Target thrust in newtons"
+        - name: "mr_min"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 3.5
+          description: "Minimum mixture ratio"
+        - name: "mr_max"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 5.5
+          description: "Maximum mixture ratio"
+      responses:
+        200:
+          description: "Generated engine design results."
+          schema:
+            type: object
+            additionalProperties: true
