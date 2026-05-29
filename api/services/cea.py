@@ -77,7 +77,11 @@ def print_output_data(output_data):
     print(f"Chamber Pressure:    {engine_inputs['chamberPressure']['value']:.1f} bar")
     print(f"Exit Pressure:       {engine_inputs['exitPressure']['value']:.3f} bar")
     print(f"Optimum O/F Ratio:   {engine_outputs['optimumMixtureRatio']['value']:.2f}")
-    print(f"Nozzle Area Ratio:   {engine_outputs['nozzleExpansionRatio']['value']:.3f}")
+    print(f"Nozzle Expansion Ratio:   {engine_outputs['nozzleGeometry']['expansionRatio']['value']:.3f}")
+    print(f"Nozzle Throat Radius:   {engine_outputs['nozzleGeometry']['throatRadius']['value']:.3f} mm")
+    print(f"Nozzle Exit Radius:     {engine_outputs['nozzleGeometry']['exitRadius']['value']:.3f} mm")
+    print(f"Chamber Radius:         {engine_outputs['nozzleGeometry']['chamberRadius']['value']:.3f} mm")
+    print(f"Contraction Ratio:      {engine_outputs['nozzleGeometry']['contractionRatio']['value']:.2f}")
     print(f"--------------------------------------------------")
     print(f"THERMOCHEMICAL PERFORMANCE AT OPTIMUM MR:")
     print(f"Chamber Temp (Tc):   {engine_outputs['chamberTemperature']['value']:.1f} K")
@@ -135,6 +139,15 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
     
     # Geometric sizing calculations
     cf = (peak_isp * g0) / cstar
+
+    # Nozzle and chamber radius calculations
+    contraction_ratio = 8.0
+    A_throat = (mdot_total * cstar) / (pc_bar * 1e5)          # m^2
+    A_exit = A_throat * opt_eps                                 # m^2
+    A_chamber = A_throat * contraction_ratio                    # m^2
+    throat_radius_mm = np.sqrt(A_throat / np.pi) * 1000
+    exit_radius_mm = np.sqrt(A_exit / np.pi) * 1000
+    chamber_radius_mm = np.sqrt(A_chamber / np.pi) * 1000
     
     output_data = {
         "engineInputs": {
@@ -154,7 +167,6 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
             "chamberTemperature": {"value": round(float(t_comb), 3), "unit": "K"},
             "specificHeatRatioGamma": {"value": round(float(gamma_throat), 3), "unit": "dimensionless"},
             "combustionMolecularWeight": {"value": round(float(ch_mw), 3), "unit": "g/mol"},
-            "nozzleExpansionRatio": {"value": round(float(opt_eps), 3), "unit": "dimensionless"},
             "mixtureRatioSweep": {
                 "units": {
                     "mixtureRatio": "O/F mass ratio",
@@ -171,6 +183,13 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
                 "total": {"value": round(float(mdot_total * 1000.0), 3), "unit": "g/s"},
                 "oxidizer": {"value": round(float(mdot_ox * 1000.0), 3), "unit": "g/s"},
                 "fuel": {"value": round(float(mdot_fuel * 1000.0), 3), "unit": "g/s"}
+            },
+            "nozzleGeometry": {
+                "throatRadius": {"value": round(float(throat_radius_mm), 3), "unit": "mm"},
+                "exitRadius": {"value": round(float(exit_radius_mm), 3), "unit": "mm"},
+                "chamberRadius": {"value": round(float(chamber_radius_mm), 3), "unit": "mm"},
+                "contractionRatio": {"value": contraction_ratio, "unit": "dimensionless"},
+                "expansionRatio": {"value": round(float(opt_eps), 3), "unit": "dimensionless"}
             }
         }
     }
