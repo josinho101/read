@@ -1,0 +1,61 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 16px;
+  background-color: #0a0e13;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-logo-name {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #00e5ff;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.header-logo-subtitle {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: rgba(200, 220, 230, 0.6);
+  letter-spacing: 1px;
+  margin-left: 4px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-icon-btn {
+  color: #00e5ff !important;
+  border: 1px solid rgba(0, 229, 255, 0.4) !important;
+  border-radius: 4px !important;
+  padding: 6px !important;
+  background-color: rgba(0, 229, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.header-icon-btn:hover {
+  background-color: rgba(0, 229, 255, 0.15) !important;
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3) !important;
+}

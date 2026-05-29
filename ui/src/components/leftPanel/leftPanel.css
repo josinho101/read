@@ -1,0 +1,226 @@
+.left-panel {
+  width: 280px;
+  min-width: 280px;
+  background-color: #0d1117;
+  border-right: 1px solid rgba(0, 229, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.left-panel--collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+
+.left-panel-toggle {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 6px 0 6px;
+  flex-shrink: 0;
+}
+
+.left-panel--collapsed .left-panel-toggle {
+  justify-content: center;
+}
+
+.toggle-btn {
+  color: #00e5ff !important;
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+  border-radius: 4px !important;
+  padding: 4px !important;
+  background-color: rgba(0, 229, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.toggle-btn:hover {
+  background-color: rgba(0, 229, 255, 0.15) !important;
+  border-color: #00e5ff !important;
+}
+
+.left-panel-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.3) transparent;
+}
+
+.left-panel-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.left-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* Tabs */
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.panel-tab {
+  flex: 1;
+  padding: 8px 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(0, 229, 255, 0.5);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.panel-tab:hover {
+  color: #00e5ff;
+  background-color: rgba(0, 229, 255, 0.05);
+}
+
+.panel-tab--active {
+  color: #00e5ff;
+  border-bottom-color: #00e5ff;
+  background-color: rgba(0, 229, 255, 0.08);
+}
+
+/* Form */
+.panel-form {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(200, 220, 230, 0.55);
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unit-badge {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  color: rgba(200, 220, 230, 0.5);
+  white-space: nowrap;
+  min-width: 40px;
+}
+
+.form-section-header {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00e5ff;
+  margin-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+/* Advanced toggle */
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ffa726;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.advanced-toggle:hover {
+  color: #ffcc02;
+}
+
+.advanced-toggle svg {
+  color: #ffa726;
+}
+
+.advanced-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+/* MUI overrides */
+.read-input .MuiOutlinedInput-root {
+  background-color: #111820;
+  color: #e0e0e0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.read-input .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 229, 255, 0.2);
+}
+
+.read-input .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 229, 255, 0.5);
+}
+
+.read-input .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #00e5ff;
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.25);
+}
+
+.read-input input {
+  color: #e0e0e0;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 7px 10px;
+}
+
+.read-select {
+  background-color: #111820 !important;
+  color: #e0e0e0 !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 12px !important;
+}
+
+.read-select .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 229, 255, 0.2) !important;
+}
+
+.read-select:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 229, 255, 0.5) !important;
+}
+
+.read-select.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #00e5ff !important;
+}
+
+.read-select svg {
+  color: rgba(0, 229, 255, 0.6);
+}
