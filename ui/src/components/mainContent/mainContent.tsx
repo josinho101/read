@@ -4,25 +4,34 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import GridOnIcon from '@mui/icons-material/GridOn';
+import { type EngineDesignResult } from '../../services/engineDesignService';
 import './mainContent.css';
 
 const TABS = ['ENGINE CONTOUR', 'CALCULATED STEPS & EQUATIONS', 'REFERENCE'] as const;
 type Tab = typeof TABS[number];
 
-const STATS = [
-  { label: 'SPECIFIC IMPULSE', value: '287.5', unit: 's' },
-  { label: 'MASS FLOW RATE', value: '35.47', unit: 'kg/s' },
-  { label: 'CHAMBER DIAMETER (DC)', value: '26.76', unit: 'cm' },
-  { label: 'THROAT DIAMETER (DT)', value: '10.70', unit: 'cm' },
-  { label: 'EXIT DIAMETER (DE)', value: '31.44', unit: 'cm' },
-  { label: 'EXPANSION RATIO (E)', value: '8.63', unit: '' },
-  { label: 'TOTAL ENGINE LENGTH', value: '56.0', unit: 'cm' },
-];
+interface MainContentProps {
+  engineDesignResult: EngineDesignResult | null;
+}
 
-export default function MainContent() {
+export default function MainContent({ engineDesignResult }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [zoom, setZoom] = useState(100);
   const [dimensionOverlay, setDimensionOverlay] = useState(true);
+
+  const outputs = engineDesignResult?.engineOutputs ?? null;
+  const opt = outputs?.mixtureRatio.optimum ?? null;
+  const fmt = (v: number, decimals: number) => v.toFixed(decimals);
+
+  const stats = [
+    { label: 'SPECIFIC IMPULSE', value: opt ? fmt(opt.specificImpulse.value, 1) : '--', unit: 's' },
+    { label: 'MASS FLOW RATE', value: opt ? fmt(opt.totalMassFlow.value / 1000, 2) : '--', unit: 'kg/s' },
+    { label: 'CHAMBER DIAMETER (DC)', value: opt ? fmt(opt.chamberRadius.value * 2 / 10, 2) : '--', unit: 'cm' },
+    { label: 'THROAT DIAMETER (DT)', value: opt ? fmt(opt.throatRadius.value * 2 / 10, 2) : '--', unit: 'cm' },
+    { label: 'EXIT DIAMETER (DE)', value: opt ? fmt(opt.exitRadius.value * 2 / 10, 2) : '--', unit: 'cm' },
+    { label: 'EXPANSION RATIO (E)', value: opt ? fmt(opt.expansionRatio.value, 2) : '--', unit: '' },
+    { label: 'CHAMBER TEMPERATURE', value: opt ? fmt(opt.chamberTemperature.value, 0) : '--', unit: 'K' },
+  ];
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 10, 300));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 10, 20));
@@ -130,7 +139,7 @@ export default function MainContent() {
 
       {/* Stats bar */}
       <div className="stats-bar">
-        {STATS.map((stat) => (
+        {stats.map((stat) => (
           <div key={stat.label} className="stat-item">
             <span className="stat-label">{stat.label}</span>
             <span className="stat-value">

@@ -13,9 +13,17 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { propellantService, type Propellant } from '../../services/propellantService';
+import { engineDesignService, type EngineDesignResult } from '../../services/engineDesignService';
 import './leftPanel.css';
 
-export default function LeftPanel() {
+interface LeftPanelProps {
+  isLoading: boolean;
+  onDesignStart: () => void;
+  onDesignResult: (result: EngineDesignResult) => void;
+  onDesignError: () => void;
+}
+
+export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError }: LeftPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'thrust' | 'payload'>('thrust');
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -48,6 +56,38 @@ export default function LeftPanel() {
     ambientPressure: '101.32',
   });
 
+  useEffect(() => {
+    if (!form.fuel || !form.oxidizer) return;
+
+    const thrust = parseFloat(form.targetThrust);
+    const pc = parseFloat(form.chamberPressure);
+    const pe = parseFloat(form.exitPressure);
+    const mrMin = parseFloat(form.minMixtureRatio);
+    const mrMax = parseFloat(form.maxMixtureRatio);
+
+    if (isNaN(thrust) || isNaN(pc) || isNaN(pe) || isNaN(mrMin) || isNaN(mrMax)) return;
+
+    const timer = setTimeout(async () => {
+      onDesignStart();
+      try {
+        const result = await engineDesignService.getEngineDesign({
+          ox_code: form.oxidizer,
+          fuel_code: form.fuel,
+          target_thrust_N: thrust * 1000,
+          pc_bar: pc,
+          pe_bar: pe,
+          mr_min: mrMin,
+          mr_max: mrMax,
+        });
+        onDesignResult(result);
+      } catch {
+        onDesignError();
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [form.fuel, form.oxidizer, form.targetThrust, form.chamberPressure, form.exitPressure, form.minMixtureRatio, form.maxMixtureRatio, onDesignStart, onDesignResult, onDesignError]);
+
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
@@ -74,8 +114,8 @@ export default function LeftPanel() {
             </button>
           </div>
 
-          {activeTab === 'thrust' && (            
-            <div className="panel-form">        
+          {activeTab === 'thrust' && (
+            <div className="panel-form">
               <div className="form-section-header">General</div>
               <div className="form-group">
                 <label className="form-label">Name</label>
@@ -85,6 +125,7 @@ export default function LeftPanel() {
                   variant="outlined"
                   size="small"
                   fullWidth
+                  disabled={isLoading}
                   className="read-input"
                 />
               </div>
@@ -97,6 +138,7 @@ export default function LeftPanel() {
                   variant="outlined"
                   size="small"
                   fullWidth
+                  disabled={isLoading}
                   className="read-input"
                 />
               </div>
@@ -108,6 +150,7 @@ export default function LeftPanel() {
                   <Select
                     value={form.fuel}
                     onChange={(e) => setForm((p) => ({ ...p, fuel: e.target.value }))}
+                    disabled={isLoading}
                     className="read-select"
                   >
                     {fuels.map((f) => (
@@ -123,6 +166,7 @@ export default function LeftPanel() {
                   <Select
                     value={form.oxidizer}
                     onChange={(e) => setForm((p) => ({ ...p, oxidizer: e.target.value }))}
+                    disabled={isLoading}
                     className="read-select"
                   >
                     {oxidizers.map((o) => (
@@ -142,6 +186,7 @@ export default function LeftPanel() {
                     variant="outlined"
                     size="small"
                     type="number"
+                    disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
                   />
@@ -156,6 +201,7 @@ export default function LeftPanel() {
                     variant="outlined"
                     size="small"
                     type="number"
+                    disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
                   />
@@ -172,6 +218,7 @@ export default function LeftPanel() {
                     variant="outlined"
                     size="small"
                     type="number"
+                    disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
                   />
@@ -187,6 +234,7 @@ export default function LeftPanel() {
                     variant="outlined"
                     size="small"
                     type="number"
+                    disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
                   />
@@ -203,6 +251,7 @@ export default function LeftPanel() {
                     variant="outlined"
                     size="small"
                     type="number"
+                    disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
                   />

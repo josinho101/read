@@ -76,20 +76,21 @@ def print_output_data(output_data):
     print(f"Propellants:         {oxidizer_name} ({oxidizer_code}) / {fuel_name} ({fuel_code})")
     print(f"Chamber Pressure:    {engine_inputs['chamberPressure']['value']:.1f} bar")
     print(f"Exit Pressure:       {engine_inputs['exitPressure']['value']:.3f} bar")
-    print(f"Optimum O/F Ratio:   {engine_outputs['optimumMixtureRatio']['value']:.2f}")
+    print(f"Optimum O/F Ratio:   {engine_outputs['optimumMixtureRatio']['optimum']['mixtureRatio']['value']:.2f}")
     print(f"Nozzle Expansion Ratio:   {engine_outputs['nozzleGeometry']['expansionRatio']['value']:.3f}")
     print(f"Nozzle Throat Radius:   {engine_outputs['nozzleGeometry']['throatRadius']['value']:.3f} mm")
     print(f"Nozzle Exit Radius:     {engine_outputs['nozzleGeometry']['exitRadius']['value']:.3f} mm")
     print(f"Chamber Radius:         {engine_outputs['nozzleGeometry']['chamberRadius']['value']:.3f} mm")
     print(f"Contraction Ratio:      {engine_outputs['nozzleGeometry']['contractionRatio']['value']:.2f}")
     print(f"--------------------------------------------------")
+    opt = engine_outputs['optimumMixtureRatio']['optimum']
     print(f"THERMOCHEMICAL PERFORMANCE AT OPTIMUM MR:")
-    print(f"Chamber Temp (Tc):   {engine_outputs['chamberTemperature']['value']:.1f} K")
-    print(f"Peak Isp Found:      {engine_outputs['peakSpecificImpulse']['value']:.2f} s")
-    print(f"C* (Characteristic): {engine_outputs['characteristicVelocityCstar']['value']:.2f} m/s")
-    print(f"Thrust Coeff (Cf):   {engine_outputs['thrustCoefficientCf']['value']:.3f}")
-    print(f"Gamma (Chamber):     {engine_outputs['specificHeatRatioGamma']['value']:.4f}")
-    print(f"Molecular Wt (Chm):  {engine_outputs['combustionMolecularWeight']['value']:.2f} g/mol")
+    print(f"Chamber Temp (Tc):   {opt['chamberTemperature']['value']:.1f} K")
+    print(f"Peak Isp Found:      {opt['peakSpecificImpulse']['value']:.2f} s")
+    print(f"C* (Characteristic): {opt['characteristicVelocityCstar']['value']:.2f} m/s")
+    print(f"Thrust Coeff (Cf):   {opt['thrustCoefficientCf']['value']:.3f}")
+    print(f"Gamma (Chamber):     {opt['specificHeatRatioGamma']['value']:.4f}")
+    print(f"Molecular Wt (Chm):  {opt['combustionMolecularWeight']['value']:.2f} g/mol")
     print(f"--------------------------------------------------")
     print(f"MASS FLOW RATE AT OPTIMUM MR:")
     print(f"Total Mass Flow:     {engine_outputs['massFlowRates']['total']['value']:.2f} g/s")
@@ -104,8 +105,9 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
     pc_ov_pe = pc_bar / pe_bar
     
     # Evaluate performance parameters iteratively across the specified O/F sweep boundaries
+    contraction_ratio = 8.0
     mr_range = np.linspace(mr_min, mr_max, 25)
-    isp_list, tc_list, records = [], [], []      
+    isp_list, tc_list, records = [], [], []
     json_sweep_array = []
 
     for mr in mr_range:
@@ -113,23 +115,38 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
         isp_step = cea_obj.get_Isp(Pc=pc_bar, MR=mr, eps=eps_step)
         cstar_step = cea_obj.get_Cstar(Pc=pc_bar, MR=mr)
         tc_step = cea_obj.get_Tcomb(Pc=pc_bar, MR=mr)
-        
+        ch_mw_step, gamma_step = cea_obj.get_Chamber_MolWt_gamma(Pc=pc_bar, MR=mr, eps=eps_step)
+
         isp_list.append(isp_step)
         tc_list.append(tc_step)
-        
+
         mdot_total_step = thrust_N / (isp_step * g0)
         mdot_fuel_step = mdot_total_step / (1.0 + mr)
         mdot_ox_step = mdot_total_step - mdot_fuel_step
-        
+        cf_step = (isp_step * g0) / cstar_step
+
+        A_throat_step = (mdot_total_step * cstar_step) / (pc_bar * 1e5)
+        throat_radius_mm_step = np.sqrt(A_throat_step / np.pi) * 1000
+        exit_radius_mm_step = np.sqrt((A_throat_step * eps_step) / np.pi) * 1000
+        chamber_radius_mm_step = np.sqrt((A_throat_step * contraction_ratio) / np.pi) * 1000
+
         records.append((mr, isp_step, cstar_step, tc_step, mdot_total_step, mdot_ox_step, mdot_fuel_step, eps_step))
         json_sweep_array.append({
             "mixtureRatio": round(float(mr), 3),
             "specificImpulse": round(float(isp_step), 3),
             "chamberTemperature": round(float(tc_step), 3),
             "characteristicVelocityCstar": round(float(cstar_step), 3),
+            "thrustCoefficientCf": round(float(cf_step), 3),
+            "specificHeatRatioGamma": round(float(gamma_step), 4),
+            "combustionMolecularWeight": round(float(ch_mw_step), 3),
+            "expansionRatio": round(float(eps_step), 3),
             "totalMassFlow": round(float(mdot_total_step * 1000.0), 3),
             "oxidizerMassFlow": round(float(mdot_ox_step * 1000.0), 3),
-            "fuelMassFlow": round(float(mdot_fuel_step * 1000.0), 3)
+            "fuelMassFlow": round(float(mdot_fuel_step * 1000.0), 3),
+            "throatRadius": round(float(throat_radius_mm_step), 3),
+            "exitRadius": round(float(exit_radius_mm_step), 3),
+            "chamberRadius": round(float(chamber_radius_mm_step), 3),
+            "contractionRatio": round(float(contraction_ratio), 3)
         })
         
     # Isolate optimum indexing entries matching peak specific impulse conditions
@@ -137,11 +154,9 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
     opt_mr, peak_isp, cstar, t_comb, mdot_total, mdot_ox, mdot_fuel, opt_eps = records[opt_idx]
     ch_mw, gamma_throat = cea_obj.get_Chamber_MolWt_gamma(Pc=pc_bar, MR=opt_mr, eps=opt_eps)
     
-    # Geometric sizing calculations
+    # Geometric sizing calculations at optimum MR
     cf = (peak_isp * g0) / cstar
 
-    # Nozzle and chamber radius calculations
-    contraction_ratio = 8.0
     A_throat = (mdot_total * cstar) / (pc_bar * 1e5)          # m^2
     A_exit = A_throat * opt_eps                                 # m^2
     A_chamber = A_throat * contraction_ratio                    # m^2
@@ -160,36 +175,44 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
             "exitPressure": {"value": pe_bar, "unit": "bar"}
         },
         "engineOutputs": {
-            "optimumMixtureRatio": {"value": round(float(opt_mr), 3), "unit": "O/F mass ratio"},
-            "peakSpecificImpulse": {"value": round(float(peak_isp), 3), "unit": "s"},
-            "characteristicVelocityCstar": {"value": round(float(cstar), 3), "unit": "m/s"},
-            "thrustCoefficientCf": {"value": round(float(cf), 3), "unit": "dimensionless"},
-            "chamberTemperature": {"value": round(float(t_comb), 3), "unit": "K"},
-            "specificHeatRatioGamma": {"value": round(float(gamma_throat), 3), "unit": "dimensionless"},
-            "combustionMolecularWeight": {"value": round(float(ch_mw), 3), "unit": "g/mol"},
-            "mixtureRatioSweep": {
-                "units": {
-                    "mixtureRatio": "O/F mass ratio",
-                    "specificImpulse": "s",
-                    "chamberTemperature": "K",
-                    "characteristicVelocityCstar": "m/s",
-                    "totalMassFlow": "g/s",
-                    "oxidizerMassFlow": "g/s",
-                    "fuelMassFlow": "g/s"
+            "mixtureRatio": {
+                "optimum": {
+                    "mixtureRatio": {"value": round(float(opt_mr), 3), "unit": "O/F mass ratio"},
+                    "specificImpulse": {"value": round(float(peak_isp), 3), "unit": "s"},
+                    "characteristicVelocityCstar": {"value": round(float(cstar), 3), "unit": "m/s"},
+                    "thrustCoefficientCf": {"value": round(float(cf), 3), "unit": "dimensionless"},
+                    "chamberTemperature": {"value": round(float(t_comb), 3), "unit": "K"},
+                    "specificHeatRatioGamma": {"value": round(float(gamma_throat), 3), "unit": "dimensionless"},
+                    "combustionMolecularWeight": {"value": round(float(ch_mw), 3), "unit": "g/mol"},                    
+                    "totalMassFlow": {"value": round(float(mdot_total * 1000.0), 3), "unit": "g/s"},
+                    "oxidizerMassFlow": {"value": round(float(mdot_ox * 1000.0), 3), "unit": "g/s"},
+                    "fuelMassFlow": {"value": round(float(mdot_fuel * 1000.0), 3), "unit": "g/s"},
+                    "throatRadius": {"value": round(float(throat_radius_mm), 3), "unit": "mm"},
+                    "exitRadius": {"value": round(float(exit_radius_mm), 3), "unit": "mm"},
+                    "chamberRadius": {"value": round(float(chamber_radius_mm), 3), "unit": "mm"},
+                    "contractionRatio": {"value": contraction_ratio, "unit": "dimensionless"},
+                    "expansionRatio": {"value": round(float(opt_eps), 3), "unit": "dimensionless"}
                 },
-                "values": json_sweep_array
-            },
-            "massFlowRates": {
-                "total": {"value": round(float(mdot_total * 1000.0), 3), "unit": "g/s"},
-                "oxidizer": {"value": round(float(mdot_ox * 1000.0), 3), "unit": "g/s"},
-                "fuel": {"value": round(float(mdot_fuel * 1000.0), 3), "unit": "g/s"}
-            },
-            "nozzleGeometry": {
-                "throatRadius": {"value": round(float(throat_radius_mm), 3), "unit": "mm"},
-                "exitRadius": {"value": round(float(exit_radius_mm), 3), "unit": "mm"},
-                "chamberRadius": {"value": round(float(chamber_radius_mm), 3), "unit": "mm"},
-                "contractionRatio": {"value": contraction_ratio, "unit": "dimensionless"},
-                "expansionRatio": {"value": round(float(opt_eps), 3), "unit": "dimensionless"}
+                "sweep": {
+                    "units": {
+                        "mixtureRatio": "O/F mass ratio",
+                        "specificImpulse": "s",
+                        "chamberTemperature": "K",
+                        "characteristicVelocityCstar": "m/s",
+                        "thrustCoefficientCf": "dimensionless",
+                        "specificHeatRatioGamma": "dimensionless",
+                        "combustionMolecularWeight": "g/mol",
+                        "expansionRatio": "dimensionless",
+                        "totalMassFlow": "g/s",
+                        "oxidizerMassFlow": "g/s",
+                        "fuelMassFlow": "g/s",
+                        "throatRadius": "mm",
+                        "exitRadius": "mm",
+                        "chamberRadius": "mm",
+                        "contractionRatio": "dimensionless"
+                    },
+                    "values": json_sweep_array
+                }
             }
         }
     }
