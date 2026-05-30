@@ -21,6 +21,8 @@ interface StatsDisplayData {
   expansionRatio: number;
   chamberTemperature: number;
   contractionRatio: number;
+  gamma: number;
+  molecularWeightGMol: number;
 }
 
 const SWEEP_COLUMNS: { key: keyof MixtureRatioSweepEntry; label: string; decimals: number }[] = [
@@ -114,6 +116,8 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
         expansionRatio: confirmedRow.expansionRatio,
         chamberTemperature: confirmedRow.chamberTemperature,
         contractionRatio: confirmedRow.contractionRatio,
+        gamma: confirmedRow.specificHeatRatioGamma,
+        molecularWeightGMol: confirmedRow.combustionMolecularWeight,
       }
     : opt
     ? {
@@ -125,6 +129,8 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
         expansionRatio: opt.expansionRatio.value,
         chamberTemperature: opt.chamberTemperature.value,
         contractionRatio: opt.contractionRatio.value,
+        gamma: opt.specificHeatRatioGamma.value,
+        molecularWeightGMol: opt.combustionMolecularWeight.value,
       }
     : null;
 
@@ -160,7 +166,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
             <span className="engine-badge-name">Engine</span>
             <span className="engine-badge-version">v0.1</span>
           </div>
-          <div className="toolbar-divider" />
         </div>
 
         <div className="toolbar-right">
@@ -174,7 +179,7 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
                 onClick={handleOpenSweep}
                 disabled={!sweep}
               >
-                MR SWEEP
+                Mix Ratio Sweep
               </Button>
             </span>
           </Tooltip>
@@ -189,19 +194,10 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
                 onClick={() => setGraphOpen(true)}
                 disabled={!sweep}
               >
-                MR GRAPH
+                Mix Ratio Graph
               </Button>
             </span>
           </Tooltip>
-
-          <Button
-            className="toolbar-btn toolbar-btn--ignite"
-            variant="contained"
-            size="small"
-            startIcon={<WhatshotIcon sx={{ fontSize: 14 }} />}
-          >
-            IGNITE ENGINE
-          </Button>
         </div>
       </div>
 
@@ -215,6 +211,10 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
               exitRadius={displayValues.exitRadius}
               expansionRatio={displayValues.expansionRatio}
               contractionRatio={displayValues.contractionRatio}
+              gamma={displayValues.gamma}
+              chamberPressureBar={engineDesignResult!.engineInputs.chamberPressure.value}
+              chamberTemperatureK={displayValues.chamberTemperature}
+              molecularWeightGMol={displayValues.molecularWeightGMol}
             />
           ) : (
             <div className="canvas-placeholder">

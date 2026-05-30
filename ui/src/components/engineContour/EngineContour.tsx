@@ -1,9 +1,15 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Switch, IconButton, Tooltip, Checkbox } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RestoreIcon from '@mui/icons-material/Restore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import {
+  type NozzleType, type FlowProperty, type FlowProfile,
+  computeGeometry, buildFlowProfile,
+  drawHeatmap, drawColorbar,
+} from './isentropicFlow';
+import { type Particle, initParticles, advanceParticles, drawParticles } from './flowParticles';
 import './EngineContour.css';
 
 interface Props {
@@ -12,9 +18,11 @@ interface Props {
   exitRadius: number;
   expansionRatio: number;
   contractionRatio: number;
+  gamma?: number;
+  chamberPressureBar?: number;
+  chamberTemperatureK?: number;
+  molecularWeightGMol?: number;
 }
-
-type NozzleType = 'bell' | 'conical';
 
 const DEG   = Math.PI / 180;
 const CYAN  = '#00e5ff';
@@ -96,7 +104,6 @@ function drawFullGrid(
   cW: number, cH: number,
   panX: number, panY: number, viewZoom: number,
 ) {
-  // Adaptive spacing: keep lines ~50 CSS px apart at any zoom level
   const raw = 50 / viewZoom;
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const frac = raw / mag;
@@ -131,49 +138,22 @@ function renderEngine(
   expansionRatio: number,
   contractionRatio: number,
   showLabels: boolean,
+  flowProfile?: FlowProfile,
+  flowProperty?: FlowProperty,
+  particles?: Particle[],
 ) {
-  // Geometry (mm)
-  const CR        = Math.max(contractionRatio, 1.1);
-  const tConvDeg  = 30;
-  const Lconv     = (Rc - Rt) / Math.tan(tConvDeg * DEG);
-  const Lc_cyl    = Math.max(Rt * 2, 1000 / CR - Lconv);
-  const Ldiv_ref  = (Re - Rt) / Math.tan(15 * DEG);
-  const Ln_bell   = 0.8 * Ldiv_ref;
-  const tNDeg     = 25;
-  const tEDeg     = +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
-  const nozzleLen = nozzleType === 'bell' ? Ln_bell : Ldiv_ref;
-  const xConvStart = Lc_cyl;
-  const xThroat    = Lc_cyl + Lconv;
-  const xExit      = xThroat + nozzleLen;
+  const geom = computeGeometry(nozzleType, Rc, Rt, Re, expansionRatio, contractionRatio);
+  const {
+    Lconv, Lc_cyl, Ln_bell,
+    xConvStart, xThroat, xExit,
+    tNDeg, tEDeg,
+    ccx1, ccy1, ccx2, ccy2,
+    bp1x, bp1r, bp2x, bp2r,
+    midY, pT,
+    px, pt, pb, mir,
+  } = geom;
 
-  // Layout
-  const pL = 130, pR = 55, pT = 85, pB = 115;
-  const drawW = LOG_W - pL - pR;
-  const drawH = LOG_H - pT - pB;
-  const midY  = pT + drawH / 2;
-
-  const sx = (drawW / xExit);
-  const sy = (drawH / 2 / (Math.max(Rc, Re) * 1.25));
-
-  const px  = (x: number) => pL + x * sx;
-  const pt  = (r: number) => midY - r * sy;
-  const pb  = (r: number) => midY + r * sy;
-  const mir = (y: number) => 2 * midY - y;
-
-  // Bezier control points — convergent
-  const ccx1 = px(xConvStart) + 0.22 * (px(xThroat) - px(xConvStart));
-  const ccy1 = pt(Rc);
-  const ccx2 = px(xThroat)    - 0.10 * (px(xThroat) - px(xConvStart));
-  const ccy2 = pt(Rt + (Rc - Rt) * 0.08);
-
-  // Bezier control points — bell divergent
-  const bDx  = xExit - xThroat;
-  const bDy  = Re - Rt;
-  const bLen = Math.sqrt(bDx * bDx + bDy * bDy);
-  const bp1x = xThroat + Math.cos(tNDeg * DEG) * bLen * 0.38;
-  const bp1r = Rt      + Math.sin(tNDeg * DEG) * bLen * 0.38;
-  const bp2x = xExit   - Math.cos(tEDeg * DEG) * bLen * 0.38;
-  const bp2r = Re      - Math.sin(tEDeg * DEG) * bLen * 0.38;
+  const tConvDeg = 30;
 
   // Dimension helpers
   const f1 = (mm: number) => (mm / 10).toFixed(1);
@@ -189,9 +169,15 @@ function renderEngine(
   ctx.beginPath(); ctx.moveTo(px(0) - 55, midY); ctx.lineTo(px(xExit) + 20, midY); ctx.stroke();
   ctx.restore();
 
+  // ── Heatmap (before fill so glow shows on top) ───────────────────────────
+  if (flowProfile && flowProperty) {
+    drawHeatmap(ctx, flowProfile, flowProperty);
+  }
+
   // ── Engine fill ──────────────────────────────────────────────────────────
   ctx.save();
-  ctx.globalAlpha = 0.04; ctx.fillStyle = CYAN;
+  ctx.globalAlpha = flowProfile ? 0.02 : 0.04;
+  ctx.fillStyle = CYAN;
   ctx.beginPath();
   ctx.moveTo(px(0), pt(Rc)); ctx.lineTo(px(xConvStart), pt(Rc));
   ctx.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(xThroat), pt(Rt));
@@ -205,6 +191,11 @@ function renderEngine(
   ctx.bezierCurveTo(ccx2, mir(ccy2), ccx1, mir(ccy1), px(xConvStart), pb(Rc));
   ctx.lineTo(px(0), pb(Rc)); ctx.closePath(); ctx.fill();
   ctx.restore();
+
+  // ── Particles (after fill, before glow) ─────────────────────────────────
+  if (flowProfile && particles && particles.length > 0) {
+    drawParticles(ctx, particles, flowProfile);
+  }
 
   // ── Helper: build contour path for top or bottom half ───────────────────
   const buildContour = (c: CanvasRenderingContext2D, top: boolean) => {
@@ -251,10 +242,10 @@ function renderEngine(
     txt(ctx, `Dc = ${f2(Rc * 2)} cm`, px(0) - 50, midY + 4, 'right');
 
     // ── Dt ──────────────────────────────────────────────────────────────────
-    dimLine(ctx, px(xThroat) + 18, pt(Rt), px(xThroat) + 18, pb(Rt));
-    extLine(ctx, px(xThroat), pt(Rt), px(xThroat) + 22, pt(Rt));
-    extLine(ctx, px(xThroat), pb(Rt), px(xThroat) + 22, pb(Rt));
-    txt(ctx, `Dt = ${f2(Rt * 2)} cm`, px(xThroat) + 24, midY + 4);
+    dimLine(ctx, px(xThroat), pt(Rt), px(xThroat), pb(Rt));
+    extLine(ctx, px(xThroat), pt(Rt), px(xThroat), pt(Rt));
+    extLine(ctx, px(xThroat), pb(Rt), px(xThroat), pb(Rt));
+    txt(ctx, `Dt = ${f2(Rt * 2)} cm`, px(xThroat) + 10, midY + 4);
 
     // ── De ──────────────────────────────────────────────────────────────────
     dimLine(ctx, px(xExit) + 30, pt(Re), px(xExit) + 30, pb(Re));
@@ -265,7 +256,7 @@ function renderEngine(
     // ── Ldiv (bell only) ────────────────────────────────────────────────────
     if (nozzleType === 'bell') {
       dimLine(ctx, px(xThroat), pT - 32, px(xExit), pT - 32);
-      txt(ctx, `Ldiv = ${f1(Ln_bell)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
+      txt(ctx, `Lnozzle = ${f1(Ln_bell)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
       extLine(ctx, px(xThroat), pt(Rt), px(xThroat), pT - 32, 0.5);
       extLine(ctx, px(xExit),   pt(Re), px(xExit),   pT - 32, 0.5);
     }
@@ -274,12 +265,7 @@ function renderEngine(
     dimLine(ctx, px(0), dimY1, px(xThroat), dimY1);
     txt(ctx, `Lchamber = ${f1(Lc_cyl + Lconv)} cm`, (px(0) + px(xThroat)) / 2, dimY1 - 7, 'center');
     extLine(ctx, px(0),       maxBotY + 4, px(0),       dimY1, 0.45);
-    extLine(ctx, px(xThroat), maxBotY + 4, px(xThroat), dimY1, 0.45);
-
-    // ── Lnozzle ─────────────────────────────────────────────────────────────
-    dimLine(ctx, px(xThroat), dimY1, px(xExit), dimY1);
-    txt(ctx, `Lnozzle = ${f1(nozzleLen)} cm`, (px(xThroat) + px(xExit)) / 2, dimY1 + 15, 'center');
-    extLine(ctx, px(xExit), maxBotY + 4, px(xExit), dimY1, 0.45);
+    extLine(ctx, px(xThroat), pb(Rt),      px(xThroat), dimY1, 0.45);
 
     // ── Ltotal ──────────────────────────────────────────────────────────────
     dimLine(ctx, px(0), dimY2, px(xExit), dimY2);
@@ -315,7 +301,6 @@ function renderEngine(
       ctx.restore();
     }
   }
-
 }
 
 // ── Legend (drawn in CSS-pixel space, pinned to canvas bottom-left) ──────────
@@ -324,8 +309,8 @@ const LEG_W = 228;
 const LEG_ITEM_H = 14;
 const LEG_PADDING = 26;
 
-function legendHeight(nozzleType: NozzleType) {
-  return 9 * LEG_ITEM_H + LEG_PADDING; // always 9 items
+function legendHeight() {
+  return 9 * LEG_ITEM_H + LEG_PADDING;
 }
 
 function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleType: NozzleType) {
@@ -345,7 +330,7 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleT
       : ['Ldiv:', 'Divergent Section Length'],
   ];
 
-  const legH = legendHeight(nozzleType);
+  const legH = legendHeight();
 
   ctx.save();
   ctx.fillStyle = 'rgba(5,14,24,0.88)';
@@ -378,6 +363,7 @@ const centeredView = (cW: number, cH: number, z = DEFAULT_ZOOM): ViewState => ({
 export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
   expansionRatio, contractionRatio,
+  gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
@@ -389,6 +375,35 @@ export default function EngineContour({
   viewRef.current = view;
   const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+
+  // Flow simulation state
+  const [showFlowSim, setShowFlowSim]     = useState(false);
+  const [flowProperty, setFlowProperty]   = useState<FlowProperty>('mach');
+  const [showParticles, setShowParticles] = useState(true);
+
+  // Refs for animation loop
+  const animFrameRef  = useRef<number | null>(null);
+  const particlesRef  = useRef<Particle[]>([]);
+  const redrawRef     = useRef<() => void>(() => {});
+
+  const hasPhysics = Boolean(gamma && chamberPressureBar && chamberTemperatureK && molecularWeightGMol);
+
+  const flowProfile = useMemo<FlowProfile | null>(() => {
+    if (!showFlowSim || !gamma || !chamberPressureBar || !chamberTemperatureK || !molecularWeightGMol) {
+      return null;
+    }
+    const geom = computeGeometry(nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio);
+    return buildFlowProfile(nozzleType, geom, gamma, chamberPressureBar * 1e5, chamberTemperatureK, molecularWeightGMol);
+  }, [
+    showFlowSim, gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
+    nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
+  ]);
+
+  // Re-initialize particles when flow profile changes
+  useEffect(() => {
+    if (!flowProfile) { particlesRef.current = []; return; }
+    particlesRef.current = initParticles(flowProfile);
+  }, [flowProfile]);
 
   const redraw = useCallback(() => {
     const canvas    = canvasRef.current;
@@ -419,14 +434,11 @@ export default function EngineContour({
     ctx.fillStyle = '#090d12';
     ctx.fillRect(0, 0, cW, cH);
 
-    // Pan + zoom (world space)
     ctx.translate(panX, panY);
     ctx.scale(vZoom, vZoom);
 
-    // Full-canvas grid in world space
     drawFullGrid(ctx, cW, cH, panX, panY, vZoom);
 
-    // Letterbox: center the logical 1140×580 in the default view
     const lbScale = Math.min(cW / LOG_W, cH / LOG_H);
     const offsetX = (cW - LOG_W * lbScale) / 2;
     const offsetY = (cH - LOG_H * lbScale) / 2;
@@ -438,19 +450,36 @@ export default function EngineContour({
       chamberRadius, throatRadius, exitRadius,
       expansionRatio, contractionRatio,
       showLabels,
+      showFlowSim && flowProfile ? flowProfile : undefined,
+      flowProperty,
+      showFlowSim && showParticles ? particlesRef.current : undefined,
     );
 
     ctx.restore();
 
-    // Legend pinned to canvas bottom-left in CSS-pixel space
+    // CSS-pixel space overlays
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
     if (showLabels) {
-      ctx.save();
-      ctx.scale(dpr, dpr);
-      const legH = legendHeight(nozzleType);
+      const legH = legendHeight();
       drawLegend(ctx, 12, cH - legH - 12, nozzleType);
-      ctx.restore();
     }
-  }, [nozzleType, showLabels, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, view]);
+
+    if (showFlowSim && flowProfile) {
+      drawColorbar(ctx, cW, cH, flowProfile, flowProperty);
+    }
+
+    ctx.restore();
+  }, [
+    nozzleType, showLabels,
+    chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
+    view,
+    showFlowSim, flowProperty, showParticles, flowProfile,
+  ]);
+
+  // Keep redrawRef current so the rAF loop always calls the latest redraw
+  redrawRef.current = redraw;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -468,7 +497,37 @@ export default function EngineContour({
     return () => ro.disconnect();
   }, [redraw]);
 
-  // Non-passive wheel listener attached to container so overlay buttons don't block scroll zoom
+  // Animation loop for particles
+  useEffect(() => {
+    if (!showFlowSim || !showParticles || !flowProfile) {
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      return;
+    }
+
+    let lastTime: number | null = null;
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - (lastTime ?? now - 16), 50);
+      lastTime = now;
+      advanceParticles(particlesRef.current, flowProfile, dt);
+      redrawRef.current();
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    animFrameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+    };
+  }, [showFlowSim, showParticles, flowProfile]);
+
+  // Non-passive wheel listener
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -591,10 +650,64 @@ export default function EngineContour({
               }}
             />
             <span className={`ec2-switch-label${showLabels ? ' ec2-switch-label--active' : ''}`}>
-              Labels
+              Engine Dimensions
             </span>
           </div>
+
         </div>
+
+        {hasPhysics && (
+          <div className="ec2-switch-stack ec2-switch-stack--right">
+            <div className="ec2-overlay-switch">
+              <span className={`ec2-switch-label ec2-switch-label--readable${showFlowSim ? ' ec2-switch-label--active' : ''}`}>
+                Fluid Flow Simulation
+              </span>
+              <Switch
+                checked={showFlowSim}
+                onChange={(e) => setShowFlowSim(e.target.checked)}
+                size="small"
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                  '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                  '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+                }}
+              />
+            </div>
+            <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`} style={{ padding: '3px 8px' }}>
+              <span className={`ec2-switch-label${showFlowSim ? ' ec2-switch-label--active' : ''}`}>Property</span>
+              <select
+                className="ec2-flow-select"
+                value={flowProperty}
+                onChange={(e) => setFlowProperty(e.target.value as FlowProperty)}
+                disabled={!showFlowSim}
+              >
+                <option value="mach">Mach</option>
+                <option value="pressure">Pressure</option>
+                <option value="temperature">Temperature</option>
+                <option value="velocity">Velocity</option>
+              </select>
+            </div>
+            <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+              <span className={`ec2-switch-label${showFlowSim && showParticles ? ' ec2-switch-label--active' : ''}`}>
+                Particles
+              </span>
+              <Switch
+                checked={showParticles}
+                onChange={(e) => setShowParticles(e.target.checked)}
+                disabled={!showFlowSim}
+                size="small"
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                  '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                  '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+                  opacity: showFlowSim ? 1 : 0.35,
+                }}
+              />
+            </div>
+          </div>
+        )}
         <div className="ec2-zoom-controls">
           <Tooltip title="Zoom in" placement="right" arrow>
             <IconButton className="ec2-zoom-btn" onClick={handleZoomIn} size="small" disableRipple>
@@ -610,23 +723,23 @@ export default function EngineContour({
             <IconButton className="ec2-zoom-btn ec2-zoom-btn--reset" onClick={handleDoubleClick} size="small" disableRipple>
               <RestoreIcon fontSize="small" />
             </IconButton>
+          </Tooltip>          
+          <Tooltip
+            title={
+              <div className="ec2-info-tooltip">
+                <div><kbd>Scroll</kbd> Zoom in / out</div>
+                <div><kbd>Drag</kbd> Pan view</div>
+                <div><kbd>Double-click</kbd> Reset view</div>
+              </div>
+            }
+            placement="right"
+            arrow
+          >
+            <IconButton className="ec2-zoom-btn" size="small" disableRipple>
+              <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
         </div>
-        <Tooltip
-          title={
-            <div className="ec2-info-tooltip">
-              <div><kbd>Scroll</kbd> Zoom in / out</div>
-              <div><kbd>Drag</kbd> Pan view</div>
-              <div><kbd>Double-click</kbd> Reset view</div>
-            </div>
-          }
-          placement="left"
-          arrow
-        >
-          <IconButton className="ec2-info-btn" size="small" disableRipple>
-            <InfoOutlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <canvas
           ref={canvasRef}
           className="ec2-canvas"

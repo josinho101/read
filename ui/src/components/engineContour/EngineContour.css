@@ -27,6 +27,12 @@
   z-index: 10;
 }
 
+.ec2-switch-stack--right {
+  left: auto;
+  right: 12px;
+  align-items: flex-end;
+}
+
 .ec2-overlay-switch {
   height: 32px;
   display: flex;
@@ -47,6 +53,14 @@
 }
 
 .ec2-switch-label--active {
+  color: #00e5ff;
+}
+
+.ec2-switch-label--readable {
+  color: rgba(200, 220, 230, 0.7);
+}
+
+.ec2-switch-label--readable.ec2-switch-label--active {
   color: #00e5ff;
 }
 
@@ -126,6 +140,34 @@
   font-family: 'Courier New', Courier, monospace;
   font-size: 11px;
   line-height: 1.6;
+}
+
+.ec2-overlay-switch--disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.ec2-flow-select {
+  background: rgba(5, 14, 24, 0.88);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  color: #00e5ff;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  padding: 3px 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.ec2-flow-select:hover {
+  border-color: rgba(0, 229, 255, 0.55);
+  background: rgba(0, 229, 255, 0.08);
+}
+
+.ec2-flow-select option {
+  background: #090d12;
 }
 
 .ec2-info-tooltip kbd {
