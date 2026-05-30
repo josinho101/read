@@ -97,10 +97,17 @@ export function computeGeometry(
   const pb  = (r: number) => midY + r * sy;
   const mir = (y: number) => 2 * midY - y;
 
-  const ccx1 = px(xConvStart) + 0.22 * (px(xThroat) - px(xConvStart));
-  const ccy1 = pt(Rc);
-  const ccx2 = px(xThroat) - 0.10 * (px(xThroat) - px(xConvStart));
-  const ccy2 = pt(Rt + (Rc - Rt) * 0.08);
+  const cDx  = xThroat    - xConvStart;
+  const cDy  = Rc         - Rt;
+  const cLen = Math.sqrt(cDx * cDx + cDy * cDy);
+  const cp1x = xConvStart + Math.cos(convergentHalfDeg * DEG) * cLen * 0.38;
+  const cp1r = Rc         - Math.sin(convergentHalfDeg * DEG) * cLen * 0.38;
+  const cp2x = xThroat    - Math.cos(convergentHalfDeg * DEG) * cLen * 0.38;
+  const cp2r = Rt         + Math.sin(convergentHalfDeg * DEG) * cLen * 0.38;
+  const ccx1 = px(cp1x);
+  const ccy1 = pt(cp1r);
+  const ccx2 = px(cp2x);
+  const ccy2 = pt(cp2r);
 
   const bDx  = xExit - xThroat;
   const bDy  = Re    - Rt;

@@ -270,13 +270,20 @@ function renderEngine(
     extLine(ctx, px(xExit), pb(Re), px(xExit) + 34, pb(Re));
     txt(ctx, `De = ${f2(Re * 2)} cm`, px(xExit) + 37, midY + 4);
 
-    // ── Ldiv (bell only) ────────────────────────────────────────────────────
-    if (nozzleType === 'bell') {
+    // ── Lnozzle / Ldiv ──────────────────────────────────────────────────────
+    {
+      const nLabel = nozzleType === 'bell' ? 'Lnozzle' : 'Ldiv';
       dimLine(ctx, px(xThroat), pT - 32, px(xExit), pT - 32);
-      txt(ctx, `Lnozzle = ${f1(Ln_bell)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
+      txt(ctx, `${nLabel} = ${f1(xExit - xThroat)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
       extLine(ctx, px(xThroat), pt(Rt), px(xThroat), pT - 32, 0.5);
       extLine(ctx, px(xExit),   pt(Re), px(xExit),   pT - 32, 0.5);
     }
+
+    // ── Lcyl (cylindrical chamber length) ───────────────────────────────────
+    dimLine(ctx, px(0), pT - 32, px(xConvStart), pT - 32);
+    txt(ctx, `Lcyl = ${f1(Lc_cyl)} cm`, (px(0) + px(xConvStart)) / 2, pT - 37, 'center');
+    extLine(ctx, px(0),          pt(Rc), px(0),          pT - 32, 0.5);
+    extLine(ctx, px(xConvStart), pt(Rc), px(xConvStart), pT - 32, 0.5);
 
     // ── Lchamber ────────────────────────────────────────────────────────────
     dimLine(ctx, px(0), dimY1, px(xThroat), dimY1);
@@ -327,7 +334,7 @@ const LEG_ITEM_H = 14;
 const LEG_PADDING = 26;
 
 function legendHeight() {
-  return 9 * LEG_ITEM_H + LEG_PADDING;
+  return 10 * LEG_ITEM_H + LEG_PADDING;
 }
 
 function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleType: NozzleType) {
@@ -338,6 +345,7 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleT
     ['Lnozzle:',  'Divergent Nozzle Length'],
     ['Ltotal:',   'Total Engine Length'],
     ['Lchamber:', 'Combustion Chamber Length'],
+    ['Lcyl:',     'Cylindrical Chamber Length'],
     ['θconv:',    'Convergent Half-Angle'],
     nozzleType === 'bell'
       ? ['θn:',   'Bell Nozzle Initial Angle']
