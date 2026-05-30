@@ -386,7 +386,6 @@ export default function EngineContour({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [nozzleType, setNozzleType] = useState<NozzleType>('bell');
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [showLabels, setShowLabels] = useState(true);
   const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
   const viewRef = useRef(view);
@@ -680,25 +679,6 @@ export default function EngineContour({
             />
             <span className={`ec2-switch-label${nozzleType === 'conical' ? ' ec2-switch-label--active' : ''}`}>
               Conical
-            </span>
-          </div>
-          <div className="ec2-overlay-switch">
-            <span className={`ec2-switch-label${viewMode === '2d' ? ' ec2-switch-label--active' : ''}`}>
-              2D
-            </span>
-            <Switch
-              checked={viewMode === '3d'}
-              onChange={(e) => setViewMode(e.target.checked ? '3d' : '2d')}
-              size="small"
-              sx={{
-                '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
-                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
-                '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
-                '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
-              }}
-            />
-            <span className={`ec2-switch-label${viewMode === '3d' ? ' ec2-switch-label--active' : ''}`}>
-              3D
             </span>
           </div>
           <div className="ec2-overlay-switch" style={{ padding: '3px' }}>
