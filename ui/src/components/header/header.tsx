@@ -14,7 +14,7 @@ export default function Header() {
           </svg>
         </div>
         <span className="header-logo-name">READ</span>
-        <span className="header-logo-subtitle">[Rocket Engine Analysis and Design]</span>
+        <span className="header-logo-subtitle">[Rocket Engine Analysis and Design - v0.1]</span>
       </div>
 
       <div className="header-actions">

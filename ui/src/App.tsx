@@ -100,7 +100,6 @@ export default function App() {
             ambientPressureBar={ambientPressureBar}
           />
         </div>
-        <Footer />
       </div>
 
       {isLoading && (

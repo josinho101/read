@@ -150,8 +150,6 @@ export function drawParticles(
 ): void {
   ctx.save();
 
-  const lastPt = profile.points[profile.points.length - 1];
-
   for (const p of particles) {
     let color: string;
 
