@@ -45,9 +45,11 @@ const SWEEP_COLUMNS: { key: keyof MixtureRatioSweepEntry; label: string; decimal
 
 interface MainContentProps {
   engineDesignResult: EngineDesignResult | null;
+  engineName: string;
+  engineVersion: string;
 }
 
-export default function MainContent({ engineDesignResult }: MainContentProps) {
+export default function MainContent({ engineDesignResult, engineName, engineVersion }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -163,8 +165,8 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
       <div className="main-toolbar">
         <div className="toolbar-left">
           <div className="engine-badge">
-            <span className="engine-badge-name">Engine</span>
-            <span className="engine-badge-version">v0.1</span>
+            <span className="engine-badge-name">{engineName}</span>
+            <span className="engine-badge-version">v{engineVersion}</span>
           </div>
         </div>
 

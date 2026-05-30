@@ -61,6 +61,8 @@ const darkTheme = createTheme({
 export default function App() {
   const [engineDesignResult, setEngineDesignResult] = useState<EngineDesignResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [engineName, setEngineName] = useState('Engine1');
+  const [engineVersion, setEngineVersion] = useState('0.1');
 
   const handleDesignStart = useCallback(() => setIsLoading(true), []);
   const handleDesignResult = useCallback((result: EngineDesignResult) => {
@@ -68,6 +70,10 @@ export default function App() {
     setIsLoading(false);
   }, []);
   const handleDesignError = useCallback(() => setIsLoading(false), []);
+  const handleEngineMetaChange = useCallback((name: string, version: string) => {
+    setEngineName(name);
+    setEngineVersion(version);
+  }, []);
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -80,8 +86,13 @@ export default function App() {
             onDesignStart={handleDesignStart}
             onDesignResult={handleDesignResult}
             onDesignError={handleDesignError}
+            onEngineMetaChange={handleEngineMetaChange}
           />
-          <MainContent engineDesignResult={engineDesignResult} />
+          <MainContent
+            engineDesignResult={engineDesignResult}
+            engineName={engineName}
+            engineVersion={engineVersion}
+          />
         </div>
         <Footer />
       </div>

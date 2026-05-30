@@ -21,9 +21,10 @@ interface LeftPanelProps {
   onDesignStart: () => void;
   onDesignResult: (result: EngineDesignResult) => void;
   onDesignError: () => void;
+  onEngineMetaChange: (name: string, version: string) => void;
 }
 
-export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError }: LeftPanelProps) {
+export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange }: LeftPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'thrust' | 'payload'>('thrust');
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -87,6 +88,10 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
 
     return () => clearTimeout(timer);
   }, [form.fuel, form.oxidizer, form.targetThrust, form.chamberPressure, form.exitPressure, form.minMixtureRatio, form.maxMixtureRatio, onDesignStart, onDesignResult, onDesignError]);
+
+  useEffect(() => {
+    onEngineMetaChange(form.engineName, form.engineVersion);
+  }, [form.engineName, form.engineVersion, onEngineMetaChange]);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
