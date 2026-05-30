@@ -3,11 +3,11 @@ import { Button, IconButton, Tooltip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import GridOnIcon from '@mui/icons-material/GridOn';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
 import MrGraph from '../mrGraph/MrGraph';
+import EngineContour from '../engineContour/EngineContour';
 import './mainContent.css';
 import Reference from '../reference/reference';
 
@@ -22,6 +22,7 @@ interface StatsDisplayData {
   exitRadius: number;
   expansionRatio: number;
   chamberTemperature: number;
+  contractionRatio: number;
 }
 
 const SWEEP_COLUMNS: { key: keyof MixtureRatioSweepEntry; label: string; decimals: number }[] = [
@@ -115,6 +116,7 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
         exitRadius: confirmedRow.exitRadius,
         expansionRatio: confirmedRow.expansionRatio,
         chamberTemperature: confirmedRow.chamberTemperature,
+        contractionRatio: confirmedRow.contractionRatio,
       }
     : opt
     ? {
@@ -125,6 +127,7 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
         exitRadius: opt.exitRadius.value,
         expansionRatio: opt.expansionRatio.value,
         chamberTemperature: opt.chamberTemperature.value,
+        contractionRatio: opt.contractionRatio.value,
       }
     : null;
 
@@ -163,11 +166,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
           <div className="engine-badge">
             <span className="engine-badge-name">Engine</span>
             <span className="engine-badge-version">v0.1</span>
-          </div>
-          <div className="toolbar-divider" />
-          <div className="grid-info">
-            <GridOnIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.6)' }} />
-            <span>GRID SCALING: 1 DIV = 5.0 cm</span>
           </div>
           <div className="toolbar-divider" />
         </div>
@@ -235,10 +233,22 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
       {/* Canvas / viewport */}
       <div className="main-viewport">
         {activeTab === 'ENGINE CONTOUR' && (
-          <div className="canvas-placeholder">
-            <div className="canvas-centerline" />
-            <div className="canvas-label">Engine contour visualization will render here</div>
-          </div>
+          displayValues ? (
+            <EngineContour
+              chamberRadius={displayValues.chamberRadius}
+              throatRadius={displayValues.throatRadius}
+              exitRadius={displayValues.exitRadius}
+              expansionRatio={displayValues.expansionRatio}
+              contractionRatio={displayValues.contractionRatio}
+              zoom={zoom}
+              onZoomChange={setZoom}
+            />
+          ) : (
+            <div className="canvas-placeholder">
+              <div className="canvas-centerline" />
+              <div className="canvas-label">Run engine design to render contour</div>
+            </div>
+          )
         )}
         {activeTab === 'CALCULATED STEPS & EQUATIONS' && (
           <div className="canvas-placeholder canvas-placeholder--text">

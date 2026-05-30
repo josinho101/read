@@ -110,7 +110,7 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
               className={`panel-tab ${activeTab === 'thrust' ? 'panel-tab--active' : ''}`}
               onClick={() => setActiveTab('thrust')}
             >
-              DESIGN SETTINGS
+              ENGINE SETTINGS
             </button>
           </div>
 
