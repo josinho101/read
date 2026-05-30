@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Switch, IconButton, Tooltip } from '@mui/material';
+import { Switch, IconButton, Tooltip, Checkbox } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RestoreIcon from '@mui/icons-material/Restore';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import './EngineContour.css';
 
 interface Props {
@@ -129,6 +130,7 @@ function renderEngine(
   Rc: number, Rt: number, Re: number,
   expansionRatio: number,
   contractionRatio: number,
+  showLabels: boolean,
 ) {
   // Geometry (mm)
   const CR        = Math.max(contractionRatio, 1.1);
@@ -241,75 +243,77 @@ function renderEngine(
     ctx.restore();
   }
 
-  // ── Dc ──────────────────────────────────────────────────────────────────
-  dimLine(ctx, px(0) - 42, pt(Rc), px(0) - 42, pb(Rc));
-  extLine(ctx, px(0), pt(Rc), px(0) - 45, pt(Rc));
-  extLine(ctx, px(0), pb(Rc), px(0) - 45, pb(Rc));
-  txt(ctx, `Dc = ${f2(Rc * 2)} cm`, px(0) - 50, midY + 4, 'right');
+  if (showLabels) {
+    // ── Dc ──────────────────────────────────────────────────────────────────
+    dimLine(ctx, px(0) - 42, pt(Rc), px(0) - 42, pb(Rc));
+    extLine(ctx, px(0), pt(Rc), px(0) - 45, pt(Rc));
+    extLine(ctx, px(0), pb(Rc), px(0) - 45, pb(Rc));
+    txt(ctx, `Dc = ${f2(Rc * 2)} cm`, px(0) - 50, midY + 4, 'right');
 
-  // ── Dt ──────────────────────────────────────────────────────────────────
-  dimLine(ctx, px(xThroat) + 18, pt(Rt), px(xThroat) + 18, pb(Rt));
-  extLine(ctx, px(xThroat), pt(Rt), px(xThroat) + 22, pt(Rt));
-  extLine(ctx, px(xThroat), pb(Rt), px(xThroat) + 22, pb(Rt));
-  txt(ctx, `Dt = ${f2(Rt * 2)} cm`, px(xThroat) + 24, midY + 4);
+    // ── Dt ──────────────────────────────────────────────────────────────────
+    dimLine(ctx, px(xThroat) + 18, pt(Rt), px(xThroat) + 18, pb(Rt));
+    extLine(ctx, px(xThroat), pt(Rt), px(xThroat) + 22, pt(Rt));
+    extLine(ctx, px(xThroat), pb(Rt), px(xThroat) + 22, pb(Rt));
+    txt(ctx, `Dt = ${f2(Rt * 2)} cm`, px(xThroat) + 24, midY + 4);
 
-  // ── De ──────────────────────────────────────────────────────────────────
-  dimLine(ctx, px(xExit) + 30, pt(Re), px(xExit) + 30, pb(Re));
-  extLine(ctx, px(xExit), pt(Re), px(xExit) + 34, pt(Re));
-  extLine(ctx, px(xExit), pb(Re), px(xExit) + 34, pb(Re));
-  txt(ctx, `De = ${f2(Re * 2)} cm`, px(xExit) + 37, midY + 4);
+    // ── De ──────────────────────────────────────────────────────────────────
+    dimLine(ctx, px(xExit) + 30, pt(Re), px(xExit) + 30, pb(Re));
+    extLine(ctx, px(xExit), pt(Re), px(xExit) + 34, pt(Re));
+    extLine(ctx, px(xExit), pb(Re), px(xExit) + 34, pb(Re));
+    txt(ctx, `De = ${f2(Re * 2)} cm`, px(xExit) + 37, midY + 4);
 
-  // ── Ldiv (bell only) ────────────────────────────────────────────────────
-  if (nozzleType === 'bell') {
-    dimLine(ctx, px(xThroat), pT - 32, px(xExit), pT - 32);
-    txt(ctx, `Ldiv = ${f1(Ln_bell)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
-    extLine(ctx, px(xThroat), pt(Rt), px(xThroat), pT - 32, 0.5);
-    extLine(ctx, px(xExit),   pt(Re), px(xExit),   pT - 32, 0.5);
-  }
+    // ── Ldiv (bell only) ────────────────────────────────────────────────────
+    if (nozzleType === 'bell') {
+      dimLine(ctx, px(xThroat), pT - 32, px(xExit), pT - 32);
+      txt(ctx, `Ldiv = ${f1(Ln_bell)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
+      extLine(ctx, px(xThroat), pt(Rt), px(xThroat), pT - 32, 0.5);
+      extLine(ctx, px(xExit),   pt(Re), px(xExit),   pT - 32, 0.5);
+    }
 
-  // ── Lchamber ────────────────────────────────────────────────────────────
-  dimLine(ctx, px(0), dimY1, px(xThroat), dimY1);
-  txt(ctx, `Lchamber = ${f1(Lc_cyl + Lconv)} cm`, (px(0) + px(xThroat)) / 2, dimY1 - 7, 'center');
-  extLine(ctx, px(0),      maxBotY + 4, px(0),      dimY1, 0.45);
-  extLine(ctx, px(xThroat), maxBotY + 4, px(xThroat), dimY1, 0.45);
+    // ── Lchamber ────────────────────────────────────────────────────────────
+    dimLine(ctx, px(0), dimY1, px(xThroat), dimY1);
+    txt(ctx, `Lchamber = ${f1(Lc_cyl + Lconv)} cm`, (px(0) + px(xThroat)) / 2, dimY1 - 7, 'center');
+    extLine(ctx, px(0),       maxBotY + 4, px(0),       dimY1, 0.45);
+    extLine(ctx, px(xThroat), maxBotY + 4, px(xThroat), dimY1, 0.45);
 
-  // ── Lnozzle ─────────────────────────────────────────────────────────────
-  dimLine(ctx, px(xThroat), dimY1, px(xExit), dimY1);
-  txt(ctx, `Lnozzle = ${f1(nozzleLen)} cm`, (px(xThroat) + px(xExit)) / 2, dimY1 + 15, 'center');
-  extLine(ctx, px(xExit), maxBotY + 4, px(xExit), dimY1, 0.45);
+    // ── Lnozzle ─────────────────────────────────────────────────────────────
+    dimLine(ctx, px(xThroat), dimY1, px(xExit), dimY1);
+    txt(ctx, `Lnozzle = ${f1(nozzleLen)} cm`, (px(xThroat) + px(xExit)) / 2, dimY1 + 15, 'center');
+    extLine(ctx, px(xExit), maxBotY + 4, px(xExit), dimY1, 0.45);
 
-  // ── Ltotal ──────────────────────────────────────────────────────────────
-  dimLine(ctx, px(0), dimY2, px(xExit), dimY2);
-  txt(ctx, `Ltotal = ${f1(xExit)} cm`, (px(0) + px(xExit)) / 2, dimY2 - 7, 'center');
+    // ── Ltotal ──────────────────────────────────────────────────────────────
+    dimLine(ctx, px(0), dimY2, px(xExit), dimY2);
+    txt(ctx, `Ltotal = ${f1(xExit)} cm`, (px(0) + px(xExit)) / 2, dimY2 - 7, 'center');
 
-  // ── θconv arc + label ────────────────────────────────────────────────────
-  txt(ctx, `θconv = ${tConvDeg}°`, px(xConvStart) + 10, pt(Rc) + 28);
-  ctx.save();
-  ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
-  ctx.beginPath(); ctx.arc(px(xConvStart), pt(Rc) + 6, 20, 0, tConvDeg * DEG); ctx.stroke();
-  ctx.restore();
-
-  // ── Bell nozzle angle labels ─────────────────────────────────────────────
-  if (nozzleType === 'bell') {
-    txt(ctx, `θn = ${tNDeg}°`, px(xThroat) + 10, pt(Rt) - 10);
+    // ── θconv arc + label ────────────────────────────────────────────────────
+    txt(ctx, `θconv = ${tConvDeg}°`, px(xConvStart) + 10, pt(Rc) + 28);
     ctx.save();
     ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + tNDeg * DEG);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(px(xConvStart), pt(Rc) + 6, 20, 0, tConvDeg * DEG); ctx.stroke();
     ctx.restore();
-    txt(ctx, `θe = ${tEDeg}°`, px(xExit) - 85, pt(Re) - 8);
-  }
 
-  // ── Conical nozzle angle label ───────────────────────────────────────────
-  if (nozzleType === 'conical') {
-    txt(ctx, 'θdiv = 15°', px(xThroat) + 10, pt(Rt) - 10);
-    ctx.save();
-    ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + 15 * DEG);
-    ctx.stroke();
-    ctx.restore();
+    // ── Bell nozzle angle labels ─────────────────────────────────────────────
+    if (nozzleType === 'bell') {
+      txt(ctx, `θn = ${tNDeg}°`, px(xThroat) + 10, pt(Rt) - 10);
+      ctx.save();
+      ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + tNDeg * DEG);
+      ctx.stroke();
+      ctx.restore();
+      txt(ctx, `θe = ${tEDeg}°`, px(xExit) - 85, pt(Re) - 8);
+    }
+
+    // ── Conical nozzle angle label ───────────────────────────────────────────
+    if (nozzleType === 'conical') {
+      txt(ctx, 'θdiv = 15°', px(xThroat) + 10, pt(Rt) - 10);
+      ctx.save();
+      ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + 15 * DEG);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
 }
@@ -378,6 +382,8 @@ export default function EngineContour({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [nozzleType, setNozzleType] = useState<NozzleType>('bell');
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [showLabels, setShowLabels] = useState(true);
   const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -431,17 +437,20 @@ export default function EngineContour({
       ctx, nozzleType,
       chamberRadius, throatRadius, exitRadius,
       expansionRatio, contractionRatio,
+      showLabels,
     );
 
     ctx.restore();
 
     // Legend pinned to canvas bottom-left in CSS-pixel space
-    ctx.save();
-    ctx.scale(dpr, dpr);
-    const legH = legendHeight(nozzleType);
-    drawLegend(ctx, 12, cH - legH - 12, nozzleType);
-    ctx.restore();
-  }, [nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, view]);
+    if (showLabels) {
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      const legH = legendHeight(nozzleType);
+      drawLegend(ctx, 12, cH - legH - 12, nozzleType);
+      ctx.restore();
+    }
+  }, [nozzleType, showLabels, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, view]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -529,30 +538,63 @@ export default function EngineContour({
 
   return (
     <div className="ec2-wrapper">
-      <div className="ec2-toggle-bar">
-        <div className="ec2-nozzle-switch">
-          <span className={`ec2-switch-label${nozzleType === 'bell' ? ' ec2-switch-label--active' : ''}`}>
-            Bell
-          </span>
-          <Switch
-            checked={nozzleType === 'conical'}
-            onChange={(e) => setNozzleType(e.target.checked ? 'conical' : 'bell')}
-            size="small"
-            sx={{
-              '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
-              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
-              '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
-              '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
-            }}
-          />
-          <span className={`ec2-switch-label${nozzleType === 'conical' ? ' ec2-switch-label--active' : ''}`}>
-            Conical
-          </span>
-        </div>
-        <span className="ec2-hint">Scroll to zoom · Drag to pan · Double-click to reset</span>
-      </div>
-
       <div ref={containerRef} className="ec2-canvas-container">
+        <div className="ec2-switch-stack">
+          <div className="ec2-overlay-switch">
+            <span className={`ec2-switch-label${nozzleType === 'bell' ? ' ec2-switch-label--active' : ''}`}>
+              Bell
+            </span>
+            <Switch
+              checked={nozzleType === 'conical'}
+              onChange={(e) => setNozzleType(e.target.checked ? 'conical' : 'bell')}
+              size="small"
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+              }}
+            />
+            <span className={`ec2-switch-label${nozzleType === 'conical' ? ' ec2-switch-label--active' : ''}`}>
+              Conical
+            </span>
+          </div>
+          <div className="ec2-overlay-switch">
+            <span className={`ec2-switch-label${viewMode === '2d' ? ' ec2-switch-label--active' : ''}`}>
+              2D
+            </span>
+            <Switch
+              checked={viewMode === '3d'}
+              onChange={(e) => setViewMode(e.target.checked ? '3d' : '2d')}
+              size="small"
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+              }}
+            />
+            <span className={`ec2-switch-label${viewMode === '3d' ? ' ec2-switch-label--active' : ''}`}>
+              3D
+            </span>
+          </div>
+          <div className="ec2-overlay-switch" style={{ padding: '3px' }}>
+            <Checkbox
+              checked={showLabels}
+              onChange={(e) => setShowLabels(e.target.checked)}
+              size="small"
+              disableRipple
+              sx={{
+                color: 'rgba(0,229,255,0.4)',
+                '&.Mui-checked': { color: '#00e5ff' },
+                padding: '2px',
+              }}
+            />
+            <span className={`ec2-switch-label${showLabels ? ' ec2-switch-label--active' : ''}`}>
+              Labels
+            </span>
+          </div>
+        </div>
         <div className="ec2-zoom-controls">
           <Tooltip title="Zoom in" placement="right" arrow>
             <IconButton className="ec2-zoom-btn" onClick={handleZoomIn} size="small" disableRipple>
@@ -570,6 +612,21 @@ export default function EngineContour({
             </IconButton>
           </Tooltip>
         </div>
+        <Tooltip
+          title={
+            <div className="ec2-info-tooltip">
+              <div><kbd>Scroll</kbd> Zoom in / out</div>
+              <div><kbd>Drag</kbd> Pan view</div>
+              <div><kbd>Double-click</kbd> Reset view</div>
+            </div>
+          }
+          placement="left"
+          arrow
+        >
+          <IconButton className="ec2-info-btn" size="small" disableRipple>
+            <InfoOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <canvas
           ref={canvasRef}
           className="ec2-canvas"

@@ -17,10 +17,23 @@
 }
 
 
-.ec2-nozzle-switch {
+.ec2-switch-stack {
+  position: absolute;
+  top: 12px;
+  left: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 10;
+}
+
+.ec2-overlay-switch {
+  height: 32px;
   display: flex;
   align-items: center;
   gap: 4px;
+  padding: 0 8px;
+  border-radius: 4px;
 }
 
 .ec2-switch-label {
@@ -83,4 +96,46 @@
 .ec2-zoom-btn.MuiIconButton-root:hover {
   background: rgba(0, 229, 255, 0.1);
   border-color: rgba(0, 229, 255, 0.55);
+}
+
+.ec2-info-btn.MuiIconButton-root {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: rgba(5, 14, 24, 0.88);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  color: rgba(0, 229, 255, 0.6);
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ec2-info-btn.MuiIconButton-root:hover {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.55);
+  color: #00e5ff;
+}
+
+.ec2-info-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.ec2-info-tooltip kbd {
+  display: inline-block;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 3px;
+  padding: 0 5px;
+  font-family: inherit;
+  font-size: 10px;
+  color: #00e5ff;
+  margin-right: 5px;
 }
