@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Button, IconButton, Tooltip } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
+import { Button, Tooltip } from '@mui/material';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
@@ -49,7 +47,6 @@ interface MainContentProps {
 
 export default function MainContent({ engineDesignResult }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
-  const [zoom, setZoom] = useState(100);
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
   const [dialogSelectedRow, setDialogSelectedRow] = useState<MixtureRatioSweepEntry | null>(null);
@@ -141,10 +138,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
     { label: 'CHAMBER TEMPERATURE',  value: displayValues ? fmt(displayValues.chamberTemperature, 0) : '--',            unit: 'K'    },
   ];
 
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 10, 300));
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 10, 20));
-  const handleResetView = () => setZoom(100);
-
   return (
     <div className="main-content">
       {/* Tab bar */}
@@ -171,24 +164,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
         </div>
 
         <div className="toolbar-right">
-          <div className="zoom-controls">
-            <Tooltip title="Zoom out">
-              <IconButton onClick={handleZoomOut} className="zoom-btn" size="small">
-                <RemoveIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-            <span className="zoom-value">{zoom}%</span>
-            <Tooltip title="Zoom in">
-              <IconButton onClick={handleZoomIn} className="zoom-btn" size="small">
-                <AddIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-          </div>
-
-          <Button onClick={handleResetView} className="toolbar-btn" variant="outlined" size="small">
-            Reset View
-          </Button>
-
           <Tooltip title={sweep ? 'View mixture ratio sweep data' : 'Run engine design first'}>
             <span>
               <Button
@@ -240,8 +215,6 @@ export default function MainContent({ engineDesignResult }: MainContentProps) {
               exitRadius={displayValues.exitRadius}
               expansionRatio={displayValues.expansionRatio}
               contractionRatio={displayValues.contractionRatio}
-              zoom={zoom}
-              onZoomChange={setZoom}
             />
           ) : (
             <div className="canvas-placeholder">

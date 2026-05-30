@@ -16,31 +16,25 @@
   flex-shrink: 0;
 }
 
-.ec2-toggle-btn {
+
+.ec2-nozzle-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ec2-switch-label {
   font-family: 'Courier New', Courier, monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  padding: 5px 14px;
-  border-radius: 4px;
-  border: 1px solid rgba(200, 220, 230, 0.2);
-  background: transparent;
-  color: rgba(200, 220, 230, 0.5);
-  cursor: pointer;
-  transition: all 0.18s ease;
+  color: rgba(200, 220, 230, 0.35);
+  user-select: none;
+  transition: color 0.18s ease;
 }
 
-.ec2-toggle-btn:hover {
-  border-color: rgba(0, 229, 255, 0.4);
+.ec2-switch-label--active {
   color: #00e5ff;
-  background: rgba(0, 229, 255, 0.05);
-}
-
-.ec2-toggle-btn--active {
-  border-color: #00e5ff;
-  color: #00e5ff;
-  background: rgba(0, 229, 255, 0.1);
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
 }
 
 .ec2-canvas-container {
@@ -63,4 +57,30 @@
   position: absolute;
   top: 0;
   left: 0;
+}
+
+.ec2-zoom-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 10;
+}
+
+.ec2-zoom-btn.MuiIconButton-root {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: rgba(5, 14, 24, 0.88);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  color: #00e5ff;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ec2-zoom-btn.MuiIconButton-root:hover {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.55);
 }

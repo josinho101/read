@@ -1,4 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { Switch, IconButton, Tooltip } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import RestoreIcon from '@mui/icons-material/Restore';
 import './EngineContour.css';
 
 interface Props {
@@ -7,8 +11,6 @@ interface Props {
   exitRadius: number;
   expansionRatio: number;
   contractionRatio: number;
-  zoom: number;
-  onZoomChange?: (zoom: number) => void;
 }
 
 type NozzleType = 'bell' | 'conical';
@@ -361,20 +363,26 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleT
 
 interface ViewState { panX: number; panY: number; vZoom: number }
 
+const DEFAULT_ZOOM = 0.75;
+
+const centeredView = (cW: number, cH: number, z = DEFAULT_ZOOM): ViewState => ({
+  panX: (cW / 2) * (1 - z),
+  panY: (cH / 2) * (1 - z),
+  vZoom: z,
+});
+
 export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
-  expansionRatio, contractionRatio, zoom,
-  onZoomChange,
+  expansionRatio, contractionRatio,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [nozzleType, setNozzleType] = useState<NozzleType>('bell');
-  const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: zoom / 100 });
+  const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
   const viewRef = useRef(view);
   viewRef.current = view;
   const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const zoomFromScroll = useRef(false);
 
   const redraw = useCallback(() => {
     const canvas    = canvasRef.current;
@@ -436,6 +444,13 @@ export default function EngineContour({
   }, [nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, view]);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const { width: cW, height: cH } = container.getBoundingClientRect();
+    if (cW > 0 && cH > 0) setView(centeredView(cW, cH));
+  }, []);
+
+  useEffect(() => {
     redraw();
     const container = containerRef.current;
     if (!container) return;
@@ -444,36 +459,25 @@ export default function EngineContour({
     return () => ro.disconnect();
   }, [redraw]);
 
-  // Sync zoom prop → vZoom when changed by parent (buttons/reset), but not when scroll already updated vZoom
+  // Non-passive wheel listener attached to container so overlay buttons don't block scroll zoom
   useEffect(() => {
-    if (zoomFromScroll.current) {
-      zoomFromScroll.current = false;
-      return;
-    }
-    setView(v => ({ ...v, vZoom: zoom / 100 }));
-  }, [zoom]);
-
-  // Non-passive wheel listener so we can preventDefault
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const { panX, panY, vZoom } = viewRef.current;
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
       const newZoom = Math.max(0.05, Math.min(20, vZoom * factor));
       const worldX = (mx - panX) / vZoom;
       const worldY = (my - panY) / vZoom;
-      zoomFromScroll.current = true;
       setView({ panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom });
-      onZoomChange?.(Math.round(newZoom * 100));
     };
-    canvas.addEventListener('wheel', onWheel, { passive: false });
-    return () => canvas.removeEventListener('wheel', onWheel);
-  }, [onZoomChange]);
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (e.button !== 0) return;
@@ -493,30 +497,79 @@ export default function EngineContour({
   const handleMouseUp = () => { drag.current = null; setDragging(false); };
 
   const handleDoubleClick = () => {
-    zoomFromScroll.current = true;
-    setView({ panX: 0, panY: 0, vZoom: 1 });
-    onZoomChange?.(100);
+    const container = containerRef.current;
+    if (!container) return;
+    const { width: cW, height: cH } = container.getBoundingClientRect();
+    setView(centeredView(cW, cH));
+  };
+
+  const handleZoomIn = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const { width: cW, height: cH } = container.getBoundingClientRect();
+    setView(v => {
+      const newZoom = Math.min(20, v.vZoom * 1.2);
+      const worldX = (cW / 2 - v.panX) / v.vZoom;
+      const worldY = (cH / 2 - v.panY) / v.vZoom;
+      return { panX: cW / 2 - worldX * newZoom, panY: cH / 2 - worldY * newZoom, vZoom: newZoom };
+    });
+  };
+
+  const handleZoomOut = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const { width: cW, height: cH } = container.getBoundingClientRect();
+    setView(v => {
+      const newZoom = Math.max(0.05, v.vZoom / 1.2);
+      const worldX = (cW / 2 - v.panX) / v.vZoom;
+      const worldY = (cH / 2 - v.panY) / v.vZoom;
+      return { panX: cW / 2 - worldX * newZoom, panY: cH / 2 - worldY * newZoom, vZoom: newZoom };
+    });
   };
 
   return (
     <div className="ec2-wrapper">
       <div className="ec2-toggle-bar">
-        <button
-          className={`ec2-toggle-btn${nozzleType === 'bell' ? ' ec2-toggle-btn--active' : ''}`}
-          onClick={() => setNozzleType('bell')}
-        >
-          Bell Nozzle
-        </button>
-        <button
-          className={`ec2-toggle-btn${nozzleType === 'conical' ? ' ec2-toggle-btn--active' : ''}`}
-          onClick={() => setNozzleType('conical')}
-        >
-          Conical Nozzle
-        </button>
+        <div className="ec2-nozzle-switch">
+          <span className={`ec2-switch-label${nozzleType === 'bell' ? ' ec2-switch-label--active' : ''}`}>
+            Bell
+          </span>
+          <Switch
+            checked={nozzleType === 'conical'}
+            onChange={(e) => setNozzleType(e.target.checked ? 'conical' : 'bell')}
+            size="small"
+            sx={{
+              '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+              '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+              '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+            }}
+          />
+          <span className={`ec2-switch-label${nozzleType === 'conical' ? ' ec2-switch-label--active' : ''}`}>
+            Conical
+          </span>
+        </div>
         <span className="ec2-hint">Scroll to zoom · Drag to pan · Double-click to reset</span>
       </div>
 
       <div ref={containerRef} className="ec2-canvas-container">
+        <div className="ec2-zoom-controls">
+          <Tooltip title="Zoom in" placement="right" arrow>
+            <IconButton className="ec2-zoom-btn" onClick={handleZoomIn} size="small" disableRipple>
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Zoom out" placement="right" arrow>
+            <IconButton className="ec2-zoom-btn" onClick={handleZoomOut} size="small" disableRipple>
+              <RemoveIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Reset view" placement="right" arrow>
+            <IconButton className="ec2-zoom-btn ec2-zoom-btn--reset" onClick={handleDoubleClick} size="small" disableRipple>
+              <RestoreIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </div>
         <canvas
           ref={canvasRef}
           className="ec2-canvas"
