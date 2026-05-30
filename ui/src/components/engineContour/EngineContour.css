@@ -181,3 +181,76 @@
   color: #00e5ff;
   margin-right: 5px;
 }
+
+.ec2-zoom-btn--active.MuiIconButton-root {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.6);
+  color: #00e5ff;
+}
+
+.ec2-angles-panel {
+  position: absolute;
+  top: 165px;
+  right: 12px;
+  left: auto;
+  z-index: 10;
+  background: rgba(5, 14, 24, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  border-radius: 4px;
+  padding: 10px 12px;
+  width: 200px;
+}
+
+.ec2-angles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #00e5ff;
+}
+
+.ec2-angles-reset {
+  background: none;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: rgba(0, 229, 255, 0.7);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ec2-angles-reset:hover {
+  background: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
+}
+
+.ec2-angle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.ec2-angle-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.65);
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.ec2-angle-val {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: #00e5ff;
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}

@@ -63,6 +63,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [engineName, setEngineName] = useState('Engine1');
   const [engineVersion, setEngineVersion] = useState('0.1');
+  const [ambientPressureBar, setAmbientPressureBar] = useState(1.013);
 
   const handleDesignStart = useCallback(() => setIsLoading(true), []);
   const handleDesignResult = useCallback((result: EngineDesignResult) => {
@@ -73,6 +74,9 @@ export default function App() {
   const handleEngineMetaChange = useCallback((name: string, version: string) => {
     setEngineName(name);
     setEngineVersion(version);
+  }, []);
+  const handleAmbientPressureChange = useCallback((value: number) => {
+    setAmbientPressureBar(value);
   }, []);
 
   return (
@@ -87,11 +91,13 @@ export default function App() {
             onDesignResult={handleDesignResult}
             onDesignError={handleDesignError}
             onEngineMetaChange={handleEngineMetaChange}
+            onAmbientPressureChange={handleAmbientPressureChange}
           />
           <MainContent
             engineDesignResult={engineDesignResult}
             engineName={engineName}
             engineVersion={engineVersion}
+            ambientPressureBar={ambientPressureBar}
           />
         </div>
         <Footer />

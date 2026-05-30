@@ -15,6 +15,13 @@ const COLORSTOPS: [number, [number, number, number]][] = [
 export type NozzleType   = 'bell' | 'conical';
 export type FlowProperty = 'mach' | 'pressure' | 'temperature' | 'velocity';
 
+export interface AngleOverrides {
+  convergentHalfDeg?: number;
+  divergentRefDeg?: number;
+  tNDeg?: number;
+  tEDeg?: number;
+}
+
 export interface EngineGeometry {
   Rc: number; Rt: number; Re: number;
   CR: number;
@@ -23,6 +30,7 @@ export interface EngineGeometry {
   nozzleLen: number;
   xConvStart: number; xThroat: number; xExit: number;
   tNDeg: number; tEDeg: number;
+  convergentHalfDeg: number; divergentHalfDeg: number;
   ccx1: number; ccy1: number;
   ccx2: number; ccy2: number;
   bp1x: number; bp1r: number;
@@ -60,14 +68,17 @@ export function computeGeometry(
   Rc: number, Rt: number, Re: number,
   expansionRatio: number,
   contractionRatio: number,
+  angles?: AngleOverrides,
 ): EngineGeometry {
+  const convergentHalfDeg = angles?.convergentHalfDeg ?? 30;
+  const divergentHalfDeg  = angles?.divergentRefDeg   ?? 15;
   const CR       = Math.max(contractionRatio, 1.1);
-  const Lconv    = (Rc - Rt) / Math.tan(30 * DEG);
+  const Lconv    = (Rc - Rt) / Math.tan(convergentHalfDeg * DEG);
   const Lc_cyl   = Math.max(Rt * 2, 1000 / CR - Lconv);
-  const Ldiv_ref = (Re - Rt) / Math.tan(15 * DEG);
+  const Ldiv_ref = (Re - Rt) / Math.tan(divergentHalfDeg * DEG);
   const Ln_bell  = 0.8 * Ldiv_ref;
-  const tNDeg    = 25;
-  const tEDeg    = +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
+  const tNDeg    = angles?.tNDeg ?? 25;
+  const tEDeg    = angles?.tEDeg ?? +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
   const nozzleLen  = nozzleType === 'bell' ? Ln_bell : Ldiv_ref;
   const xConvStart = Lc_cyl;
   const xThroat    = Lc_cyl + Lconv;
@@ -103,7 +114,7 @@ export function computeGeometry(
     Rc, Rt, Re,
     CR, Lconv, Lc_cyl, Ldiv_ref, Ln_bell,
     nozzleLen, xConvStart, xThroat, xExit,
-    tNDeg, tEDeg,
+    tNDeg, tEDeg, convergentHalfDeg, divergentHalfDeg,
     ccx1, ccy1, ccx2, ccy2,
     bp1x, bp1r, bp2x, bp2r,
     midY, pT, sy,

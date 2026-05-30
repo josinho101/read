@@ -47,9 +47,10 @@ interface MainContentProps {
   engineDesignResult: EngineDesignResult | null;
   engineName: string;
   engineVersion: string;
+  ambientPressureBar?: number;
 }
 
-export default function MainContent({ engineDesignResult, engineName, engineVersion }: MainContentProps) {
+export default function MainContent({ engineDesignResult, engineName, engineVersion, ambientPressureBar }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -217,6 +218,8 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
               chamberPressureBar={engineDesignResult!.engineInputs.chamberPressure.value}
               chamberTemperatureK={displayValues.chamberTemperature}
               molecularWeightGMol={displayValues.molecularWeightGMol}
+              exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
+              ambientPressureBar={ambientPressureBar}
             />
           ) : (
             <div className="canvas-placeholder">

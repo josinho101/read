@@ -1,15 +1,20 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { Switch, IconButton, Tooltip, Checkbox } from '@mui/material';
+import { Switch, IconButton, Tooltip, Checkbox, Slider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RestoreIcon from '@mui/icons-material/Restore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import TuneIcon from '@mui/icons-material/Tune';
 import {
-  type NozzleType, type FlowProperty, type FlowProfile,
+  type NozzleType, type FlowProperty, type FlowProfile, type AngleOverrides,
   computeGeometry, buildFlowProfile,
   drawHeatmap, drawColorbar,
 } from './isentropicFlow';
 import { type Particle, initParticles, advanceParticles, drawParticles } from './flowParticles';
+import {
+  type PlumeParams, type PlumeGeometry,
+  computePlumeGeometry, drawPlume,
+} from './exhaustPlume';
 import './EngineContour.css';
 
 interface Props {
@@ -22,6 +27,8 @@ interface Props {
   chamberPressureBar?: number;
   chamberTemperatureK?: number;
   molecularWeightGMol?: number;
+  exitPressureBar?: number;
+  ambientPressureBar?: number;
 }
 
 const DEG   = Math.PI / 180;
@@ -141,19 +148,23 @@ function renderEngine(
   flowProfile?: FlowProfile,
   flowProperty?: FlowProperty,
   particles?: Particle[],
+  angleOverrides?: AngleOverrides,
+  plumeGeom?: PlumeGeometry,
+  plumeParams?: PlumeParams,
 ) {
-  const geom = computeGeometry(nozzleType, Rc, Rt, Re, expansionRatio, contractionRatio);
+  const geom = computeGeometry(nozzleType, Rc, Rt, Re, expansionRatio, contractionRatio, angleOverrides);
   const {
     Lconv, Lc_cyl, Ln_bell,
     xConvStart, xThroat, xExit,
     tNDeg, tEDeg,
+    convergentHalfDeg, divergentHalfDeg,
     ccx1, ccy1, ccx2, ccy2,
     bp1x, bp1r, bp2x, bp2r,
     midY, pT,
     px, pt, pb, mir,
   } = geom;
 
-  const tConvDeg = 30;
+  const tConvDeg = convergentHalfDeg;
 
   // Dimension helpers
   const f1 = (mm: number) => (mm / 10).toFixed(1);
@@ -163,10 +174,11 @@ function renderEngine(
   const dimY2   = maxBotY + 50;
 
   // ── Centerline ──────────────────────────────────────────────────────────
+  const centerlineEnd = plumeParams ? plumeParams.exitX + plumeParams.plumeLength : px(xExit) + 20;
   ctx.save();
   ctx.strokeStyle = CYAN; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.35;
   ctx.setLineDash([10, 6]);
-  ctx.beginPath(); ctx.moveTo(px(0) - 55, midY); ctx.lineTo(px(xExit) + 20, midY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px(0) - 55, midY); ctx.lineTo(centerlineEnd, midY); ctx.stroke();
   ctx.restore();
 
   // ── Heatmap (before fill so glow shows on top) ───────────────────────────
@@ -234,6 +246,11 @@ function renderEngine(
     ctx.restore();
   }
 
+  // ── Exhaust plume (after nozzle glow, before labels) ────────────────────
+  if (plumeGeom && plumeParams && flowProfile && flowProperty) {
+    drawPlume(ctx, plumeGeom, plumeParams, flowProperty, flowProfile);
+  }
+
   if (showLabels) {
     // ── Dc ──────────────────────────────────────────────────────────────────
     dimLine(ctx, px(0) - 42, pt(Rc), px(0) - 42, pb(Rc));
@@ -292,11 +309,11 @@ function renderEngine(
 
     // ── Conical nozzle angle label ───────────────────────────────────────────
     if (nozzleType === 'conical') {
-      txt(ctx, 'θdiv = 15°', px(xThroat) + 10, pt(Rt) - 10);
+      txt(ctx, `θdiv = ${divergentHalfDeg}°`, px(xThroat) + 10, pt(Rt) - 10);
       ctx.save();
       ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
       ctx.beginPath();
-      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + 15 * DEG);
+      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + divergentHalfDeg * DEG);
       ctx.stroke();
       ctx.restore();
     }
@@ -364,6 +381,7 @@ export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
   expansionRatio, contractionRatio,
   gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
+  exitPressureBar, ambientPressureBar,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
@@ -380,6 +398,11 @@ export default function EngineContour({
   const [showFlowSim, setShowFlowSim]     = useState(false);
   const [flowProperty, setFlowProperty]   = useState<FlowProperty>('mach');
   const [showParticles, setShowParticles] = useState(true);
+  const [showPlume, setShowPlume]         = useState(true);
+
+  // Angle overrides
+  const [angleOverrides, setAngleOverrides] = useState<AngleOverrides>({});
+  const [showAnglesPanel, setShowAnglesPanel] = useState(false);
 
   // Refs for animation loop
   const animFrameRef  = useRef<number | null>(null);
@@ -392,12 +415,42 @@ export default function EngineContour({
     if (!showFlowSim || !gamma || !chamberPressureBar || !chamberTemperatureK || !molecularWeightGMol) {
       return null;
     }
-    const geom = computeGeometry(nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio);
+    const geom = computeGeometry(nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, angleOverrides);
     return buildFlowProfile(nozzleType, geom, gamma, chamberPressureBar * 1e5, chamberTemperatureK, molecularWeightGMol);
   }, [
     showFlowSim, gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
     nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
+    angleOverrides,
   ]);
+
+  const plumeParams = useMemo<PlumeParams | null>(() => {
+    if (!showFlowSim || !showPlume || !flowProfile || !gamma) return null;
+    const geom    = computeGeometry(nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, angleOverrides);
+    const exitPt  = flowProfile.points[flowProfile.points.length - 1];
+    const Pa      = (ambientPressureBar ?? exitPressureBar ?? 1.013) * 1e5;
+    return {
+      exitX:          geom.px(geom.xExit),
+      exitTopY:       geom.pt(geom.Re),
+      exitBotY:       geom.pb(geom.Re),
+      midY:           geom.midY,
+      exitMach:       exitPt.mach,
+      exitPressurePa: exitPt.pressure,
+      exitTempK:      exitPt.temperature,
+      gamma,
+      ambientPressurePa: Pa,
+      exitAngleRad:   geom.tEDeg * (Math.PI / 180),
+      plumeLength:    440,
+    };
+  }, [
+    showFlowSim, showPlume, flowProfile, gamma,
+    nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
+    angleOverrides, ambientPressureBar, exitPressureBar,
+  ]);
+
+  const plumeGeom = useMemo<PlumeGeometry | null>(
+    () => plumeParams ? computePlumeGeometry(plumeParams) : null,
+    [plumeParams],
+  );
 
   // Re-initialize particles when flow profile changes
   useEffect(() => {
@@ -453,6 +506,9 @@ export default function EngineContour({
       showFlowSim && flowProfile ? flowProfile : undefined,
       flowProperty,
       showFlowSim && showParticles ? particlesRef.current : undefined,
+      angleOverrides,
+      showFlowSim && showPlume && plumeGeom ? plumeGeom : undefined,
+      showFlowSim && showPlume && plumeParams ? plumeParams : undefined,
     );
 
     ctx.restore();
@@ -476,6 +532,7 @@ export default function EngineContour({
     chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
     view,
     showFlowSim, flowProperty, showParticles, flowProfile,
+    angleOverrides, showPlume, plumeGeom, plumeParams,
   ]);
 
   // Keep redrawRef current so the rAF loop always calls the latest redraw
@@ -499,7 +556,8 @@ export default function EngineContour({
 
   // Animation loop for particles
   useEffect(() => {
-    if (!showFlowSim || !showParticles || !flowProfile) {
+    const needsAnimation = showFlowSim && flowProfile && (showParticles || (showPlume && plumeGeom));
+    if (!needsAnimation) {
       if (animFrameRef.current !== null) {
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = null;
@@ -512,7 +570,13 @@ export default function EngineContour({
     const tick = (now: number) => {
       const dt = Math.min(now - (lastTime ?? now - 16), 50);
       lastTime = now;
-      advanceParticles(particlesRef.current, flowProfile, dt);
+      if (showParticles) {
+        advanceParticles(
+          particlesRef.current, flowProfile, dt,
+          showPlume && plumeGeom ? plumeGeom : undefined,
+          showPlume && plumeParams ? plumeParams : undefined,
+        );
+      }
       redrawRef.current();
       animFrameRef.current = requestAnimationFrame(tick);
     };
@@ -525,7 +589,7 @@ export default function EngineContour({
         animFrameRef.current = null;
       }
     };
-  }, [showFlowSim, showParticles, flowProfile]);
+  }, [showFlowSim, showParticles, flowProfile, showPlume, plumeGeom, plumeParams]);
 
   // Non-passive wheel listener
   useEffect(() => {
@@ -706,6 +770,36 @@ export default function EngineContour({
                 }}
               />
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+                <span className={`ec2-switch-label${showFlowSim && showPlume ? ' ec2-switch-label--active' : ''}`}>
+                  Exhaust Plume
+                </span>
+                <Switch
+                  checked={showPlume}
+                  onChange={(e) => setShowPlume(e.target.checked)}
+                  disabled={!showFlowSim}
+                  size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                    '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                    '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+                    opacity: showFlowSim ? 1 : 0.35,
+                  }}
+                />
+              </div>
+              <Tooltip title="Nozzle angle overrides" placement="left" arrow>
+                <IconButton
+                  className={`ec2-zoom-btn${showAnglesPanel ? ' ec2-zoom-btn--active' : ''}`}
+                  onClick={() => setShowAnglesPanel(v => !v)}
+                  size="small"
+                  disableRipple
+                >
+                  <TuneIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </div>
           </div>
         )}
         <div className="ec2-zoom-controls">
@@ -740,6 +834,86 @@ export default function EngineContour({
             </IconButton>
           </Tooltip>
         </div>
+        {showAnglesPanel && (() => {
+          const defaultTEDeg = +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
+          const convVal = angleOverrides.convergentHalfDeg ?? 30;
+          const divVal  = angleOverrides.divergentRefDeg   ?? 15;
+          const tNVal   = angleOverrides.tNDeg             ?? 25;
+          const tEVal   = angleOverrides.tEDeg             ?? defaultTEDeg;
+          const sliderSx = {
+            color: '#00e5ff',
+            '& .MuiSlider-thumb': { width: 10, height: 10, boxShadow: '0 0 4px rgba(0,229,255,0.6)' },
+            '& .MuiSlider-track': { border: 'none' },
+            '& .MuiSlider-rail': { opacity: 0.3 },
+          };
+          return (
+            <div className="ec2-angles-panel">
+              <div className="ec2-angles-header">
+                <span>NOZZLE ANGLES</span>
+                <button
+                  className="ec2-angles-reset"
+                  onClick={() => setAngleOverrides({})}
+                >
+                  Reset
+                </button>
+              </div>
+
+              <div className="ec2-angle-row">
+                <span className="ec2-angle-label">θconv</span>
+                <Slider
+                  value={convVal}
+                  min={20} max={50} step={1}
+                  size="small"
+                  sx={sliderSx}
+                  onChange={(_, v) => setAngleOverrides(o => ({ ...o, convergentHalfDeg: v as number }))}
+                />
+                <span className="ec2-angle-val">{convVal}°</span>
+              </div>
+
+              {nozzleType === 'bell' && (
+                <>
+                  <div className="ec2-angle-row">
+                    <span className="ec2-angle-label">θn</span>
+                    <Slider
+                      value={tNVal}
+                      min={20} max={35} step={1}
+                      size="small"
+                      sx={sliderSx}
+                      onChange={(_, v) => setAngleOverrides(o => ({ ...o, tNDeg: v as number }))}
+                    />
+                    <span className="ec2-angle-val">{tNVal}°</span>
+                  </div>
+                  <div className="ec2-angle-row">
+                    <span className="ec2-angle-label">θe</span>
+                    <Slider
+                      value={tEVal}
+                      min={0} max={30} step={0.5}
+                      size="small"
+                      sx={sliderSx}
+                      onChange={(_, v) => setAngleOverrides(o => ({ ...o, tEDeg: v as number }))}
+                    />
+                    <span className="ec2-angle-val">{tEVal}°</span>
+                  </div>
+                </>
+              )}
+
+              {nozzleType === 'conical' && (
+                <div className="ec2-angle-row">
+                  <span className="ec2-angle-label">θdiv</span>
+                  <Slider
+                    value={divVal}
+                    min={10} max={25} step={1}
+                    size="small"
+                    sx={sliderSx}
+                    onChange={(_, v) => setAngleOverrides(o => ({ ...o, divergentRefDeg: v as number }))}
+                  />
+                  <span className="ec2-angle-val">{divVal}°</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <canvas
           ref={canvasRef}
           className="ec2-canvas"

@@ -22,9 +22,10 @@ interface LeftPanelProps {
   onDesignResult: (result: EngineDesignResult) => void;
   onDesignError: () => void;
   onEngineMetaChange: (name: string, version: string) => void;
+  onAmbientPressureChange?: (value: number) => void;
 }
 
-export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange }: LeftPanelProps) {
+export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange, onAmbientPressureChange }: LeftPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'thrust' | 'payload'>('thrust');
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -54,7 +55,7 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
     chamberPressure: '10.0',
     exitPressure: '1.013',
     altitude: '0',
-    ambientPressure: '101.32',
+    ambientPressure: '1.013',
   });
 
   useEffect(() => {
@@ -92,6 +93,12 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
   useEffect(() => {
     onEngineMetaChange(form.engineName, form.engineVersion);
   }, [form.engineName, form.engineVersion, onEngineMetaChange]);
+
+  useEffect(() => {
+    if (!onAmbientPressureChange) return;
+    const v = parseFloat(form.ambientPressure);
+    if (!isNaN(v) && v > 0) onAmbientPressureChange(v);
+  }, [form.ambientPressure, onAmbientPressureChange]);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -259,6 +266,24 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
                     disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
+                  />
+                  <span className="unit-badge">bar</span>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Ambient Pressure</label>
+                <div className="input-with-unit">
+                  <TextField
+                    value={form.ambientPressure}
+                    onChange={handleChange('ambientPressure')}
+                    variant="outlined"
+                    size="small"
+                    type="number"
+                    disabled={isLoading}
+                    className="read-input"
+                    sx={{ flex: 1 }}
+                    inputProps={{ step: '0.01', min: '0.01' }}
                   />
                   <span className="unit-badge">bar</span>
                 </div>
