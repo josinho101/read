@@ -6,7 +6,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Header from './components/header/header';
 import LeftPanel from './components/leftPanel/leftPanel';
 import MainContent from './components/mainContent/mainContent';
-import Footer from './components/footer/footer';
 import { type EngineDesignResult } from './services/engineDesignService';
 import './App.css';
 
