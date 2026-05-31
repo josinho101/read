@@ -20,6 +20,7 @@ The current application is a web-based rocket engine design tool (React + Python
 | Flow particle animation | ✅ | ❌ |
 | Export/import engine JSON | ✅ | ✅ |
 | Multiple propellant combinations | ✅ (15 fuels, 11 oxidizers) | ✅ |
+| Rao optimal nozzle contour | ✅ | ✅ |
 
 ---
 
@@ -135,7 +136,7 @@ The current application is a web-based rocket engine design tool (React + Python
 
 ---
 
-### 7. MOC / Rao Optimal Nozzle Contour
+### 7. MOC / Rao Optimal Nozzle Contour — ✅ IMPLEMENTED
 **Complexity**: Medium | **Estimate**: 3–5 weeks
 
 **What RPA does**: Generates a Rao/Thrust-Optimized Parabolic (TOP) nozzle contour using the Method of Characteristics — the industry-standard bell shape that maximizes thrust for a given nozzle length.
@@ -160,7 +161,7 @@ The current application is a web-based rocket engine design tool (React + Python
 | 4 | Film cooling (interactive slider) | Medium | 2–4 wks | Yes — overlay on heat flux plot | High |
 | 5 | Injector sizing | Medium-High | 4–6 wks | Yes — injector face schematic | Very High |
 | 6 | Regenerative cooling | High | 6–10 wks | Yes — wall temp curves + channel cross-section | High (high-Pc) |
-| 7 | MOC / Rao nozzle contour | Medium | 3–5 wks | Yes — toggle on main nozzle canvas | Medium |
+| 7 | ✅ Rao optimal nozzle contour | Medium | 3–5 wks | Yes — dropdown on main nozzle canvas | Medium |
 
 **Recommended sequencing**: 1 → 2 → 3 → 4 → 5 → 7 → 6
 (Heat flux must precede film cooling and regen cooling; injector sizing is independent and high value.)

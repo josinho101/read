@@ -124,6 +124,32 @@ const sections: Section[] = [
         ],
     },
     {
+        heading: 'Nozzle Types',
+        params: [
+            {
+                symbol: <>Conical</>,
+                name: 'Conical Nozzle',
+                unit: '—',
+                unitNone: true,
+                desc: 'The simplest divergent nozzle: a straight-walled cone at a fixed half-angle θdiv (typically 12–18°). Easy to manufacture. Produces slight radial exhaust velocity components that reduce thrust efficiency by a factor of ½(1 + cos θdiv) — roughly 1.7% loss at 15°.',
+            },
+            {
+                symbol: <>Bell</>,
+                name: 'Bell Nozzle (Bézier)',
+                unit: '—',
+                unitNone: true,
+                desc: 'A parabolic bell shape approximated by a cubic Bézier curve. The wall starts at a steep initial angle θn near the throat to rapidly turn the flow axially, then curves to a shallow exit angle θe nearly parallel to the axis. Achieves the same efficiency as a full conical nozzle at ~75–85% of the length. Angles are user-adjustable.',
+            },
+            {
+                symbol: <>Rao</>,
+                name: 'Rao Optimal Nozzle',
+                unit: '—',
+                unitNone: true,
+                desc: 'A thrust-optimized contour from Rao\'s 1958 variational analysis. Wall angles θn and θe are derived from Rao\'s look-up tables (Sutton & Biblarz) based on the expansion ratio ε and nozzle length fraction Ln/Lref, maximising the thrust coefficient Cf. Unlike the Bell approximation, these angles are computed automatically and are not user-adjustable.',
+            },
+        ],
+    },
+    {
         heading: 'Heat Transfer',
         params: [
             {

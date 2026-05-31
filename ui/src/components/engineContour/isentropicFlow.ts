@@ -1,3 +1,5 @@
+import { interpolateRaoAngles, RAO_LN_DEFAULT } from './raoContour';
+
 const DEG         = Math.PI / 180;
 const LOG_W       = 1140;
 const LOG_H       = 580;
@@ -12,7 +14,7 @@ const COLORSTOPS: [number, [number, number, number]][] = [
   [1.00, [255,   0,   0]],
 ];
 
-export type NozzleType   = 'bell' | 'conical';
+export type NozzleType   = 'bell' | 'conical' | 'rao';
 export type FlowProperty = 'mach' | 'pressure' | 'temperature' | 'velocity' | 'heatFlux';
 
 export interface AngleOverrides {
@@ -20,6 +22,7 @@ export interface AngleOverrides {
   divergentRefDeg?: number;
   tNDeg?: number;
   tEDeg?: number;
+  lnFraction?: number;  // Rao only — Ln/Lref, range 0.6–1.0, default 0.8
 }
 
 export interface EngineGeometry {
@@ -77,10 +80,15 @@ export function computeGeometry(
   const Lconv    = (Rc - Rt) / Math.tan(convergentHalfDeg * DEG);
   const Lc_cyl   = Math.max(Rt * 2, 1000 / CR - Lconv);
   const Ldiv_ref = (Re - Rt) / Math.tan(divergentHalfDeg * DEG);
-  const Ln_bell  = 0.8 * Ldiv_ref;
-  const tNDeg    = angles?.tNDeg ?? 25;
-  const tEDeg    = angles?.tEDeg ?? +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
-  const nozzleLen  = nozzleType === 'bell' ? Ln_bell : Ldiv_ref;
+  const Ln_bell    = 0.8 * Ldiv_ref;
+  const lnFraction = angles?.lnFraction ?? RAO_LN_DEFAULT;
+  const Ln_rao     = lnFraction * Ldiv_ref;
+  const raoAngles  = nozzleType === 'rao' ? interpolateRaoAngles(expansionRatio, lnFraction) : null;
+  const tNDeg      = raoAngles?.tN ?? angles?.tNDeg ?? 25;
+  const tEDeg      = raoAngles?.tE ?? angles?.tEDeg ?? +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
+  const nozzleLen  = nozzleType === 'conical' ? Ldiv_ref
+                   : nozzleType === 'rao'     ? Ln_rao
+                   :                           Ln_bell;
   const xConvStart = Lc_cyl;
   const xThroat    = Lc_cyl + Lconv;
   const xExit      = xThroat + nozzleLen;
@@ -194,7 +202,7 @@ function sampleWallProfile(
   for (let i = 1; i <= 60; i++) {
     const t = i / 60;
     let xLog: number, topY: number;
-    if (nozzleType === 'bell') {
+    if (nozzleType === 'bell' || nozzleType === 'rao') {
       xLog = cubicBez(t, px(xThroat), px(bp1x), px(bp2x), px(xExit));
       topY = cubicBez(t, pt(Rt), pt(bp1r), pt(bp2r), pt(Re));
     } else {

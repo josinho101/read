@@ -12,6 +12,7 @@ import {
   drawHeatmap, drawColorbar,
 } from './isentropicFlow';
 import { computeBartzHeatFlux, type HeatFluxProfile } from './bartzHeatFlux';
+import { interpolateRaoAngles, RAO_LN_DEFAULT, RAO_LN_MIN, RAO_LN_MAX, RAO_LN_STEP } from './raoContour';
 import { WALL_TEMP_DEFAULT_K } from './bartzConstants';
 import HeatFluxControls from './HeatFluxControls';
 import HeatFluxPlot from '../heatFluxPlot/HeatFluxPlot';
@@ -46,6 +47,44 @@ const CYAN  = '#00e5ff';
 const AMBER = '#ffb300';
 const LOG_W = 1140;
 const LOG_H = 580;
+
+// ── Rao angles panel (file-local component) ──────────────────────────────────
+
+interface RaoAnglesPanelProps {
+  expansionRatio: number;
+  lnFrac: number;
+  sliderSx: object;
+  onChange: (lnFraction: number) => void;
+}
+
+function RaoAnglesPanel({ expansionRatio, lnFrac, sliderSx, onChange }: RaoAnglesPanelProps) {
+  const { tN, tE } = interpolateRaoAngles(expansionRatio, lnFrac);
+  return (
+    <>
+      <div className="ec2-angle-row">
+        <span className="ec2-angle-label" style={{ width: 48 }}>Ln/Lref</span>
+        <Slider
+          value={lnFrac}
+          min={RAO_LN_MIN} max={RAO_LN_MAX} step={RAO_LN_STEP}
+          size="small"
+          sx={sliderSx}
+          onChange={(_, v) => onChange(v as number)}
+        />
+        <span className="ec2-angle-val">{lnFrac.toFixed(2)}</span>
+      </div>
+      <div className="ec2-angle-row">
+        <span className="ec2-angle-label">θn</span>
+        <span style={{ flex: 1, fontSize: '9px', color: 'rgba(0,229,255,0.45)', paddingLeft: 4 }}>(auto)</span>
+        <span className="ec2-angle-val">{tN.toFixed(1)}°</span>
+      </div>
+      <div className="ec2-angle-row">
+        <span className="ec2-angle-label">θe</span>
+        <span style={{ flex: 1, fontSize: '9px', color: 'rgba(0,229,255,0.45)', paddingLeft: 4 }}>(auto)</span>
+        <span className="ec2-angle-val">{tE.toFixed(1)}°</span>
+      </div>
+    </>
+  );
+}
 
 // ── Drawing helpers ──────────────────────────────────────────────────────────
 
@@ -242,11 +281,11 @@ function renderEngine(
   ctx.beginPath();
   ctx.moveTo(px(0), pt(Rc)); ctx.lineTo(px(xConvStart), pt(Rc));
   ctx.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(xThroat), pt(Rt));
-  nozzleType === 'bell'
+  nozzleType !== 'conical'
     ? ctx.bezierCurveTo(px(bp1x), pt(bp1r), px(bp2x), pt(bp2r), px(xExit), pt(Re))
     : ctx.lineTo(px(xExit), pt(Re));
   ctx.lineTo(px(xExit), pb(Re));
-  nozzleType === 'bell'
+  nozzleType !== 'conical'
     ? ctx.bezierCurveTo(px(bp2x), pb(bp2r), px(bp1x), pb(bp1r), px(xThroat), pb(Rt))
     : ctx.lineTo(px(xThroat), pb(Rt));
   ctx.bezierCurveTo(ccx2, mir(ccy2), ccx1, mir(ccy1), px(xConvStart), pb(Rc));
@@ -267,7 +306,7 @@ function renderEngine(
     top
       ? c.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(xThroat), pt(Rt))
       : c.bezierCurveTo(ccx1, mir(ccy1), ccx2, mir(ccy2), px(xThroat), pb(Rt));
-    if (nozzleType === 'bell') {
+    if (nozzleType !== 'conical') {
       top
         ? c.bezierCurveTo(px(bp1x), pt(bp1r), px(bp2x), pt(bp2r), px(xExit), pt(Re))
         : c.bezierCurveTo(px(bp1x), pb(bp1r), px(bp2x), pb(bp2r), px(xExit), pb(Re));
@@ -321,7 +360,7 @@ function renderEngine(
 
     // ── Lnozzle / Ldiv ──────────────────────────────────────────────────────
     {
-      const nLabel = nozzleType === 'bell' ? 'Lnozzle' : 'Ldiv';
+      const nLabel = nozzleType === 'conical' ? 'Ldiv' : 'Lnozzle';
       dimLine(ctx, px(xThroat), pT - 32, px(xExit), pT - 32);
       txt(ctx, `${nLabel} = ${f1(xExit - xThroat)} cm`, (px(xThroat) + px(xExit)) / 2, pT - 37, 'center');
       extLine(ctx, px(xThroat), pt(Rt), px(xThroat), pT - 32, 0.5);
@@ -363,6 +402,18 @@ function renderEngine(
       txt(ctx, `θe = ${tEDeg}°`, px(xExit) - 85, pt(Re) - 8);
     }
 
+    // ── Rao nozzle angle labels (auto-computed) ──────────────────────────────
+    if (nozzleType === 'rao') {
+      txt(ctx, `θn = ${tNDeg.toFixed(1)}° (Rao)`, px(xThroat) + 10, pt(Rt) - 10);
+      ctx.save();
+      ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + tNDeg * DEG);
+      ctx.stroke();
+      ctx.restore();
+      txt(ctx, `θe = ${tEDeg.toFixed(1)}° (Rao)`, px(xExit) - 95, pt(Re) - 8);
+    }
+
     // ── Conical nozzle angle label ───────────────────────────────────────────
     if (nozzleType === 'conical') {
       txt(ctx, `θdiv = ${divergentHalfDeg}°`, px(xThroat) + 10, pt(Rt) - 10);
@@ -396,11 +447,15 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleT
     ['Lchamber:', 'Combustion Chamber Length'],
     ['Lcyl:',     'Cylindrical Chamber Length'],
     ['θconv:',    'Convergent Half-Angle'],
-    nozzleType === 'bell'
-      ? ['θn:',   'Bell Nozzle Initial Angle']
+    nozzleType === 'rao'
+      ? ['θn:',   'Rao Initial Angle (auto)']
+      : nozzleType === 'bell'
+      ? ['θn:',   'Bell Initial Angle']
       : ['θdiv:', 'Half Divergence Angle'],
-    nozzleType === 'bell'
-      ? ['θe:',   'Bell Nozzle Exit Angle']
+    nozzleType === 'rao'
+      ? ['θe:',   'Rao Exit Angle (auto)']
+      : nozzleType === 'bell'
+      ? ['θe:',   'Bell Exit Angle']
       : ['Ldiv:', 'Divergent Section Length'],
   ];
 
@@ -752,23 +807,16 @@ export default function EngineContour({
       <div ref={containerRef} className="ec2-canvas-container">
         <div className="ec2-switch-stack">
           <div className="ec2-overlay-switch">
-            <span className={`ec2-switch-label${nozzleType === 'bell' ? ' ec2-switch-label--active' : ''}`}>
-              Bell
-            </span>
-            <Switch
-              checked={nozzleType === 'conical'}
-              onChange={(e) => onNozzleTypeChange(e.target.checked ? 'conical' : 'bell')}
-              size="small"
-              sx={{
-                '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
-                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
-                '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
-                '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
-              }}
-            />
-            <span className={`ec2-switch-label${nozzleType === 'conical' ? ' ec2-switch-label--active' : ''}`}>
-              Conical
-            </span>
+            <span className="ec2-switch-label ec2-switch-label--active">Nozzle</span>
+            <select
+              className="ec2-flow-select"
+              value={nozzleType}
+              onChange={(e) => onNozzleTypeChange(e.target.value as NozzleType)}
+            >
+              <option value="conical">Conical</option>
+              <option value="bell">Bell (Bézier)</option>
+              <option value="rao">Rao Optimal</option>
+            </select>
           </div>
           <div className="ec2-overlay-switch" style={{ padding: '3px' }}>
             <Checkbox
@@ -928,7 +976,7 @@ export default function EngineContour({
           return (
             <div className="ec2-angles-panel">
               <div className="ec2-angles-header">
-                <span>NOZZLE ANGLES</span>
+                <span>NOZZLE CONTOUR</span>
                 <button
                   className="ec2-angles-reset"
                   onClick={() => onAngleOverridesChange({})}
@@ -988,6 +1036,15 @@ export default function EngineContour({
                   />
                   <span className="ec2-angle-val">{divVal}°</span>
                 </div>
+              )}
+
+              {nozzleType === 'rao' && (
+                <RaoAnglesPanel
+                  expansionRatio={expansionRatio}
+                  lnFrac={angleOverrides.lnFraction ?? RAO_LN_DEFAULT}
+                  sliderSx={sliderSx}
+                  onChange={(lnFraction) => onAngleOverridesChange({ ...angleOverrides, lnFraction })}
+                />
               )}
             </div>
           );
