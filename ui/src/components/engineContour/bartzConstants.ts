@@ -31,3 +31,18 @@ export const WALL_TEMP_STEP_K    = 50;    // K — slider granularity
 // Raw Bartz outputs are in W/m². Dividing by this factor converts to MW/m², keeping
 // chart y-axis numbers in the human-readable 0–20 range rather than 0–20_000_000.
 export const HEAT_FLUX_DISPLAY_DIVISOR = 1e6;  // W/m² → MW/m²
+
+// ── Regenerative cooling channel defaults ────────────────────────────────────
+export const REGEN_NUM_CHANNELS_DEFAULT              = 60;
+export const REGEN_CHANNEL_WIDTH_MM_DEFAULT          = 1.5;
+export const REGEN_CHANNEL_HEIGHT_MM_DEFAULT         = 2.0;
+export const REGEN_WALL_THICKNESS_MM_DEFAULT         = 0.8;
+export const REGEN_COOLANT_INLET_TEMP_K_DEFAULT      = 270;   // ~room-temp RP-1 / storable propellant
+export const REGEN_COOLANT_INLET_PRESSURE_BAR_DEFAULT = 30;
+
+// Hot-wall temperature limits by material (continuous-use softening point)
+export const REGEN_WALL_TEMP_LIMIT_K: Record<string, number> = {
+  copper:  600,   // K — annealing / softening onset
+  steel:   900,   // K — stainless 304 sustained-use limit
+  inconel: 1200,  // K — Inconel 718 continuous-use limit
+};

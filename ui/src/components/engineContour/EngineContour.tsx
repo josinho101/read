@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { Switch, IconButton, Tooltip, Checkbox, Slider } from '@mui/material';
+import { Switch, IconButton, Tooltip, Slider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -13,9 +13,17 @@ import {
 } from './isentropicFlow';
 import { computeBartzHeatFlux, type HeatFluxProfile } from './bartzHeatFlux';
 import { interpolateRaoAngles, RAO_LN_DEFAULT, RAO_LN_MIN, RAO_LN_MAX, RAO_LN_STEP } from './raoContour';
-import { WALL_TEMP_DEFAULT_K } from './bartzConstants';
+import {
+  WALL_TEMP_DEFAULT_K,
+  REGEN_NUM_CHANNELS_DEFAULT, REGEN_CHANNEL_WIDTH_MM_DEFAULT,
+  REGEN_CHANNEL_HEIGHT_MM_DEFAULT, REGEN_WALL_THICKNESS_MM_DEFAULT,
+  REGEN_COOLANT_INLET_TEMP_K_DEFAULT, REGEN_COOLANT_INLET_PRESSURE_BAR_DEFAULT,
+} from './bartzConstants';
 import HeatFluxControls from './HeatFluxControls';
 import HeatFluxPlot from '../heatFluxPlot/HeatFluxPlot';
+import { computeRegenCooling, type RegenChannelParams, type RegenResult } from './regenCooling';
+import RegenCoolingControls from './RegenCoolingControls';
+import RegenCoolingPlot from '../regenCoolingPlot/RegenCoolingPlot';
 import { type Particle, initParticles, advanceParticles, drawParticles } from './flowParticles';
 import {
   type PlumeParams, type PlumeGeometry,
@@ -36,6 +44,8 @@ interface Props {
   exitPressureBar?: number;
   ambientPressureBar?: number;
   cstarMs?: number;
+  fuelCode?: string;
+  fuelMassFlowKgPerS?: number;
   nozzleType: NozzleType;
   onNozzleTypeChange: (t: NozzleType) => void;
   angleOverrides: AngleOverrides;
@@ -488,11 +498,22 @@ const centeredView = (cW: number, cH: number, z = DEFAULT_ZOOM): ViewState => ({
   vZoom: z,
 });
 
+const DEFAULT_REGEN_PARAMS: RegenChannelParams = {
+  numChannels:              REGEN_NUM_CHANNELS_DEFAULT,
+  channelWidthMm:           REGEN_CHANNEL_WIDTH_MM_DEFAULT,
+  channelHeightMm:          REGEN_CHANNEL_HEIGHT_MM_DEFAULT,
+  wallThicknessMm:          REGEN_WALL_THICKNESS_MM_DEFAULT,
+  wallMaterial:             'copper',
+  coolantInletTempK:        REGEN_COOLANT_INLET_TEMP_K_DEFAULT,
+  coolantInletPressureBar:  REGEN_COOLANT_INLET_PRESSURE_BAR_DEFAULT,
+};
+
 export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
   expansionRatio, contractionRatio,
   gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
   exitPressureBar, ambientPressureBar, cstarMs,
+  fuelCode, fuelMassFlowKgPerS,
   nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -515,7 +536,13 @@ export default function EngineContour({
   const [showHeatFluxPlot, setShowHeatFluxPlot] = useState(false);
   const [hoveredHeatFluxXMm, setHoveredHeatFluxXMm] = useState<number | null>(null);
 
+  // Regenerative cooling state
+  const [showRegenCooling, setShowRegenCooling]   = useState(false);
+  const [regenParams, setRegenParams]             = useState<RegenChannelParams>(DEFAULT_REGEN_PARAMS);
+  const [showRegenPlot, setShowRegenPlot]         = useState(false);
+
   const [showAnglesPanel, setShowAnglesPanel] = useState(false);
+  const [simPanelOpen, setSimPanelOpen] = useState(true);
 
   // Refs for animation loop
   const animFrameRef  = useRef<number | null>(null);
@@ -551,6 +578,11 @@ export default function EngineContour({
     nozzleType, chamberRadius, throatRadius, exitRadius,
     expansionRatio, contractionRatio, angleOverrides,
   ]);
+
+  const regenResult = useMemo<RegenResult | null>(() => {
+    if (!showRegenCooling || !heatFluxProfile || !fuelCode || !fuelMassFlowKgPerS) return null;
+    return computeRegenCooling(heatFluxProfile, regenParams, fuelCode, fuelMassFlowKgPerS, throatRadius);
+  }, [showRegenCooling, heatFluxProfile, regenParams, fuelCode, fuelMassFlowKgPerS, throatRadius]);
 
   const plumeParams = useMemo<PlumeParams | null>(() => {
     if (!showFlowSim || !showPlume || !flowProfile || !gamma) return null;
@@ -805,7 +837,8 @@ export default function EngineContour({
   return (
     <div className="ec2-wrapper">
       <div ref={containerRef} className="ec2-canvas-container">
-        <div className="ec2-switch-stack">
+        <div className="ec2-display-panel">
+          <div className="ec2-angles-header">DISPLAY</div>
           <div className="ec2-overlay-switch">
             <span className="ec2-switch-label ec2-switch-label--active">Nozzle</span>
             <select
@@ -818,30 +851,26 @@ export default function EngineContour({
               <option value="rao">Rao Optimal</option>
             </select>
           </div>
-          <div className="ec2-overlay-switch" style={{ padding: '3px' }}>
-            <Checkbox
+          <div className="ec2-overlay-switch">
+            <span className={`ec2-switch-label ec2-switch-label--readable${showLabels ? ' ec2-switch-label--active' : ''}`}>
+              Engine Dimensions
+            </span>
+            <Switch
               checked={showLabels}
               onChange={(e) => setShowLabels(e.target.checked)}
               size="small"
-              disableRipple
               sx={{
-                color: 'rgba(0,229,255,0.4)',
-                '&.Mui-checked': { color: '#00e5ff' },
-                padding: '2px',
+                '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
               }}
             />
-            <span className={`ec2-switch-label${showLabels ? ' ec2-switch-label--active' : ''}`}>
-              Engine Dimensions
-            </span>
           </div>
-
-        </div>
-
-        {hasPhysics && (
-          <div className="ec2-switch-stack ec2-switch-stack--right">
+          {hasPhysics && (
             <div className="ec2-overlay-switch">
               <span className={`ec2-switch-label ec2-switch-label--readable${showFlowSim ? ' ec2-switch-label--active' : ''}`}>
-                Fluid Flow Simulation
+                Flow Simulation
               </span>
               <Switch
                 checked={showFlowSim}
@@ -855,77 +884,126 @@ export default function EngineContour({
                 }}
               />
             </div>
-            <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`} style={{ padding: '3px 8px' }}>
-              <span className={`ec2-switch-label${showFlowSim ? ' ec2-switch-label--active' : ''}`}>Property</span>
-              <select
-                className="ec2-flow-select"
-                value={flowProperty}
-                onChange={(e) => setFlowProperty(e.target.value as FlowProperty)}
-                disabled={!showFlowSim}
-              >
-                <option value="mach">Mach</option>
-                <option value="pressure">Pressure</option>
-                <option value="temperature">Temperature</option>
-                <option value="velocity">Velocity</option>
-                <option value="heatFlux">Heat Flux</option>
-              </select>
+          )}
+        </div>
+
+        {hasPhysics && (
+          <div className="ec2-sim-panel">
+            <div className="ec2-angles-header">
+              <span>SIMULATION</span>
+              <button className="ec2-panel-toggle" onClick={() => setSimPanelOpen(v => !v)}>
+                {simPanelOpen ? '▲' : '▼'}
+              </button>
             </div>
-            <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
-              <span className={`ec2-switch-label${showFlowSim && showParticles ? ' ec2-switch-label--active' : ''}`}>
-                Particles
-              </span>
-              <Switch
-                checked={showParticles}
-                onChange={(e) => setShowParticles(e.target.checked)}
-                disabled={!showFlowSim}
-                size="small"
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
-                  '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
-                  '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
-                  opacity: showFlowSim ? 1 : 0.35,
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
-                <span className={`ec2-switch-label${showFlowSim && showPlume ? ' ec2-switch-label--active' : ''}`}>
-                  Exhaust Plume
-                </span>
-                <Switch
-                  checked={showPlume}
-                  onChange={(e) => setShowPlume(e.target.checked)}
-                  disabled={!showFlowSim}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
-                    '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
-                    '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
-                    opacity: showFlowSim ? 1 : 0.35,
-                  }}
-                />
-              </div>
-              <Tooltip title="Nozzle angle overrides" placement="left" arrow>
-                <IconButton
-                  className={`ec2-zoom-btn${showAnglesPanel ? ' ec2-zoom-btn--active' : ''}`}
-                  onClick={() => setShowAnglesPanel(v => !v)}
-                  size="small"
-                  disableRipple
-                >
-                  <TuneIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </div>
-            {flowProperty === 'heatFlux' && (
-              <HeatFluxControls
-                enabled={showFlowSim}
-                wallTempK={wallTempK}
-                onWallTempChange={setWallTempK}
-                showPlot={showHeatFluxPlot}
-                onShowPlotChange={setShowHeatFluxPlot}
-              />
+            {simPanelOpen && (
+              <>
+                <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`} style={{ padding: '3px 8px' }}>
+                  <span className={`ec2-switch-label${showFlowSim ? ' ec2-switch-label--active' : ''}`}>Property</span>
+                  <select
+                    className="ec2-flow-select"
+                    value={flowProperty}
+                    onChange={(e) => setFlowProperty(e.target.value as FlowProperty)}
+                    disabled={!showFlowSim}
+                  >
+                    <option value="mach">Mach</option>
+                    <option value="pressure">Pressure</option>
+                    <option value="temperature">Temperature</option>
+                    <option value="velocity">Velocity</option>
+                    <option value="heatFlux">Heat Flux</option>
+                  </select>
+                </div>
+                <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+                  <span className={`ec2-switch-label${showFlowSim && showParticles ? ' ec2-switch-label--active' : ''}`}>
+                    Particles
+                  </span>
+                  <Switch
+                    checked={showParticles}
+                    onChange={(e) => setShowParticles(e.target.checked)}
+                    disabled={!showFlowSim}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                      '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                      '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+                      opacity: showFlowSim ? 1 : 0.35,
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+                    <span className={`ec2-switch-label${showFlowSim && showPlume ? ' ec2-switch-label--active' : ''}`}>
+                      Exhaust Plume
+                    </span>
+                    <Switch
+                      checked={showPlume}
+                      onChange={(e) => setShowPlume(e.target.checked)}
+                      disabled={!showFlowSim}
+                      size="small"
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00e5ff' },
+                        '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                        '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
+                        opacity: showFlowSim ? 1 : 0.35,
+                      }}
+                    />
+                  </div>
+                  <Tooltip title="Nozzle angle overrides" placement="left" arrow>
+                    <IconButton
+                      className={`ec2-zoom-btn${showAnglesPanel ? ' ec2-zoom-btn--active' : ''}`}
+                      onClick={() => setShowAnglesPanel(v => !v)}
+                      size="small"
+                      disableRipple
+                    >
+                      <TuneIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </div>
+                {flowProperty === 'heatFlux' && (
+                  <HeatFluxControls
+                    enabled={showFlowSim}
+                    wallTempK={wallTempK}
+                    onWallTempChange={setWallTempK}
+                    showPlot={showHeatFluxPlot}
+                    onShowPlotChange={setShowHeatFluxPlot}
+                  />
+                )}
+                {flowProperty === 'heatFlux' && fuelCode && fuelMassFlowKgPerS && (
+                  <>
+                    <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+                      <span className={`ec2-switch-label ec2-switch-label--readable${showFlowSim && showRegenCooling ? ' ec2-switch-label--active' : ''}`}
+                        style={{ opacity: showFlowSim ? 1 : 0.35 }}>
+                        Regen Cooling
+                      </span>
+                      <Switch
+                        checked={showRegenCooling}
+                        onChange={(e) => setShowRegenCooling(e.target.checked)}
+                        disabled={!showFlowSim}
+                        size="small"
+                        sx={{
+                          '& .MuiSwitch-switchBase.Mui-checked': { color: '#69ff47' },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#69ff47' },
+                          '& .MuiSwitch-track': { backgroundColor: 'rgba(200,220,230,0.3)' },
+                          '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(105,255,71,0.5)' },
+                          opacity: showFlowSim ? 1 : 0.35,
+                        }}
+                      />
+                    </div>
+                    {showRegenCooling && (
+                      <RegenCoolingControls
+                        enabled={showFlowSim}
+                        fuelCode={fuelCode}
+                        params={regenParams}
+                        onParamsChange={setRegenParams}
+                        showPlot={showRegenPlot}
+                        onShowPlotChange={setShowRegenPlot}
+                        regenResult={regenResult ?? undefined}
+                      />
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1063,6 +1141,14 @@ export default function EngineContour({
       </div>
       {showFlowSim && flowProperty === 'heatFlux' && showHeatFluxPlot && heatFluxProfile && (
         <HeatFluxPlot heatFluxProfile={heatFluxProfile} wallTempK={wallTempK} onHoveredX={setHoveredHeatFluxXMm} />
+      )}
+      {showFlowSim && showRegenCooling && showRegenPlot && regenResult && regenResult.points.length > 0 && heatFluxProfile && (
+        <RegenCoolingPlot
+          regenResult={regenResult}
+          heatFluxProfile={heatFluxProfile}
+          channelParams={regenParams}
+          wallTempK={wallTempK}
+        />
       )}
     </div>
   );

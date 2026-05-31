@@ -17,20 +17,46 @@
 }
 
 
-.ec2-switch-stack {
+.ec2-display-panel {
   position: absolute;
   top: 12px;
   left: 50px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   z-index: 10;
+  background: rgba(5, 14, 24, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  border-radius: 4px;
+  padding: 10px 12px;
+  min-width: 200px;
 }
 
-.ec2-switch-stack--right {
-  left: auto;
+.ec2-sim-panel {
+  position: absolute;
+  top: 12px;
   right: 12px;
-  align-items: flex-end;
+  z-index: 10;
+  background: rgba(5, 14, 24, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  border-radius: 4px;
+  padding: 10px 12px;
+  min-width: 200px;
+}
+
+.ec2-panel-toggle {
+  background: none;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: rgba(0, 229, 255, 0.7);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ec2-panel-toggle:hover {
+  background: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
 }
 
 .ec2-overlay-switch {

@@ -6,6 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Header from './components/header/header';
 import LeftPanel from './components/leftPanel/leftPanel';
 import MainContent from './components/mainContent/mainContent';
+import RightPanel from './components/rightPanel/rightPanel';
 import { type EngineDesignResult, type EngineImportData, type EngineFormInputs } from './services/engineDesignService';
 import { type NozzleType, type AngleOverrides } from './components/engineContour/isentropicFlow';
 import './App.css';
@@ -132,6 +133,7 @@ export default function App() {
             angleOverrides={angleOverrides}
             onAngleOverridesChange={setAngleOverrides}
           />
+          <RightPanel />
         </div>
       </div>
 

@@ -111,7 +111,7 @@ The current application is a web-based rocket engine design tool (React + Python
 
 ---
 
-### 6. Regenerative Cooling Channel Analysis
+### 6. Regenerative Cooling Channel Analysis — ✅ IMPLEMENTED
 **Complexity**: High | **Estimate**: 6–10 weeks
 
 **What RPA does**: Models coolant channels machined around the nozzle wall; calculates whether the wall survives thermally and what the coolant pressure drop is.
@@ -160,7 +160,7 @@ The current application is a web-based rocket engine design tool (React + Python
 | 3 | Bartz heat flux distribution | Medium | 2–3 wks | Yes — plot below nozzle; heatmap on wall | Very High |
 | 4 | Film cooling (interactive slider) | Medium | 2–4 wks | Yes — overlay on heat flux plot | High |
 | 5 | Injector sizing | Medium-High | 4–6 wks | Yes — injector face schematic | Very High |
-| 6 | Regenerative cooling | High | 6–10 wks | Yes — wall temp curves + channel cross-section | High (high-Pc) |
+| 6 | ✅ Regenerative cooling | High | 6–10 wks | Yes — wall temp curves + channel cross-section | High (high-Pc) |
 | 7 | ✅ Rao optimal nozzle contour | Medium | 3–5 wks | Yes — dropdown on main nozzle canvas | Medium |
 
 **Recommended sequencing**: 1 → 2 → 3 → 4 → 5 → 7 → 6

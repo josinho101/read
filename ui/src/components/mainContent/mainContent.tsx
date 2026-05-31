@@ -117,6 +117,14 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
     ? confirmedRow.characteristicVelocityCstar
     : opt?.characteristicVelocityCstar.value ?? 0;
 
+  const fuelCode = engineDesignResult?.engineInputs.propellents.fuel.code;
+  // fuelMassFlow from CEA is in g/s; convert to kg/s for regen analysis
+  const fuelMassFlowKgPerS = confirmedRow
+    ? confirmedRow.fuelMassFlow / 1000
+    : opt?.fuelMassFlow.value
+      ? opt.fuelMassFlow.value / 1000
+      : undefined;
+
   const displayValues: StatsDisplayData | null = confirmedRow
     ? {
         specificImpulse: confirmedRow.specificImpulse,
@@ -229,6 +237,8 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
               exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
               ambientPressureBar={ambientPressureBar}
               cstarMs={cstarMs}
+              fuelCode={fuelCode}
+              fuelMassFlowKgPerS={fuelMassFlowKgPerS}
               nozzleType={nozzleType}
               onNozzleTypeChange={onNozzleTypeChange}
               angleOverrides={angleOverrides}
