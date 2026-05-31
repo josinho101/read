@@ -13,7 +13,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { propellantService, type Propellant } from '../../services/propellantService';
-import { engineDesignService, type EngineDesignResult } from '../../services/engineDesignService';
+import { engineDesignService, type EngineDesignResult, type EngineFormInputs } from '../../services/engineDesignService';
 import './leftPanel.css';
 
 interface LeftPanelProps {
@@ -23,9 +23,11 @@ interface LeftPanelProps {
   onDesignError: () => void;
   onEngineMetaChange: (name: string, version: string) => void;
   onAmbientPressureChange?: (value: number) => void;
+  onFormChange?: (form: EngineFormInputs) => void;
+  importData?: EngineFormInputs | null;
 }
 
-export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange, onAmbientPressureChange }: LeftPanelProps) {
+export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange, onAmbientPressureChange, onFormChange, importData }: LeftPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'thrust' | 'payload'>('thrust');
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -99,6 +101,15 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
     const v = parseFloat(form.ambientPressure);
     if (!isNaN(v) && v > 0) onAmbientPressureChange(v);
   }, [form.ambientPressure, onAmbientPressureChange]);
+
+  useEffect(() => {
+    onFormChange?.(form);
+  }, [form, onFormChange]);
+
+  useEffect(() => {
+    if (!importData) return;
+    setForm(importData);
+  }, [importData]);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));

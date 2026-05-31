@@ -1,9 +1,38 @@
+import { useRef } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import { type EngineImportData } from '../../services/engineDesignService';
 import './Header.css';
 
-export default function Header() {
+interface HeaderProps {
+  onExportClick: () => void;
+  onImportData: (data: EngineImportData) => void;
+}
+
+export default function Header({ onExportClick, onImportData }: HeaderProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string) as EngineImportData;
+        if (!data.version || !data.inputs || !data.nozzleAdjustments) {
+          alert('Invalid engine file format.');
+          return;
+        }
+        onImportData(data);
+      } catch {
+        alert('Failed to parse engine file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
     <header className="header">
       <div className="header-logo">
@@ -18,13 +47,20 @@ export default function Header() {
       </div>
 
       <div className="header-actions">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
         <Tooltip title="Import Engine File">
-          <IconButton className="header-icon-btn" size="small">
+          <IconButton className="header-icon-btn" size="small" onClick={() => fileInputRef.current?.click()}>
             <FileUploadOutlinedIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title="Export Engine File">
-          <IconButton className="header-icon-btn" size="small">
+          <IconButton className="header-icon-btn" size="small" onClick={onExportClick}>
             <FileDownloadOutlinedIcon fontSize="small" />
           </IconButton>
         </Tooltip>

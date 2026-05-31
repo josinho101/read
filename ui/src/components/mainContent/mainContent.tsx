@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Button, Tooltip } from '@mui/material';
-import WhatshotIcon from '@mui/icons-material/Whatshot';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
+import { type NozzleType, type AngleOverrides } from '../engineContour/isentropicFlow';
 import MrGraph from '../mrGraph/MrGraph';
 import EngineContour from '../engineContour/EngineContour';
 import './mainContent.css';
@@ -48,9 +48,13 @@ interface MainContentProps {
   engineName: string;
   engineVersion: string;
   ambientPressureBar?: number;
+  nozzleType: NozzleType;
+  onNozzleTypeChange: (t: NozzleType) => void;
+  angleOverrides: AngleOverrides;
+  onAngleOverridesChange: (a: AngleOverrides) => void;
 }
 
-export default function MainContent({ engineDesignResult, engineName, engineVersion, ambientPressureBar }: MainContentProps) {
+export default function MainContent({ engineDesignResult, engineName, engineVersion, ambientPressureBar, nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -220,6 +224,10 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
               molecularWeightGMol={displayValues.molecularWeightGMol}
               exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
               ambientPressureBar={ambientPressureBar}
+              nozzleType={nozzleType}
+              onNozzleTypeChange={onNozzleTypeChange}
+              angleOverrides={angleOverrides}
+              onAngleOverridesChange={onAngleOverridesChange}
             />
           ) : (
             <div className="canvas-placeholder">

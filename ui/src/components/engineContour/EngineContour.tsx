@@ -29,6 +29,10 @@ interface Props {
   molecularWeightGMol?: number;
   exitPressureBar?: number;
   ambientPressureBar?: number;
+  nozzleType: NozzleType;
+  onNozzleTypeChange: (t: NozzleType) => void;
+  angleOverrides: AngleOverrides;
+  onAngleOverridesChange: (a: AngleOverrides) => void;
 }
 
 const DEG   = Math.PI / 180;
@@ -154,7 +158,7 @@ function renderEngine(
 ) {
   const geom = computeGeometry(nozzleType, Rc, Rt, Re, expansionRatio, contractionRatio, angleOverrides);
   const {
-    Lconv, Lc_cyl, Ln_bell,
+    Lconv, Lc_cyl,
     xConvStart, xThroat, xExit,
     tNDeg, tEDeg,
     convergentHalfDeg, divergentHalfDeg,
@@ -390,10 +394,10 @@ export default function EngineContour({
   expansionRatio, contractionRatio,
   gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
   exitPressureBar, ambientPressureBar,
+  nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
-  const [nozzleType, setNozzleType] = useState<NozzleType>('bell');
   const [showLabels, setShowLabels] = useState(true);
   const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
   const viewRef = useRef(view);
@@ -407,8 +411,6 @@ export default function EngineContour({
   const [showParticles, setShowParticles] = useState(true);
   const [showPlume, setShowPlume]         = useState(true);
 
-  // Angle overrides
-  const [angleOverrides, setAngleOverrides] = useState<AngleOverrides>({});
   const [showAnglesPanel, setShowAnglesPanel] = useState(false);
 
   // Refs for animation loop
@@ -676,7 +678,7 @@ export default function EngineContour({
             </span>
             <Switch
               checked={nozzleType === 'conical'}
-              onChange={(e) => setNozzleType(e.target.checked ? 'conical' : 'bell')}
+              onChange={(e) => onNozzleTypeChange(e.target.checked ? 'conical' : 'bell')}
               size="small"
               sx={{
                 '& .MuiSwitch-switchBase.Mui-checked': { color: '#00e5ff' },
@@ -840,7 +842,7 @@ export default function EngineContour({
                 <span>NOZZLE ANGLES</span>
                 <button
                   className="ec2-angles-reset"
-                  onClick={() => setAngleOverrides({})}
+                  onClick={() => onAngleOverridesChange({})}
                 >
                   Reset
                 </button>
@@ -853,7 +855,7 @@ export default function EngineContour({
                   min={20} max={50} step={1}
                   size="small"
                   sx={sliderSx}
-                  onChange={(_, v) => setAngleOverrides(o => ({ ...o, convergentHalfDeg: v as number }))}
+                  onChange={(_, v) => onAngleOverridesChange({ ...angleOverrides, convergentHalfDeg: v as number })}
                 />
                 <span className="ec2-angle-val">{convVal}°</span>
               </div>
@@ -867,7 +869,7 @@ export default function EngineContour({
                       min={20} max={35} step={1}
                       size="small"
                       sx={sliderSx}
-                      onChange={(_, v) => setAngleOverrides(o => ({ ...o, tNDeg: v as number }))}
+                      onChange={(_, v) => onAngleOverridesChange({ ...angleOverrides, tNDeg: v as number })}
                     />
                     <span className="ec2-angle-val">{tNVal}°</span>
                   </div>
@@ -878,7 +880,7 @@ export default function EngineContour({
                       min={0} max={30} step={0.5}
                       size="small"
                       sx={sliderSx}
-                      onChange={(_, v) => setAngleOverrides(o => ({ ...o, tEDeg: v as number }))}
+                      onChange={(_, v) => onAngleOverridesChange({ ...angleOverrides, tEDeg: v as number })}
                     />
                     <span className="ec2-angle-val">{tEVal}°</span>
                   </div>
@@ -893,7 +895,7 @@ export default function EngineContour({
                     min={10} max={25} step={1}
                     size="small"
                     sx={sliderSx}
-                    onChange={(_, v) => setAngleOverrides(o => ({ ...o, divergentRefDeg: v as number }))}
+                    onChange={(_, v) => onAngleOverridesChange({ ...angleOverrides, divergentRefDeg: v as number })}
                   />
                   <span className="ec2-angle-val">{divVal}°</span>
                 </div>

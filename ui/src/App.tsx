@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
@@ -6,7 +6,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Header from './components/header/header';
 import LeftPanel from './components/leftPanel/leftPanel';
 import MainContent from './components/mainContent/mainContent';
-import { type EngineDesignResult } from './services/engineDesignService';
+import { type EngineDesignResult, type EngineImportData, type EngineFormInputs } from './services/engineDesignService';
+import { type NozzleType, type AngleOverrides } from './components/engineContour/isentropicFlow';
 import './App.css';
 
 const darkTheme = createTheme({
@@ -63,6 +64,10 @@ export default function App() {
   const [engineName, setEngineName] = useState('Engine1');
   const [engineVersion, setEngineVersion] = useState('0.1');
   const [ambientPressureBar, setAmbientPressureBar] = useState(1.013);
+  const [nozzleType, setNozzleType] = useState<NozzleType>('bell');
+  const [angleOverrides, setAngleOverrides] = useState<AngleOverrides>({});
+  const [importData, setImportData] = useState<EngineFormInputs | null>(null);
+  const formSnapshotRef = useRef<EngineFormInputs | null>(null);
 
   const handleDesignStart = useCallback(() => setIsLoading(true), []);
   const handleDesignResult = useCallback((result: EngineDesignResult) => {
@@ -78,11 +83,34 @@ export default function App() {
     setAmbientPressureBar(value);
   }, []);
 
+  const handleExport = useCallback(() => {
+    const form = formSnapshotRef.current;
+    if (!form) return;
+    const data: EngineImportData = {
+      version: '1.0',
+      inputs: { ...form },
+      nozzleAdjustments: { nozzleType, angleOverrides },
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${form.engineName || 'engine'}_v${form.engineVersion || '0'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [nozzleType, angleOverrides]);
+
+  const handleImportData = useCallback((data: EngineImportData) => {
+    setNozzleType(data.nozzleAdjustments.nozzleType);
+    setAngleOverrides(data.nozzleAdjustments.angleOverrides);
+    setImportData(data.inputs);
+  }, []);
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <div className="app-shell">
-        <Header />
+        <Header onExportClick={handleExport} onImportData={handleImportData} />
         <div className="app-body">
           <LeftPanel
             isLoading={isLoading}
@@ -91,12 +119,18 @@ export default function App() {
             onDesignError={handleDesignError}
             onEngineMetaChange={handleEngineMetaChange}
             onAmbientPressureChange={handleAmbientPressureChange}
+            onFormChange={(f) => { formSnapshotRef.current = f; }}
+            importData={importData}
           />
           <MainContent
             engineDesignResult={engineDesignResult}
             engineName={engineName}
             engineVersion={engineVersion}
             ambientPressureBar={ambientPressureBar}
+            nozzleType={nozzleType}
+            onNozzleTypeChange={setNozzleType}
+            angleOverrides={angleOverrides}
+            onAngleOverridesChange={setAngleOverrides}
           />
         </div>
       </div>

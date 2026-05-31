@@ -76,6 +76,34 @@ export interface EngineDesignResult {
   };
 }
 
+export interface EngineFormInputs {
+  engineName: string;
+  engineVersion: string;
+  fuel: string;
+  oxidizer: string;
+  minMixtureRatio: string;
+  maxMixtureRatio: string;
+  targetThrust: string;
+  chamberPressure: string;
+  exitPressure: string;
+  altitude: string;
+  ambientPressure: string;
+}
+
+export interface EngineImportData {
+  version: string;
+  inputs: EngineFormInputs;
+  nozzleAdjustments: {
+    nozzleType: 'bell' | 'conical';
+    angleOverrides: {
+      convergentHalfDeg?: number;
+      divergentRefDeg?: number;
+      tNDeg?: number;
+      tEDeg?: number;
+    };
+  };
+}
+
 class EngineDesignService extends BaseApi {
   constructor() {
     super(constants.API_BASE_URL);
