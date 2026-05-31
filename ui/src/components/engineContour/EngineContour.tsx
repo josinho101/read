@@ -335,7 +335,7 @@ function renderEngine(
 
 const LEG_W = 228;
 const LEG_ITEM_H = 14;
-const LEG_PADDING = 26;
+const LEG_PADDING = 12;
 
 function legendHeight() {
   return 10 * LEG_ITEM_H + LEG_PADDING;
@@ -370,10 +370,9 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleT
   ctx.stroke();
   ctx.restore();
 
-  txt(ctx, 'LEGENDS', x + 10, y + 17, 'left', CYAN, 10.5);
   items.forEach(([abbr, desc], i) => {
-    txt(ctx, abbr, x + 10, y + 31 + i * LEG_ITEM_H, 'left', AMBER, 9.5);
-    txt(ctx, desc, x + 72, y + 31 + i * LEG_ITEM_H, 'left', 'rgba(200,220,230,0.65)', 9.5);
+    txt(ctx, abbr, x + 10, y + 17 + i * LEG_ITEM_H, 'left', AMBER, 9.5);
+    txt(ctx, desc, x + 72, y + 17 + i * LEG_ITEM_H, 'left', 'rgba(200,220,230,0.65)', 9.5);
   });
 }
 
