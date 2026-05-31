@@ -113,6 +113,10 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
     setDialogSelectedRow(null);
   };
 
+  const cstarMs = confirmedRow
+    ? confirmedRow.characteristicVelocityCstar
+    : opt?.characteristicVelocityCstar.value ?? 0;
+
   const displayValues: StatsDisplayData | null = confirmedRow
     ? {
         specificImpulse: confirmedRow.specificImpulse,
@@ -224,6 +228,7 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
               molecularWeightGMol={displayValues.molecularWeightGMol}
               exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
               ambientPressureBar={ambientPressureBar}
+              cstarMs={cstarMs}
               nozzleType={nozzleType}
               onNozzleTypeChange={onNozzleTypeChange}
               angleOverrides={angleOverrides}

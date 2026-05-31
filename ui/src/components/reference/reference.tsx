@@ -123,6 +123,42 @@ const sections: Section[] = [
             },
         ],
     },
+    {
+        heading: 'Heat Transfer',
+        params: [
+            {
+                symbol: <><i>q</i></>,
+                name: 'Heat Flux',
+                unit: 'MW/m²',
+                desc: 'The rate of heat transferred from the hot combustion gas to the nozzle wall per unit area. It peaks sharply at the throat where gas velocity and density are highest. Used to size cooling jackets and select wall materials.',
+            },
+            {
+                symbol: <><i>h</i><sub>g</sub></>,
+                name: 'Heat Transfer Coefficient',
+                unit: 'W/m²K',
+                desc: 'The gas-side thermal conductance computed from the Bartz correlation. It quantifies how strongly the boundary layer couples the hot gas to the wall. Higher values mean the wall heats up faster for the same temperature difference.',
+            },
+            {
+                symbol: <><i>T</i><sub>aw</sub></>,
+                name: 'Adiabatic Wall Temperature',
+                unit: 'K',
+                desc: 'The temperature the wall surface would reach if no heat were conducted away — the upper limit for wall heating. It is higher than the local static gas temperature because the boundary layer decelerates and partially recovers kinetic energy as heat.',
+            },
+            {
+                symbol: <><i>T</i><sub>wall</sub></>,
+                name: 'Wall Temperature',
+                unit: 'K',
+                desc: 'The assumed inner-wall surface temperature. Lower values represent an actively cooled wall (regenerative or film cooling), giving a larger ΔT and a higher heat load. Higher values represent an uncooled or ablatively cooled wall. Heat flux is q = h_g × (T_aw − T_wall).',
+            },
+            {
+                symbol: <>σ</>,
+                name: 'Bartz Correction Factor',
+                unit: '—',
+                unitNone: true,
+                desc: 'A dimensionless correction in the Bartz correlation that accounts for the variation of gas viscosity and thermal conductivity across the hot boundary layer. Values less than 1 reduce the uncorrected heat transfer coefficient; it varies along the nozzle with local Mach number and wall-to-gas temperature ratio.',
+            },
+        ],
+    },
 ];
 
 export default function Reference() {

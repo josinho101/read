@@ -1,0 +1,65 @@
+.hfp-wrapper {
+  width: 100%;
+  background: #090d12;
+  border-top: 1px solid rgba(0, 229, 255, 0.15);
+  padding: 10px 12px 4px;
+  box-sizing: border-box;
+  min-height: 270px;
+}
+
+.hfp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.hfp-title {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  color: #00e5ff;
+}
+
+.hfp-subtitle {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.55);
+}
+
+/* Custom tooltip */
+.hfp-tooltip {
+  background: rgba(5, 14, 24, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.85);
+  min-width: 170px;
+}
+
+.hfp-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  line-height: 1.7;
+}
+
+.hfp-tooltip-row span {
+  color: #00e5ff;
+  font-weight: bold;
+}
+
+.hfp-tooltip-header {
+  color: rgba(200, 220, 230, 0.55);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  margin-bottom: 4px;
+  padding-bottom: 3px;
+}
+
+.hfp-tooltip-header span {
+  color: rgba(200, 220, 230, 0.85);
+  font-weight: normal;
+}
