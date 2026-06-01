@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { Switch, IconButton, Tooltip } from '@mui/material';
+import { Switch, IconButton, Tooltip, Select, MenuItem, FormControl } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -14,6 +14,7 @@ import {
   type PlumeParams, type PlumeGeometry,
   computePlumeGeometry, drawPlume,
 } from './exhaustPlume';
+import EngineContourRightPanel from '../engineContourRightPanel/engineContourRightPanel';
 import './EngineContour.css';
 
 const switchSx = {
@@ -37,12 +38,16 @@ interface Props {
   ambientPressureBar?: number;
   nozzleType: NozzleType;
   angleOverrides: AngleOverrides;
-  // Simulation state (controlled from RightPanel via App)
+  onNozzleTypeChange: (t: NozzleType) => void;
+  onAngleOverridesChange: (a: AngleOverrides) => void;
   showFlowSim: boolean;
   onShowFlowSimChange: (v: boolean) => void;
   flowProperty: FlowProperty;
+  onFlowPropertyChange: (v: FlowProperty) => void;
   showParticles: boolean;
+  onShowParticlesChange: (v: boolean) => void;
   showPlume: boolean;
+  onShowPlumeChange: (v: boolean) => void;
 }
 
 const DEG   = Math.PI / 180;
@@ -419,15 +424,16 @@ export default function EngineContour({
   expansionRatio, contractionRatio,
   gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
   exitPressureBar, ambientPressureBar,
-  nozzleType, angleOverrides,
+  nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange,
   showFlowSim, onShowFlowSimChange,
-  flowProperty,
-  showParticles,
-  showPlume,
+  flowProperty, onFlowPropertyChange,
+  showParticles, onShowParticlesChange,
+  showPlume, onShowPlumeChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [showLabels, setShowLabels] = useState(true);
+  const [rightCollapsed, setRightCollapsed] = useState(true);
   const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -746,7 +752,47 @@ export default function EngineContour({
                 sx={switchSx}
               />
             </div>
+            <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+              <span className={`ec2-switch-label ec2-switch-label--readable${showParticles && showFlowSim ? ' ec2-switch-label--active' : ''}`}>
+                Particles
+              </span>
+              <Switch
+                checked={showParticles}
+                disabled={!showFlowSim}
+                onChange={(e) => onShowParticlesChange(e.target.checked)}
+                size="small"
+                sx={switchSx}
+              />
+            </div>
+            <div className={`ec2-overlay-switch${!showFlowSim ? ' ec2-overlay-switch--disabled' : ''}`}>
+              <span className={`ec2-switch-label ec2-switch-label--readable${showPlume && showFlowSim ? ' ec2-switch-label--active' : ''}`}>
+                Exhaust Plume
+              </span>
+              <Switch
+                checked={showPlume}
+                disabled={!showFlowSim}
+                onChange={(e) => onShowPlumeChange(e.target.checked)}
+                size="small"
+                sx={switchSx}
+              />
+            </div>
           </div>
+        </div>
+
+        <div className={`ec2-overlay-right${!showFlowSim ? ' ec2-overlay-right--disabled' : ''}`}>
+          <FormControl size="small">
+            <Select
+              className="ec2-property-select"
+              value={flowProperty}
+              disabled={!showFlowSim}
+              onChange={(e) => onFlowPropertyChange(e.target.value as FlowProperty)}
+            >
+              <MenuItem value="mach">Mach</MenuItem>
+              <MenuItem value="pressure">Pressure</MenuItem>
+              <MenuItem value="temperature">Temperature</MenuItem>
+              <MenuItem value="velocity">Velocity</MenuItem>
+            </Select>
+          </FormControl>
         </div>
         <canvas
           ref={canvasRef}
@@ -759,6 +805,15 @@ export default function EngineContour({
           onDoubleClick={handleDoubleClick}
         />
       </div>
+      <EngineContourRightPanel
+        collapsed={rightCollapsed}
+        onToggle={() => setRightCollapsed(v => !v)}
+        nozzleType={nozzleType}
+        onNozzleTypeChange={onNozzleTypeChange}
+        angleOverrides={angleOverrides}
+        onAngleOverridesChange={onAngleOverridesChange}
+        expansionRatio={expansionRatio}
+      />
     </div>
   );
 }

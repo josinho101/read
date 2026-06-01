@@ -10,7 +10,7 @@ import './mainContent.css';
 import Reference from '../reference/reference';
 
 const TABS = ['ENGINE CONTOUR', 'CALCULATED STEPS & EQUATIONS', 'REFERENCE'] as const;
-type Tab = typeof TABS[number];
+export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
   specificImpulse: number;
@@ -49,20 +49,28 @@ interface MainContentProps {
   engineVersion: string;
   ambientPressureBar?: number;
   nozzleType: NozzleType;
+  onNozzleTypeChange: (t: NozzleType) => void;
   angleOverrides: AngleOverrides;
+  onAngleOverridesChange: (a: AngleOverrides) => void;
   showFlowSim: boolean;
   onShowFlowSimChange: (v: boolean) => void;
   flowProperty: FlowProperty;
+  onFlowPropertyChange: (v: FlowProperty) => void;
   showParticles: boolean;
+  onShowParticlesChange: (v: boolean) => void;
   showPlume: boolean;
+  onShowPlumeChange: (v: boolean) => void;
+  activeTab: Tab;
+  onActiveTabChange: (tab: Tab) => void;
 }
 
 export default function MainContent({
-  engineDesignResult, engineName, engineVersion, ambientPressureBar, nozzleType, angleOverrides,
-  showFlowSim, onShowFlowSimChange, flowProperty,
-  showParticles, showPlume,
+  engineDesignResult, engineName, engineVersion, ambientPressureBar,
+  nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange,
+  showFlowSim, onShowFlowSimChange, flowProperty, onFlowPropertyChange,
+  showParticles, onShowParticlesChange, showPlume, onShowPlumeChange,
+  activeTab, onActiveTabChange,
 }: MainContentProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
   const [dialogSelectedRow, setDialogSelectedRow] = useState<MixtureRatioSweepEntry | null>(null);
@@ -166,15 +174,15 @@ export default function MainContent({
           <button
             key={tab}
             className={`main-tab ${activeTab === tab ? 'main-tab--active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => onActiveTabChange(tab)}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Toolbar */}
-      <div className="main-toolbar">
+      {/* Toolbar — Engine Contour tab only */}
+      {activeTab === 'ENGINE CONTOUR' && <div className="main-toolbar">
         <div className="toolbar-left">
           <div className="engine-badge">
             <span className="engine-badge-name">{engineName}</span>
@@ -213,7 +221,7 @@ export default function MainContent({
             </span>
           </Tooltip>
         </div>
-      </div>
+      </div>}
 
       {/* Canvas / viewport */}
       <div className="main-viewport">
@@ -232,12 +240,17 @@ export default function MainContent({
               exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
               ambientPressureBar={ambientPressureBar}
               nozzleType={nozzleType}
+              onNozzleTypeChange={onNozzleTypeChange}
               angleOverrides={angleOverrides}
+              onAngleOverridesChange={onAngleOverridesChange}
               showFlowSim={showFlowSim}
               onShowFlowSimChange={onShowFlowSimChange}
               flowProperty={flowProperty}
+              onFlowPropertyChange={onFlowPropertyChange}
               showParticles={showParticles}
+              onShowParticlesChange={onShowParticlesChange}
               showPlume={showPlume}
+              onShowPlumeChange={onShowPlumeChange}
             />
           ) : (
             <div className="canvas-placeholder">
@@ -254,8 +267,8 @@ export default function MainContent({
         {activeTab === 'REFERENCE' && <Reference />}
       </div>
 
-      {/* Stats bar */}
-      <div className="stats-bar">
+      {/* Stats bar — Engine Contour tab only */}
+      {activeTab === 'ENGINE CONTOUR' && <div className="stats-bar">
         {stats.map((stat) => (
           <div key={stat.label} className="stat-item">
             <span className="stat-label">{stat.label}</span>
@@ -265,7 +278,7 @@ export default function MainContent({
             </span>
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* MR Sweep Dialog */}
       {sweepOpen && sweep && (

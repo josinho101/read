@@ -356,9 +356,17 @@ export function drawColorbar(
   profile:  FlowProfile,
   property: FlowProperty,
 ): void {
-  const x = cW - 105;
-  const y = cH - CB_H - 34;
+  // Fixed-size panel anchored to bottom-right (mirrors left overlay at top: 12, left: 12)
+  const PAD    = 8;
+  const MARGIN = 12;
+  const pw = 76;
+  const ph = CB_H + 52;
+  const px = cW - MARGIN - pw;
+  const py = cH - MARGIN - ph;
+  const x  = px + PAD;          // gradient bar left
+  const y  = py + 30;           // gradient bar top
 
+  const [min, max] = propRange(profile, property);
   const grad = ctx.createLinearGradient(0, y + CB_H, 0, y);
   COLORSTOPS.forEach(([t, [r, g, b]]) => grad.addColorStop(t, `rgb(${r},${g},${b})`));
 
@@ -368,7 +376,6 @@ export function drawColorbar(
   ctx.fillStyle = 'rgba(5,14,24,0.82)';
   ctx.strokeStyle = 'rgba(0,229,255,0.22)';
   ctx.lineWidth = 0.8;
-  const px = x - 8, py = y - 30, pw = CB_W + 76, ph = CB_H + 52;
   ctx.beginPath();
   ctx.roundRect(px, py, pw, ph, 4);
   ctx.fill();
@@ -387,7 +394,6 @@ export function drawColorbar(
   ctx.fillText(propLabel(property), x, y - 15);
 
   // Tick labels
-  const [min, max] = propRange(profile, property);
   ctx.font = '9px "Courier New", monospace';
   ctx.fillStyle = 'rgba(200,220,230,0.75)';
   for (let i = 0; i <= 4; i++) {

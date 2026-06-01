@@ -5,8 +5,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Header from './components/header/header';
 import LeftPanel from './components/leftPanel/leftPanel';
-import MainContent from './components/mainContent/mainContent';
-import RightPanel from './components/rightPanel/rightPanel';
+import MainContent, { type Tab } from './components/mainContent/mainContent';
 import { type EngineDesignResult, type EngineImportData, type EngineFormInputs } from './services/engineDesignService';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from './components/engineContour/isentropicFlow';
 import './App.css';
@@ -60,8 +59,8 @@ const darkTheme = createTheme({
 });
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(true);
   const [engineDesignResult, setEngineDesignResult] = useState<EngineDesignResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [engineName, setEngineName] = useState('Engine1');
@@ -75,31 +74,10 @@ export default function App() {
   // Simulation state (lifted from EngineContour so RightPanel can control it)
   const [showFlowSim, setShowFlowSim]               = useState(false);
   const [flowProperty, setFlowProperty]             = useState<FlowProperty>('mach');
-  const [showParticles, setShowParticles]           = useState(true);
-  const [showPlume, setShowPlume]                   = useState(true);
-  const opt = engineDesignResult?.engineOutputs?.mixtureRatio?.optimum ?? null;
-  const hasPhysics = Boolean(
-    opt?.specificHeatRatioGamma?.value &&
-    engineDesignResult?.engineInputs?.chamberPressure?.value &&
-    opt?.chamberTemperature?.value &&
-    opt?.combustionMolecularWeight?.value,
-  );
+  const [showParticles, setShowParticles]           = useState(false);
+  const [showPlume, setShowPlume]                   = useState(false);
 
-  const handleLeftToggle = useCallback(() => {
-    setLeftCollapsed((prev) => {
-      const next = !prev;
-      if (!next) setRightCollapsed(true);
-      return next;
-    });
-  }, []);
-
-  const handleRightToggle = useCallback(() => {
-    setRightCollapsed((prev) => {
-      const next = !prev;
-      if (!next) setLeftCollapsed(true);
-      return next;
-    });
-  }, []);
+  const handleLeftToggle = useCallback(() => setLeftCollapsed(prev => !prev), []);
 
   const handleDesignStart = useCallback(() => setIsLoading(true), []);
   const handleDesignResult = useCallback((result: EngineDesignResult) => {
@@ -162,29 +140,19 @@ export default function App() {
             engineVersion={engineVersion}
             ambientPressureBar={ambientPressureBar}
             nozzleType={nozzleType}
-            angleOverrides={angleOverrides}
-            showFlowSim={showFlowSim}
-            onShowFlowSimChange={setShowFlowSim}
-            flowProperty={flowProperty}
-            showParticles={showParticles}
-            showPlume={showPlume}
-          />
-          <RightPanel
-            collapsed={rightCollapsed}
-            onToggle={handleRightToggle}
-            nozzleType={nozzleType}
             onNozzleTypeChange={setNozzleType}
             angleOverrides={angleOverrides}
             onAngleOverridesChange={setAngleOverrides}
-            expansionRatio={engineDesignResult?.engineOutputs?.mixtureRatio?.optimum?.expansionRatio?.value}
-            hasPhysics={hasPhysics}
             showFlowSim={showFlowSim}
+            onShowFlowSimChange={setShowFlowSim}
             flowProperty={flowProperty}
             onFlowPropertyChange={setFlowProperty}
             showParticles={showParticles}
             onShowParticlesChange={setShowParticles}
             showPlume={showPlume}
             onShowPlumeChange={setShowPlume}
+            activeTab={activeTab}
+            onActiveTabChange={setActiveTab}
           />
         </div>
       </div>
