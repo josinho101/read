@@ -94,7 +94,7 @@ export interface EngineImportData {
   version: string;
   inputs: EngineFormInputs;
   nozzleAdjustments: {
-    nozzleType: 'bell' | 'conical';
+    nozzleType: 'bell' | 'conical' | 'rao';
     angleOverrides: {
       convergentHalfDeg?: number;
       divergentRefDeg?: number;
