@@ -6,14 +6,9 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
   type NozzleType, type FlowProperty, type FlowProfile, type AngleOverrides,
-  type HeatFluxData,
   computeGeometry, buildFlowProfile,
   drawHeatmap, drawColorbar,
 } from './isentropicFlow';
-import { computeBartzHeatFlux, type HeatFluxProfile } from './bartzHeatFlux';
-import HeatFluxPlot from '../heatFluxPlot/HeatFluxPlot';
-import { computeRegenCooling, type RegenChannelParams, type RegenResult } from './regenCooling';
-import RegenCoolingPlot from '../regenCoolingPlot/RegenCoolingPlot';
 import { type Particle, initParticles, advanceParticles, drawParticles } from './flowParticles';
 import {
   type PlumeParams, type PlumeGeometry,
@@ -40,29 +35,14 @@ interface Props {
   molecularWeightGMol?: number;
   exitPressureBar?: number;
   ambientPressureBar?: number;
-  cstarMs?: number;
-  fuelCode?: string;
-  fuelMassFlowKgPerS?: number;
   nozzleType: NozzleType;
   angleOverrides: AngleOverrides;
   // Simulation state (controlled from RightPanel via App)
   showFlowSim: boolean;
   onShowFlowSimChange: (v: boolean) => void;
   flowProperty: FlowProperty;
-  onFlowPropertyChange: (v: FlowProperty) => void;
   showParticles: boolean;
-  onShowParticlesChange: (v: boolean) => void;
   showPlume: boolean;
-  onShowPlumeChange: (v: boolean) => void;
-  wallTempK: number;
-  onWallTempChange: (v: number) => void;
-  showHeatFluxPlot: boolean;
-  onShowHeatFluxPlotChange: (v: boolean) => void;
-  regenParams: RegenChannelParams;
-  onRegenParamsChange: (p: RegenChannelParams) => void;
-  showRegenPlot: boolean;
-  onShowRegenPlotChange: (v: boolean) => void;
-  onRegenResultChange?: (r: RegenResult | null) => void;
 }
 
 const DEG   = Math.PI / 180;
@@ -185,8 +165,6 @@ function renderEngine(
   angleOverrides?: AngleOverrides,
   plumeGeom?: PlumeGeometry,
   plumeParams?: PlumeParams,
-  heatFluxData?: HeatFluxData,
-  hoveredXLog?: number,
 ) {
   const geom = computeGeometry(nozzleType, Rc, Rt, Re, expansionRatio, contractionRatio, angleOverrides);
   const {
@@ -219,44 +197,7 @@ function renderEngine(
 
   // ── Heatmap (before fill so glow shows on top) ───────────────────────────
   if (flowProfile && flowProperty) {
-    drawHeatmap(ctx, flowProfile, flowProperty, heatFluxData);
-  }
-
-  // ── Heat flux position arrow: downward arrow above nozzle top wall ──────────
-  if (hoveredXLog != null && flowProfile && flowProfile.points.length > 1) {
-    const pts = flowProfile.points;
-    let closest = 0, minDist = Infinity;
-    for (let i = 0; i < pts.length; i++) {
-      const d = Math.abs(pts[i].xLog - hoveredXLog);
-      if (d < minDist) { minDist = d; closest = i; }
-    }
-    const fp          = pts[closest];
-    const tipY        = fp.topY;       // arrow tip sits on the top nozzle wall
-    const shaftLen    = 26;            // length of the arrow shaft above the wall
-    const headSize    = 7;             // arrowhead half-width / height
-
-    ctx.save();
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 0.95;
-
-    // Shaft
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth   = 2;
-    ctx.beginPath();
-    ctx.moveTo(hoveredXLog, tipY - headSize);
-    ctx.lineTo(hoveredXLog, tipY - headSize - shaftLen);
-    ctx.stroke();
-
-    // Filled arrowhead pointing down
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(hoveredXLog,             tipY);
-    ctx.lineTo(hoveredXLog - headSize,  tipY - headSize * 1.6);
-    ctx.lineTo(hoveredXLog + headSize,  tipY - headSize * 1.6);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
+    drawHeatmap(ctx, flowProfile, flowProperty);
   }
 
   // ── Engine fill ──────────────────────────────────────────────────────────
@@ -477,18 +418,12 @@ export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
   expansionRatio, contractionRatio,
   gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
-  exitPressureBar, ambientPressureBar, cstarMs,
-  fuelCode, fuelMassFlowKgPerS,
+  exitPressureBar, ambientPressureBar,
   nozzleType, angleOverrides,
   showFlowSim, onShowFlowSimChange,
-  flowProperty, onFlowPropertyChange,
-  showParticles, onShowParticlesChange,
-  showPlume, onShowPlumeChange,
-  wallTempK, onWallTempChange,
-  showHeatFluxPlot, onShowHeatFluxPlotChange,
-  regenParams, onRegenParamsChange,
-  showRegenPlot, onShowRegenPlotChange,
-  onRegenResultChange,
+  flowProperty,
+  showParticles,
+  showPlume,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
@@ -498,7 +433,6 @@ export default function EngineContour({
   viewRef.current = view;
   const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [hoveredHeatFluxXMm, setHoveredHeatFluxXMm] = useState<number | null>(null);
 
   // Refs for animation loop
   const animFrameRef  = useRef<number | null>(null);
@@ -516,31 +450,6 @@ export default function EngineContour({
     nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
     angleOverrides,
   ]);
-
-  const heatFluxProfile = useMemo<HeatFluxProfile | null>(() => {
-    if (!showFlowSim || !flowProfile || !gamma || !chamberPressureBar
-        || !chamberTemperatureK || !molecularWeightGMol || !cstarMs) return null;
-    const geom = computeGeometry(nozzleType, chamberRadius, throatRadius, exitRadius,
-                                 expansionRatio, contractionRatio, angleOverrides);
-    return computeBartzHeatFlux(
-      flowProfile, geom, gamma, chamberPressureBar * 1e5,
-      chamberTemperatureK, molecularWeightGMol, cstarMs, wallTempK,
-    );
-  }, [
-    showFlowSim, flowProfile, gamma, chamberPressureBar,
-    chamberTemperatureK, molecularWeightGMol, cstarMs, wallTempK,
-    nozzleType, chamberRadius, throatRadius, exitRadius,
-    expansionRatio, contractionRatio, angleOverrides,
-  ]);
-
-  const regenResult = useMemo<RegenResult | null>(() => {
-    if (!showFlowSim || !heatFluxProfile || !fuelCode || !fuelMassFlowKgPerS) return null;
-    return computeRegenCooling(heatFluxProfile, regenParams, fuelCode, fuelMassFlowKgPerS, throatRadius);
-  }, [showFlowSim, heatFluxProfile, regenParams, fuelCode, fuelMassFlowKgPerS, throatRadius]);
-
-  useEffect(() => {
-    onRegenResultChange?.(regenResult);
-  }, [regenResult, onRegenResultChange]);
 
   const plumeParams = useMemo<PlumeParams | null>(() => {
     if (!showFlowSim || !showPlume || !flowProfile || !gamma) return null;
@@ -617,31 +526,17 @@ export default function EngineContour({
     ctx.translate(offsetX, offsetY);
     ctx.scale(lbScale, lbScale);
 
-    let hoveredXLog: number | undefined;
-    if (hoveredHeatFluxXMm != null && heatFluxProfile) {
-      let best = heatFluxProfile.points[0], bestDist = Infinity;
-      for (const p of heatFluxProfile.points) {
-        const d = Math.abs(p.xPhys_mm - hoveredHeatFluxXMm);
-        if (d < bestDist) { bestDist = d; best = p; }
-      }
-      hoveredXLog = best?.xLog;
-    }
-
-    const effectiveFlowProperty: FlowProperty = showHeatFluxPlot ? 'heatFlux' : flowProperty;
-
     renderEngine(
       ctx, nozzleType,
       chamberRadius, throatRadius, exitRadius,
       expansionRatio, contractionRatio,
       showLabels,
       showFlowSim && flowProfile ? flowProfile : undefined,
-      effectiveFlowProperty,
+      flowProperty,
       showFlowSim && showParticles ? particlesRef.current : undefined,
       angleOverrides,
       showFlowSim && showPlume && plumeGeom ? plumeGeom : undefined,
       showFlowSim && showPlume && plumeParams ? plumeParams : undefined,
-      showFlowSim && heatFluxProfile ? heatFluxProfile : undefined,
-      hoveredXLog,
     );
 
     ctx.restore();
@@ -656,8 +551,7 @@ export default function EngineContour({
     }
 
     if (showFlowSim && flowProfile) {
-      drawColorbar(ctx, cW, cH, flowProfile, effectiveFlowProperty,
-        heatFluxProfile ?? undefined);
+      drawColorbar(ctx, cW, cH, flowProfile, flowProperty);
     }
 
     ctx.restore();
@@ -665,9 +559,8 @@ export default function EngineContour({
     nozzleType, showLabels,
     chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
     view,
-    showFlowSim, flowProperty, showHeatFluxPlot, showParticles, flowProfile,
+    showFlowSim, flowProperty, showParticles, flowProfile,
     angleOverrides, showPlume, plumeGeom, plumeParams,
-    heatFluxProfile, wallTempK, hoveredHeatFluxXMm,
   ]);
 
   // Keep redrawRef current so the rAF loop always calls the latest redraw
@@ -866,17 +759,6 @@ export default function EngineContour({
           onDoubleClick={handleDoubleClick}
         />
       </div>
-      {showFlowSim && showHeatFluxPlot && heatFluxProfile && (
-        <HeatFluxPlot heatFluxProfile={heatFluxProfile} wallTempK={wallTempK} onHoveredX={setHoveredHeatFluxXMm} />
-      )}
-      {showFlowSim && showRegenPlot && regenResult && regenResult.points.length > 0 && heatFluxProfile && (
-        <RegenCoolingPlot
-          regenResult={regenResult}
-          heatFluxProfile={heatFluxProfile}
-          channelParams={regenParams}
-          wallTempK={wallTempK}
-        />
-      )}
     </div>
   );
 }

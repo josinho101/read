@@ -33,7 +33,7 @@ export interface PlumeGeometry {
 }
 
 export function computePlumeGeometry(p: PlumeParams): PlumeGeometry {
-  const { exitX, exitTopY, exitBotY, midY, exitMach, exitPressurePa,
+  const { exitX, exitTopY, midY, exitMach, exitPressurePa,
           ambientPressurePa, exitAngleRad, plumeLength } = p;
 
   const pressureRatio = exitPressurePa / Math.max(ambientPressurePa, 1);
@@ -111,7 +111,6 @@ export function computePlumeGeometry(p: PlumeParams): PlumeGeometry {
 function buildBoundaryPath(
   ctx: CanvasRenderingContext2D,
   boundary: PlumeGeometry['boundary'],
-  midY: number,
 ) {
   if (boundary.length === 0) return;
   ctx.beginPath();
@@ -147,7 +146,7 @@ export function drawPlume(
 
   // 1. Heatmap fill clipped to boundary polygon
   ctx.save();
-  buildBoundaryPath(ctx, boundary, midY);
+  buildBoundaryPath(ctx, boundary);
   ctx.clip();
   const grad = ctx.createLinearGradient(exitX, 0, exitX + plumeLength, 0);
   grad.addColorStop(0, exitColor);

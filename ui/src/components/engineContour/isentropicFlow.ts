@@ -15,7 +15,7 @@ const COLORSTOPS: [number, [number, number, number]][] = [
 ];
 
 export type NozzleType   = 'bell' | 'conical' | 'rao';
-export type FlowProperty = 'mach' | 'pressure' | 'temperature' | 'velocity' | 'heatFlux';
+export type FlowProperty = 'mach' | 'pressure' | 'temperature' | 'velocity';
 
 export interface AngleOverrides {
   convergentHalfDeg?: number;
@@ -293,36 +293,11 @@ export function flowColor(value: number, min: number, max: number): string {
 
 // ── Heatmap renderer ──────────────────────────────────────────────────────────
 
-// Minimal shape needed from HeatFluxProfile — avoids circular import with bartzHeatFlux.ts
-export interface HeatFluxData {
-  points:      { xLog: number; heatFlux: number }[];
-  minHeatFlux: number;
-  maxHeatFlux: number;
-}
-
 export function drawHeatmap(
-  ctx:           CanvasRenderingContext2D,
-  profile:       FlowProfile,
-  property:      FlowProperty,
-  heatFluxData?: HeatFluxData,
+  ctx:     CanvasRenderingContext2D,
+  profile: FlowProfile,
+  property: FlowProperty,
 ): void {
-  if (property === 'heatFlux') {
-    if (!heatFluxData || heatFluxData.points.length < 2) return;
-    const { points: hfPts, minHeatFlux, maxHeatFlux } = heatFluxData;
-    const flowPts = profile.points;
-    ctx.save();
-    ctx.globalAlpha = 0.75;
-    for (let i = 0; i < hfPts.length - 1; i++) {
-      const fp  = flowPts[i];
-      const fp1 = flowPts[i + 1];
-      if (!fp || !fp1) continue;
-      ctx.fillStyle = flowColor(hfPts[i].heatFlux, minHeatFlux, maxHeatFlux);
-      ctx.fillRect(fp.xLog, fp.topY, fp1.xLog - fp.xLog + 0.5, fp.botY - fp.topY);
-    }
-    ctx.restore();
-    return;
-  }
-
   const { points, minMach, maxMach, minP, maxP, minT, maxT, minV, maxV } = profile;
   if (points.length < 2) return;
 
@@ -357,7 +332,6 @@ function propLabel(property: FlowProperty): string {
   if (property === 'mach')        return 'MACH';
   if (property === 'pressure')    return 'P (kPa)';
   if (property === 'temperature') return 'T (K)';
-  if (property === 'heatFlux')    return 'q (MW/m²)';
   return 'V (m/s)';
 }
 
@@ -365,30 +339,22 @@ function formatTick(value: number, property: FlowProperty): string {
   if (property === 'mach')        return value.toFixed(3);
   if (property === 'pressure')    return (value / 1000).toFixed(1);
   if (property === 'temperature') return value.toFixed(0);
-  if (property === 'heatFlux')    return (value / 1e6).toFixed(2);
   return value.toFixed(1);
 }
 
-function propRange(
-  profile:       FlowProfile,
-  property:      FlowProperty,
-  heatFluxData?: HeatFluxData,
-): [number, number] {
+function propRange(profile: FlowProfile, property: FlowProperty): [number, number] {
   if (property === 'mach')        return [profile.minMach, profile.maxMach];
   if (property === 'pressure')    return [profile.minP,    profile.maxP];
   if (property === 'temperature') return [profile.minT,    profile.maxT];
-  if (property === 'heatFlux' && heatFluxData)
-    return [heatFluxData.minHeatFlux, heatFluxData.maxHeatFlux];
   return [profile.minV, profile.maxV];
 }
 
 export function drawColorbar(
-  ctx:           CanvasRenderingContext2D,
-  cW:            number,
-  cH:            number,
-  profile:       FlowProfile,
-  property:      FlowProperty,
-  heatFluxData?: HeatFluxData,
+  ctx:      CanvasRenderingContext2D,
+  cW:       number,
+  cH:       number,
+  profile:  FlowProfile,
+  property: FlowProperty,
 ): void {
   const x = cW - 105;
   const y = cH - CB_H - 34;
@@ -421,7 +387,7 @@ export function drawColorbar(
   ctx.fillText(propLabel(property), x, y - 15);
 
   // Tick labels
-  const [min, max] = propRange(profile, property, heatFluxData);
+  const [min, max] = propRange(profile, property);
   ctx.font = '9px "Courier New", monospace';
   ctx.fillStyle = 'rgba(200,220,230,0.75)';
   for (let i = 0; i <= 4; i++) {

@@ -9,13 +9,6 @@ import MainContent from './components/mainContent/mainContent';
 import RightPanel from './components/rightPanel/rightPanel';
 import { type EngineDesignResult, type EngineImportData, type EngineFormInputs } from './services/engineDesignService';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from './components/engineContour/isentropicFlow';
-import { type RegenChannelParams, type RegenResult } from './components/engineContour/regenCooling';
-import {
-  WALL_TEMP_DEFAULT_K,
-  REGEN_NUM_CHANNELS_DEFAULT, REGEN_CHANNEL_WIDTH_MM_DEFAULT,
-  REGEN_CHANNEL_HEIGHT_MM_DEFAULT, REGEN_WALL_THICKNESS_MM_DEFAULT,
-  REGEN_COOLANT_INLET_TEMP_K_DEFAULT, REGEN_COOLANT_INLET_PRESSURE_BAR_DEFAULT,
-} from './components/engineContour/bartzConstants';
 import './App.css';
 
 const darkTheme = createTheme({
@@ -66,16 +59,6 @@ const darkTheme = createTheme({
   },
 });
 
-const DEFAULT_REGEN_PARAMS: RegenChannelParams = {
-  numChannels:              REGEN_NUM_CHANNELS_DEFAULT,
-  channelWidthMm:           REGEN_CHANNEL_WIDTH_MM_DEFAULT,
-  channelHeightMm:          REGEN_CHANNEL_HEIGHT_MM_DEFAULT,
-  wallThicknessMm:          REGEN_WALL_THICKNESS_MM_DEFAULT,
-  wallMaterial:             'copper',
-  coolantInletTempK:        REGEN_COOLANT_INLET_TEMP_K_DEFAULT,
-  coolantInletPressureBar:  REGEN_COOLANT_INLET_PRESSURE_BAR_DEFAULT,
-};
-
 export default function App() {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(true);
@@ -94,12 +77,6 @@ export default function App() {
   const [flowProperty, setFlowProperty]             = useState<FlowProperty>('mach');
   const [showParticles, setShowParticles]           = useState(true);
   const [showPlume, setShowPlume]                   = useState(true);
-  const [wallTempK, setWallTempK]                   = useState(WALL_TEMP_DEFAULT_K);
-  const [showHeatFluxPlot, setShowHeatFluxPlot]     = useState(false);
-  const [regenParams, setRegenParams]               = useState<RegenChannelParams>(DEFAULT_REGEN_PARAMS);
-  const [showRegenPlot, setShowRegenPlot]           = useState(false);
-  const [regenResult, setRegenResult]               = useState<RegenResult | null>(null);
-
   const opt = engineDesignResult?.engineOutputs?.mixtureRatio?.optimum ?? null;
   const hasPhysics = Boolean(
     opt?.specificHeatRatioGamma?.value &&
@@ -107,8 +84,6 @@ export default function App() {
     opt?.chamberTemperature?.value &&
     opt?.combustionMolecularWeight?.value,
   );
-  const fuelCode = engineDesignResult?.engineInputs?.propellents?.fuel?.code;
-  const fuelMassFlowKgPerS = opt?.fuelMassFlow?.value ? opt.fuelMassFlow.value / 1000 : undefined;
 
   const handleLeftToggle = useCallback(() => {
     setLeftCollapsed((prev) => {
@@ -189,22 +164,10 @@ export default function App() {
             nozzleType={nozzleType}
             angleOverrides={angleOverrides}
             showFlowSim={showFlowSim}
+            onShowFlowSimChange={setShowFlowSim}
             flowProperty={flowProperty}
             showParticles={showParticles}
             showPlume={showPlume}
-            wallTempK={wallTempK}
-            showHeatFluxPlot={showHeatFluxPlot}
-            regenParams={regenParams}
-            onShowFlowSimChange={setShowFlowSim}
-            onFlowPropertyChange={setFlowProperty}
-            onShowParticlesChange={setShowParticles}
-            onShowPlumeChange={setShowPlume}
-            onWallTempChange={setWallTempK}
-            onShowHeatFluxPlotChange={setShowHeatFluxPlot}
-            onRegenParamsChange={setRegenParams}
-            showRegenPlot={showRegenPlot}
-            onShowRegenPlotChange={setShowRegenPlot}
-            onRegenResultChange={setRegenResult}
           />
           <RightPanel
             collapsed={rightCollapsed}
@@ -215,8 +178,6 @@ export default function App() {
             onAngleOverridesChange={setAngleOverrides}
             expansionRatio={engineDesignResult?.engineOutputs?.mixtureRatio?.optimum?.expansionRatio?.value}
             hasPhysics={hasPhysics}
-            fuelCode={fuelCode}
-            fuelMassFlowKgPerS={fuelMassFlowKgPerS}
             showFlowSim={showFlowSim}
             flowProperty={flowProperty}
             onFlowPropertyChange={setFlowProperty}
@@ -224,15 +185,6 @@ export default function App() {
             onShowParticlesChange={setShowParticles}
             showPlume={showPlume}
             onShowPlumeChange={setShowPlume}
-            wallTempK={wallTempK}
-            onWallTempChange={setWallTempK}
-            showHeatFluxPlot={showHeatFluxPlot}
-            onShowHeatFluxPlotChange={setShowHeatFluxPlot}
-            regenParams={regenParams}
-            onRegenParamsChange={setRegenParams}
-            showRegenPlot={showRegenPlot}
-            onShowRegenPlotChange={setShowRegenPlot}
-            regenResult={regenResult}
           />
         </div>
       </div>

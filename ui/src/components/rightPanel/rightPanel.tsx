@@ -3,10 +3,7 @@ import { IconButton, Tooltip, Select, MenuItem, FormControl, Slider, Switch } fr
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from '../engineContour/isentropicFlow';
-import { type RegenChannelParams, type RegenResult } from '../engineContour/regenCooling';
 import { interpolateRaoAngles, RAO_LN_DEFAULT, RAO_LN_MIN, RAO_LN_MAX, RAO_LN_STEP } from '../engineContour/raoContour';
-import HeatFluxControls from '../engineContour/HeatFluxControls';
-import RegenCoolingControls from '../engineContour/RegenCoolingControls';
 import './rightPanel.css';
 
 interface RightPanelProps {
@@ -18,8 +15,6 @@ interface RightPanelProps {
   onAngleOverridesChange: (a: AngleOverrides) => void;
   expansionRatio?: number;
   hasPhysics: boolean;
-  fuelCode?: string;
-  fuelMassFlowKgPerS?: number;
   showFlowSim: boolean;
   flowProperty: FlowProperty;
   onFlowPropertyChange: (v: FlowProperty) => void;
@@ -27,15 +22,6 @@ interface RightPanelProps {
   onShowParticlesChange: (v: boolean) => void;
   showPlume: boolean;
   onShowPlumeChange: (v: boolean) => void;
-  wallTempK: number;
-  onWallTempChange: (v: number) => void;
-  showHeatFluxPlot: boolean;
-  onShowHeatFluxPlotChange: (v: boolean) => void;
-  regenParams: RegenChannelParams;
-  onRegenParamsChange: (p: RegenChannelParams) => void;
-  showRegenPlot: boolean;
-  onShowRegenPlotChange: (v: boolean) => void;
-  regenResult: RegenResult | null;
 }
 
 const sliderSx = {
@@ -55,12 +41,9 @@ const switchSx = {
 export default function RightPanel({
   collapsed, onToggle,
   nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange, expansionRatio = 8,
-  hasPhysics, fuelCode, fuelMassFlowKgPerS,
+  hasPhysics,
   showFlowSim, flowProperty, onFlowPropertyChange,
   showParticles, onShowParticlesChange, showPlume, onShowPlumeChange,
-  wallTempK, onWallTempChange, showHeatFluxPlot, onShowHeatFluxPlotChange,
-  regenParams, onRegenParamsChange,
-  showRegenPlot, onShowRegenPlotChange, regenResult,
 }: RightPanelProps) {
   const [activeTab, setActiveTab] = useState<'nozzle' | 'simulation'>('nozzle');
 
@@ -263,29 +246,6 @@ export default function RightPanel({
                       </FormControl>
                     </div>
 
-                    <div className="form-section-header">Heat Flux</div>
-                    <HeatFluxControls
-                      enabled={showFlowSim}
-                      wallTempK={wallTempK}
-                      onWallTempChange={onWallTempChange}
-                      showPlot={showHeatFluxPlot}
-                      onShowPlotChange={onShowHeatFluxPlotChange}
-                    />
-
-                    {fuelCode && fuelMassFlowKgPerS && (
-                      <>
-                        <div className="form-section-header" style={{ marginTop: 8 }}>Regen Cooling</div>
-                        <RegenCoolingControls
-                          enabled={showFlowSim}
-                          fuelCode={fuelCode}
-                          params={regenParams}
-                          onParamsChange={onRegenParamsChange}
-                          showPlot={showRegenPlot}
-                          onShowPlotChange={onShowRegenPlotChange}
-                          regenResult={regenResult ?? undefined}
-                        />
-                      </>
-                    )}
                   </>
                 )}
               </div>

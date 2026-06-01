@@ -4,7 +4,6 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from '../engineContour/isentropicFlow';
-import { type RegenChannelParams, type RegenResult } from '../engineContour/regenCooling';
 import MrGraph from '../mrGraph/MrGraph';
 import EngineContour from '../engineContour/EngineContour';
 import './mainContent.css';
@@ -54,29 +53,14 @@ interface MainContentProps {
   showFlowSim: boolean;
   onShowFlowSimChange: (v: boolean) => void;
   flowProperty: FlowProperty;
-  onFlowPropertyChange: (v: FlowProperty) => void;
   showParticles: boolean;
-  onShowParticlesChange: (v: boolean) => void;
   showPlume: boolean;
-  onShowPlumeChange: (v: boolean) => void;
-  wallTempK: number;
-  onWallTempChange: (v: number) => void;
-  showHeatFluxPlot: boolean;
-  onShowHeatFluxPlotChange: (v: boolean) => void;
-  regenParams: RegenChannelParams;
-  onRegenParamsChange: (p: RegenChannelParams) => void;
-  showRegenPlot: boolean;
-  onShowRegenPlotChange: (v: boolean) => void;
-  onRegenResultChange: (r: RegenResult | null) => void;
 }
 
 export default function MainContent({
   engineDesignResult, engineName, engineVersion, ambientPressureBar, nozzleType, angleOverrides,
-  showFlowSim, onShowFlowSimChange, flowProperty, onFlowPropertyChange,
-  showParticles, onShowParticlesChange, showPlume, onShowPlumeChange,
-  wallTempK, onWallTempChange, showHeatFluxPlot, onShowHeatFluxPlotChange,
-  regenParams, onRegenParamsChange,
-  showRegenPlot, onShowRegenPlotChange, onRegenResultChange,
+  showFlowSim, onShowFlowSimChange, flowProperty,
+  showParticles, showPlume,
 }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [sweepOpen, setSweepOpen] = useState(false);
@@ -135,18 +119,6 @@ export default function MainContent({
     setSweepOpen(false);
     setDialogSelectedRow(null);
   };
-
-  const cstarMs = confirmedRow
-    ? confirmedRow.characteristicVelocityCstar
-    : opt?.characteristicVelocityCstar.value ?? 0;
-
-  const fuelCode = engineDesignResult?.engineInputs.propellents.fuel.code;
-  // fuelMassFlow from CEA is in g/s; convert to kg/s for regen analysis
-  const fuelMassFlowKgPerS = confirmedRow
-    ? confirmedRow.fuelMassFlow / 1000
-    : opt?.fuelMassFlow.value
-      ? opt.fuelMassFlow.value / 1000
-      : undefined;
 
   const displayValues: StatsDisplayData | null = confirmedRow
     ? {
@@ -259,28 +231,13 @@ export default function MainContent({
               molecularWeightGMol={displayValues.molecularWeightGMol}
               exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
               ambientPressureBar={ambientPressureBar}
-              cstarMs={cstarMs}
-              fuelCode={fuelCode}
-              fuelMassFlowKgPerS={fuelMassFlowKgPerS}
               nozzleType={nozzleType}
               angleOverrides={angleOverrides}
               showFlowSim={showFlowSim}
               onShowFlowSimChange={onShowFlowSimChange}
               flowProperty={flowProperty}
-              onFlowPropertyChange={onFlowPropertyChange}
               showParticles={showParticles}
-              onShowParticlesChange={onShowParticlesChange}
               showPlume={showPlume}
-              onShowPlumeChange={onShowPlumeChange}
-              wallTempK={wallTempK}
-              onWallTempChange={onWallTempChange}
-              showHeatFluxPlot={showHeatFluxPlot}
-              onShowHeatFluxPlotChange={onShowHeatFluxPlotChange}
-              regenParams={regenParams}
-              onRegenParamsChange={onRegenParamsChange}
-              showRegenPlot={showRegenPlot}
-              onShowRegenPlotChange={onShowRegenPlotChange}
-              onRegenResultChange={onRegenResultChange}
             />
           ) : (
             <div className="canvas-placeholder">
