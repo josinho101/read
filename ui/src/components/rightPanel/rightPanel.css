@@ -45,3 +45,63 @@
   background: rgba(0, 229, 255, 0.3);
   border-radius: 2px;
 }
+
+.rp-reset-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(0, 229, 255, 0.8);
+  background-color: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rp-reset-btn:hover {
+  background-color: rgba(0, 229, 255, 0.15);
+  border-color: #00e5ff;
+  color: #00e5ff;
+}
+
+.sim-section-divider {
+  border: none;
+  border-top: 1px solid rgba(0, 229, 255, 0.1);
+  margin: 6px 0;
+}
+
+.sim-placeholder {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: rgba(200, 220, 230, 0.35);
+  padding: 16px 8px;
+  text-align: center;
+}
+
+.rp-switch-row {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.rp-sim-disabled {
+  opacity: 0.4;
+}
+
+.rp-switch-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: rgba(200, 220, 230, 0.7);
+  user-select: none;
+  transition: color 0.18s ease;
+}
+
+.rp-switch-label--active {
+  color: #00e5ff;
+}

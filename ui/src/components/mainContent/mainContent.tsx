@@ -3,7 +3,8 @@ import { Button, Tooltip } from '@mui/material';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
-import { type NozzleType, type AngleOverrides } from '../engineContour/isentropicFlow';
+import { type NozzleType, type AngleOverrides, type FlowProperty } from '../engineContour/isentropicFlow';
+import { type RegenChannelParams, type RegenResult } from '../engineContour/regenCooling';
 import MrGraph from '../mrGraph/MrGraph';
 import EngineContour from '../engineContour/EngineContour';
 import './mainContent.css';
@@ -49,12 +50,34 @@ interface MainContentProps {
   engineVersion: string;
   ambientPressureBar?: number;
   nozzleType: NozzleType;
-  onNozzleTypeChange: (t: NozzleType) => void;
   angleOverrides: AngleOverrides;
-  onAngleOverridesChange: (a: AngleOverrides) => void;
+  showFlowSim: boolean;
+  onShowFlowSimChange: (v: boolean) => void;
+  flowProperty: FlowProperty;
+  onFlowPropertyChange: (v: FlowProperty) => void;
+  showParticles: boolean;
+  onShowParticlesChange: (v: boolean) => void;
+  showPlume: boolean;
+  onShowPlumeChange: (v: boolean) => void;
+  wallTempK: number;
+  onWallTempChange: (v: number) => void;
+  showHeatFluxPlot: boolean;
+  onShowHeatFluxPlotChange: (v: boolean) => void;
+  regenParams: RegenChannelParams;
+  onRegenParamsChange: (p: RegenChannelParams) => void;
+  showRegenPlot: boolean;
+  onShowRegenPlotChange: (v: boolean) => void;
+  onRegenResultChange: (r: RegenResult | null) => void;
 }
 
-export default function MainContent({ engineDesignResult, engineName, engineVersion, ambientPressureBar, nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange }: MainContentProps) {
+export default function MainContent({
+  engineDesignResult, engineName, engineVersion, ambientPressureBar, nozzleType, angleOverrides,
+  showFlowSim, onShowFlowSimChange, flowProperty, onFlowPropertyChange,
+  showParticles, onShowParticlesChange, showPlume, onShowPlumeChange,
+  wallTempK, onWallTempChange, showHeatFluxPlot, onShowHeatFluxPlotChange,
+  regenParams, onRegenParamsChange,
+  showRegenPlot, onShowRegenPlotChange, onRegenResultChange,
+}: MainContentProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ENGINE CONTOUR');
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -240,9 +263,24 @@ export default function MainContent({ engineDesignResult, engineName, engineVers
               fuelCode={fuelCode}
               fuelMassFlowKgPerS={fuelMassFlowKgPerS}
               nozzleType={nozzleType}
-              onNozzleTypeChange={onNozzleTypeChange}
               angleOverrides={angleOverrides}
-              onAngleOverridesChange={onAngleOverridesChange}
+              showFlowSim={showFlowSim}
+              onShowFlowSimChange={onShowFlowSimChange}
+              flowProperty={flowProperty}
+              onFlowPropertyChange={onFlowPropertyChange}
+              showParticles={showParticles}
+              onShowParticlesChange={onShowParticlesChange}
+              showPlume={showPlume}
+              onShowPlumeChange={onShowPlumeChange}
+              wallTempK={wallTempK}
+              onWallTempChange={onWallTempChange}
+              showHeatFluxPlot={showHeatFluxPlot}
+              onShowHeatFluxPlotChange={onShowHeatFluxPlotChange}
+              regenParams={regenParams}
+              onRegenParamsChange={onRegenParamsChange}
+              showRegenPlot={showRegenPlot}
+              onShowRegenPlotChange={onShowRegenPlotChange}
+              onRegenResultChange={onRegenResultChange}
             />
           ) : (
             <div className="canvas-placeholder">

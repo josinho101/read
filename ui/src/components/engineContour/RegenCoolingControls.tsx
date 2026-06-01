@@ -1,4 +1,4 @@
-import { Slider, Checkbox, Tooltip } from '@mui/material';
+import { Slider, Checkbox, Tooltip, Select, MenuItem, FormControl } from '@mui/material';
 import { FUEL_COOLANT_PROPS } from './fuelCoolantProps';
 import type { RegenChannelParams, RegenResult, WallMaterial } from './regenCooling';
 import ChannelCrossSectionDiagram from './ChannelCrossSectionDiagram';
@@ -15,7 +15,6 @@ interface Props {
 
 const sliderSx = {
   color: '#00e5ff',
-  width: 80,
   '& .MuiSlider-thumb': { width: 10, height: 10, boxShadow: '0 0 4px rgba(0,229,255,0.6)' },
   '& .MuiSlider-track': { border: 'none' },
   '& .MuiSlider-rail':  { opacity: 0.3 },
@@ -58,84 +57,94 @@ export default function RegenCoolingControls({
 }: Props) {
   const disabledClass = !enabled ? ' ec2-overlay-switch--disabled' : '';
   const set = (partial: Partial<RegenChannelParams>) => onParamsChange({ ...params, ...partial });
-  const opacitySx = { ...sliderSx, opacity: enabled ? 1 : 0.35 };
 
   return (
     <>
       {/* Fuel suitability badge */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6, justifyContent: 'flex-end' }}>
+      <div className={`ec2-overlay-switch${disabledClass}`}>
         <FuelBadge fuelCode={fuelCode} />
       </div>
 
       {/* numChannels */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <Tooltip title="Number of coolant channels machined around the nozzle circumference" placement="left" arrow>
-          <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>N<sub>ch</sub></span>
-        </Tooltip>
-        <Slider value={params.numChannels} min={20} max={200} step={5} disabled={!enabled}
-          size="small" sx={opacitySx}
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Tooltip title="Number of coolant channels machined around the nozzle circumference" placement="left" arrow>
+            <span className="form-label">N<sub>ch</sub></span>
+          </Tooltip>
+          <span className="unit-badge">{params.numChannels}</span>
+        </div>
+        <Slider value={params.numChannels} min={20} max={300} step={5} disabled={!enabled}
+          size="small" sx={sliderSx}
           onChange={(_, v) => set({ numChannels: v as number })} />
-        <span className="ec2-angle-val" style={{ opacity: enabled ? 1 : 0.35, minWidth: 30 }}>{params.numChannels}</span>
       </div>
 
       {/* channelWidthMm */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <Tooltip title="Coolant channel width (mm)" placement="left" arrow>
-          <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>w<sub>ch</sub></span>
-        </Tooltip>
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Tooltip title="Coolant channel width (mm)" placement="left" arrow>
+            <span className="form-label">w<sub>ch</sub></span>
+          </Tooltip>
+          <span className="unit-badge">{params.channelWidthMm.toFixed(1)} mm</span>
+        </div>
         <Slider value={params.channelWidthMm} min={0.5} max={5.0} step={0.1} disabled={!enabled}
-          size="small" sx={opacitySx}
+          size="small" sx={sliderSx}
           onChange={(_, v) => set({ channelWidthMm: v as number })} />
-        <span className="ec2-angle-val" style={{ opacity: enabled ? 1 : 0.35, minWidth: 40 }}>{params.channelWidthMm.toFixed(1)} mm</span>
       </div>
 
       {/* channelHeightMm */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <Tooltip title="Coolant channel height / depth (mm)" placement="left" arrow>
-          <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>h<sub>ch</sub></span>
-        </Tooltip>
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Tooltip title="Coolant channel height / depth (mm)" placement="left" arrow>
+            <span className="form-label">h<sub>ch</sub></span>
+          </Tooltip>
+          <span className="unit-badge">{params.channelHeightMm.toFixed(1)} mm</span>
+        </div>
         <Slider value={params.channelHeightMm} min={0.5} max={5.0} step={0.1} disabled={!enabled}
-          size="small" sx={opacitySx}
+          size="small" sx={sliderSx}
           onChange={(_, v) => set({ channelHeightMm: v as number })} />
-        <span className="ec2-angle-val" style={{ opacity: enabled ? 1 : 0.35, minWidth: 40 }}>{params.channelHeightMm.toFixed(1)} mm</span>
       </div>
 
       {/* wallThicknessMm */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <Tooltip title="Hot-side wall thickness between the gas and coolant channel (mm)" placement="left" arrow>
-          <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>t<sub>wall</sub></span>
-        </Tooltip>
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Tooltip title="Hot-side wall thickness between the gas and coolant channel (mm)" placement="left" arrow>
+            <span className="form-label">t<sub>wall</sub></span>
+          </Tooltip>
+          <span className="unit-badge">{params.wallThicknessMm.toFixed(1)} mm</span>
+        </div>
         <Slider value={params.wallThicknessMm} min={0.2} max={3.0} step={0.1} disabled={!enabled}
-          size="small" sx={opacitySx}
+          size="small" sx={sliderSx}
           onChange={(_, v) => set({ wallThicknessMm: v as number })} />
-        <span className="ec2-angle-val" style={{ opacity: enabled ? 1 : 0.35, minWidth: 40 }}>{params.wallThicknessMm.toFixed(1)} mm</span>
       </div>
 
       {/* wallMaterial */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>Material</span>
-        <select
-          className="ec2-flow-select"
-          value={params.wallMaterial}
-          disabled={!enabled}
-          onChange={e => set({ wallMaterial: e.target.value as WallMaterial })}
-          style={{ opacity: enabled ? 1 : 0.35 }}
-        >
-          <option value="copper">Copper</option>
-          <option value="steel">Steel 304</option>
-          <option value="inconel">Inconel 718</option>
-        </select>
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <span className="form-label">Material</span>
+        <FormControl fullWidth size="small">
+          <Select
+            className="read-select"
+            value={params.wallMaterial}
+            disabled={!enabled}
+            onChange={e => set({ wallMaterial: e.target.value as WallMaterial })}
+          >
+            <MenuItem value="copper">Copper</MenuItem>
+            <MenuItem value="steel">Steel 304</MenuItem>
+            <MenuItem value="inconel">Inconel 718</MenuItem>
+          </Select>
+        </FormControl>
       </div>
 
       {/* coolantInletTempK */}
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <Tooltip title="Coolant temperature at the inlet (nozzle exit end). Typically near the propellant tank temperature." placement="left" arrow>
-          <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>T<sub>in</sub></span>
-        </Tooltip>
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Tooltip title="Coolant temperature at the inlet (nozzle exit end). Typically near the propellant tank temperature." placement="left" arrow>
+            <span className="form-label">T<sub>in</sub></span>
+          </Tooltip>
+          <span className="unit-badge">{params.coolantInletTempK} K</span>
+        </div>
         <Slider value={params.coolantInletTempK} min={50} max={500} step={10} disabled={!enabled}
-          size="small" sx={opacitySx}
+          size="small" sx={sliderSx}
           onChange={(_, v) => set({ coolantInletTempK: v as number })} />
-        <span className="ec2-angle-val" style={{ opacity: enabled ? 1 : 0.35, minWidth: 46 }}>{params.coolantInletTempK} K</span>
       </div>
 
       {/* Channel cross-section diagram */}

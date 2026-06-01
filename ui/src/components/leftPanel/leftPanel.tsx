@@ -6,17 +6,16 @@ import {
   MenuItem,
   FormControl,
   Tooltip,
-  Collapse,
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { propellantService, type Propellant } from '../../services/propellantService';
 import { engineDesignService, type EngineDesignResult, type EngineFormInputs } from '../../services/engineDesignService';
 import './leftPanel.css';
 
 interface LeftPanelProps {
+  collapsed: boolean;
+  onToggle: () => void;
   isLoading: boolean;
   onDesignStart: () => void;
   onDesignResult: (result: EngineDesignResult) => void;
@@ -27,10 +26,8 @@ interface LeftPanelProps {
   importData?: EngineFormInputs | null;
 }
 
-export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange, onAmbientPressureChange, onFormChange, importData }: LeftPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStart, onDesignResult, onDesignError, onEngineMetaChange, onAmbientPressureChange, onFormChange, importData }: LeftPanelProps) {
   const [activeTab, setActiveTab] = useState<'thrust' | 'payload'>('thrust');
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [fuels, setFuels] = useState<Propellant[]>([]);
   const [oxidizers, setOxidizers] = useState<Propellant[]>([]);
 
@@ -119,7 +116,7 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
     <aside className={`left-panel ${collapsed ? 'left-panel--collapsed' : ''}`}>
       <div className="left-panel-toggle">
         <Tooltip title={collapsed ? 'Expand panel' : 'Collapse panel'} placement="right">
-          <IconButton onClick={() => setCollapsed(!collapsed)} className="toggle-btn" size="small">
+          <IconButton onClick={onToggle} className="toggle-btn" size="small">
             {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
           </IconButton>
         </Tooltip>
@@ -294,7 +291,6 @@ export default function LeftPanel({ isLoading, onDesignStart, onDesignResult, on
                     disabled={isLoading}
                     className="read-input"
                     sx={{ flex: 1 }}
-                    inputProps={{ step: '0.01', min: '0.01' }}
                   />
                   <span className="unit-badge">bar</span>
                 </div>

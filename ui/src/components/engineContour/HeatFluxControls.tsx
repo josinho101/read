@@ -15,7 +15,6 @@ interface HeatFluxControlsProps {
 
 const sliderSx = {
   color: '#00e5ff',
-  width: 90,
   '& .MuiSlider-thumb': { width: 10, height: 10, boxShadow: '0 0 4px rgba(0,229,255,0.6)' },
   '& .MuiSlider-track': { border: 'none' },
   '& .MuiSlider-rail':  { opacity: 0.3 },
@@ -34,16 +33,17 @@ export default function HeatFluxControls({
 
   return (
     <>
-      <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px 8px', gap: 6 }}>
-        <Tooltip
-          title="Assumed temperature of the inner nozzle wall surface. Lower = cooled wall (higher heat load, e.g. regen/film cooling). Higher = uncooled or partially cooled wall. Scales heat flux: q = hg × (T_aw − T_wall)."
-          placement="left"
-          arrow
-        >
-          <span className={`ec2-switch-label${enabled ? ' ec2-switch-label--active' : ''}`}>
-            T<sub>wall</sub>
-          </span>
-        </Tooltip>
+      <div className={`form-group${!enabled ? ' rp-sim-disabled' : ''}`}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Tooltip
+            title="Assumed temperature of the inner nozzle wall surface. Lower = cooled wall (higher heat load, e.g. regen/film cooling). Higher = uncooled or partially cooled wall. Scales heat flux: q = hg × (T_aw − T_wall)."
+            placement="left"
+            arrow
+          >
+            <span className="form-label">T<sub>wall</sub></span>
+          </Tooltip>
+          <span className="unit-badge">{wallTempK} K</span>
+        </div>
         <Slider
           value={wallTempK}
           min={WALL_TEMP_MIN_K}
@@ -51,12 +51,9 @@ export default function HeatFluxControls({
           step={WALL_TEMP_STEP_K}
           disabled={!enabled}
           size="small"
-          sx={{ ...sliderSx, opacity: enabled ? 1 : 0.35 }}
+          sx={sliderSx}
           onChange={(_, v) => onWallTempChange(v as number)}
         />
-        <span className={`ec2-angle-val${enabled ? '' : ''}`} style={{ opacity: enabled ? 1 : 0.35, minWidth: 52 }}>
-          {wallTempK} K
-        </span>
       </div>
 
       <div className={`ec2-overlay-switch${disabledClass}`} style={{ padding: '3px' }}>
