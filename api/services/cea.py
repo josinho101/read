@@ -44,10 +44,10 @@ def plot_propulsion_tradeoffs(mr_list, isp_list, tc_list, opt_mr):
 def print_output_data(output_data):
     engine_inputs = output_data.get('engineInputs', {})
     engine_outputs = output_data.get('engineOutputs', {})
-    oxidizer_name = engine_inputs["propellents"]["oxidizer"]["name"]
-    fuel_name = engine_inputs["propellents"]["fuel"]["name"]
-    oxidizer_code = engine_inputs["propellents"]["oxidizer"]["code"]
-    fuel_code = engine_inputs["propellents"]["fuel"]["code"]
+    oxidizer_name = engine_inputs["propellants"]["oxidizer"]["name"]
+    fuel_name = engine_inputs["propellants"]["fuel"]["name"]
+    oxidizer_code = engine_inputs["propellants"]["oxidizer"]["code"]
+    fuel_code = engine_inputs["propellants"]["fuel"]["code"]
 
     print(f"========================================================================================================")
     print(f"                               RUNNING PROPULSION SWEEP ACROSS O/F RANGE                               ")
@@ -55,7 +55,7 @@ def print_output_data(output_data):
     print(f"{'MR (O/F)':<10} | {'Isp (s)':<8} | {'Tc (K)':<8} | {'C* (m/s)':<10} | {'Total Flow (g/s)':<18} | {'Ox Flow (g/s)':<15} | {'Fuel Flow (g/s)':<15}")
     print(f"-------------------------------------------------------------------------------------------------------")
     
-    sweep_data = engine_outputs.get('mixtureRatioSweep', {})
+    sweep_data = engine_outputs.get('mixtureRatio', {}).get('sweep', {})
     sweep_values = sweep_data.get('values', [])
     for item in sweep_values:
         mr = item['mixtureRatio']
@@ -76,26 +76,26 @@ def print_output_data(output_data):
     print(f"Propellants:         {oxidizer_name} ({oxidizer_code}) / {fuel_name} ({fuel_code})")
     print(f"Chamber Pressure:    {engine_inputs['chamberPressure']['value']:.1f} bar")
     print(f"Exit Pressure:       {engine_inputs['exitPressure']['value']:.3f} bar")
-    print(f"Optimum O/F Ratio:   {engine_outputs['optimumMixtureRatio']['optimum']['mixtureRatio']['value']:.2f}")
-    print(f"Nozzle Expansion Ratio:   {engine_outputs['nozzleGeometry']['expansionRatio']['value']:.3f}")
-    print(f"Nozzle Throat Radius:   {engine_outputs['nozzleGeometry']['throatRadius']['value']:.3f} mm")
-    print(f"Nozzle Exit Radius:     {engine_outputs['nozzleGeometry']['exitRadius']['value']:.3f} mm")
-    print(f"Chamber Radius:         {engine_outputs['nozzleGeometry']['chamberRadius']['value']:.3f} mm")
-    print(f"Contraction Ratio:      {engine_outputs['nozzleGeometry']['contractionRatio']['value']:.2f}")
+    opt = engine_outputs['mixtureRatio']['optimum']
+    print(f"Optimum O/F Ratio:   {opt['mixtureRatio']['value']:.2f}")
+    print(f"Nozzle Expansion Ratio:   {opt['expansionRatio']['value']:.3f}")
+    print(f"Nozzle Throat Radius:   {opt['throatRadius']['value']:.3f} mm")
+    print(f"Nozzle Exit Radius:     {opt['exitRadius']['value']:.3f} mm")
+    print(f"Chamber Radius:         {opt['chamberRadius']['value']:.3f} mm")
+    print(f"Contraction Ratio:      {opt['contractionRatio']['value']:.2f}")
     print(f"--------------------------------------------------")
-    opt = engine_outputs['optimumMixtureRatio']['optimum']
     print(f"THERMOCHEMICAL PERFORMANCE AT OPTIMUM MR:")
     print(f"Chamber Temp (Tc):   {opt['chamberTemperature']['value']:.1f} K")
-    print(f"Peak Isp Found:      {opt['peakSpecificImpulse']['value']:.2f} s")
+    print(f"Peak Isp Found:      {opt['specificImpulse']['value']:.2f} s")
     print(f"C* (Characteristic): {opt['characteristicVelocityCstar']['value']:.2f} m/s")
     print(f"Thrust Coeff (Cf):   {opt['thrustCoefficientCf']['value']:.3f}")
     print(f"Gamma (Chamber):     {opt['specificHeatRatioGamma']['value']:.4f}")
     print(f"Molecular Wt (Chm):  {opt['combustionMolecularWeight']['value']:.2f} g/mol")
     print(f"--------------------------------------------------")
     print(f"MASS FLOW RATE AT OPTIMUM MR:")
-    print(f"Total Mass Flow:     {engine_outputs['massFlowRates']['total']['value']:.2f} g/s")
-    print(f"Oxidizer Flow rate:  {engine_outputs['massFlowRates']['oxidizer']['value']:.2f} g/s")
-    print(f"Fuel Flow rate:      {engine_outputs['massFlowRates']['fuel']['value']:.2f} g/s")
+    print(f"Total Mass Flow:     {opt['totalMassFlow']['value']:.2f} g/s")
+    print(f"Oxidizer Flow rate:  {opt['oxidizerMassFlow']['value']:.2f} g/s")
+    print(f"Fuel Flow rate:      {opt['fuelMassFlow']['value']:.2f} g/s")
     print(f"==================================================")
 
 def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=500.0, pc_bar=20.0, pe_bar=1.013, mr_min=3.0, mr_max=6.5, console_output=False):
@@ -166,7 +166,7 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
     
     output_data = {
         "engineInputs": {
-            "propellents": {
+            "propellants": {
                 "oxidizer": {"name": get_oxidizer_name_by_code(ox_code), "code": ox_code},
                 "fuel": {"name": get_fuel_name_by_code(fuel_code), "code": fuel_code}
             },
@@ -226,7 +226,7 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
 if __name__ == "__main__":
     result = generate_rocket_engine_params(
         ox_code='N2O', 
-        fuelName='Ethanol',
+        fuel_code='Ethanol',
         thrust_N=500.0, 
         pc_bar=10.0, 
         pe_bar=1.013, 

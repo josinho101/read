@@ -163,7 +163,7 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
                 />
               </div>
 
-              <div className="form-section-header">Propellents</div>
+              <div className="form-section-header">Propellants</div>
               <div className="form-group">
                 <label className="form-label">Fuel</label>
                 <FormControl fullWidth size="small">

@@ -41,7 +41,7 @@ export interface MixtureRatioSweepEntry {
 
 export interface EngineDesignResult {
   engineInputs: {
-    propellents: {
+    propellants: {
       oxidizer: PropellantInfo;
       fuel: PropellantInfo;
     };
