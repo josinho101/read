@@ -18,28 +18,8 @@ A web-based rocket engine design tool. Input a propellant pair and thrust requir
 | Tool | Version | Notes |
 |------|---------|-------|
 | Python | 3.11+ | Backend runtime |
-| gfortran + gcc + make | any recent | Required by rocketcea to compile NASA CEA Fortran code at install time |
 | Node.js | 20+ | Frontend build and dev server |
 | Docker | any recent | Container run mode only |
-
-### Installing gfortran / gcc / make
-
-**Windows (MSYS2 recommended):**
-```bash
-pacman -S mingw-w64-x86_64-gcc-fortran make
-```
-
-**Ubuntu / Debian:**
-```bash
-sudo apt-get install gfortran gcc make
-```
-
-**macOS:**
-```bash
-brew install gcc make
-```
-
----
 
 ## Running Locally (Development)
 
@@ -98,7 +78,7 @@ The Docker image builds the React frontend and bundles it with the Flask backend
 docker build -t read-app .
 
 # Run the container
-docker run -p 5000:5000 read-app
+docker run -d -p 5000:5000 read-app
 ```
 
 Open `http://localhost:5000` in your browser.
