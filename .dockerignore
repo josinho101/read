@@ -1,0 +1,12 @@
+ui/node_modules/
+api/env/
+ui/dist/
+.git/
+.gitignore
+*.md
+**/__pycache__/
+**/*.pyc
+*.egg-info/
+.vscode/
+.idea/
+*.DS_Store

@@ -3,7 +3,7 @@ import { IconButton, Tooltip } from '@mui/material';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import { type EngineImportData } from '../../services/engineDesignService';
-import './Header.css';
+import './header.css';
 
 interface HeaderProps {
   onExportClick: () => void;
