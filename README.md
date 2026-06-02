@@ -71,7 +71,7 @@ API docs: `http://localhost:5173/swagger/`
 
 ## Running in Docker
 
-The Docker image builds the React frontend and bundles it with the Flask backend into a single container. Flask serves both the UI and the API from port 5000.
+The image uses a 3-stage build: Node.js compiles the React frontend, a Python builder stage compiles rocketcea's Fortran code (gfortran/gcc are isolated here and never reach the final image), then a lean runtime stage serves everything from port 5000. No compiler toolchain needed on your machine.
 
 ```bash
 # Build the image (first build takes ~10–15 minutes — rocketcea compiles Fortran)
@@ -105,7 +105,7 @@ read/
 │   │   ├── services/     # API client
 │   │   └── constants.ts  # Shared config (API base URL)
 │   └── vite.config.ts    # Dev server + proxy config
-└── Dockerfile            # Multi-stage build (Node → Python)
+└── Dockerfile            # 3-stage build: Node frontend → Python builder → lean runtime
 ```
 
 ---
