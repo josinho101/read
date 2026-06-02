@@ -2,8 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button, Tooltip } from '@mui/material';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
-import { type NozzleType, type AngleOverrides, type FlowProperty } from '../engineContour/isentropicFlow';
+import { type NozzleType, type AngleOverrides, type FlowProperty, computeGeometry } from '../engineContour/isentropicFlow';
+import { generateEngineDXF, downloadDXF } from '../../utils/dxfExport';
 import MrGraph from '../mrGraph/MrGraph';
 import EngineContour from '../engineContour/EngineContour';
 import './mainContent.css';
@@ -128,6 +130,21 @@ export default function MainContent({
     setDialogSelectedRow(null);
   };
 
+  const handleExportDXF = () => {
+    if (!displayValues) return;
+    const geom = computeGeometry(
+      nozzleType,
+      displayValues.chamberRadius,
+      displayValues.throatRadius,
+      displayValues.exitRadius,
+      displayValues.expansionRatio,
+      displayValues.contractionRatio,
+      angleOverrides,
+    );
+    const dxf = generateEngineDXF(geom, nozzleType);
+    downloadDXF(dxf, `${engineName}_v${engineVersion}_contour.dxf`);
+  };
+
   const displayValues: StatsDisplayData | null = confirmedRow
     ? {
         specificImpulse: confirmedRow.specificImpulse,
@@ -217,6 +234,21 @@ export default function MainContent({
                 disabled={!sweep}
               >
                 Mix Ratio Graph
+              </Button>
+            </span>
+          </Tooltip>
+
+          <Tooltip title={displayValues ? 'Export nozzle contour as DXF for CAD import' : 'Run engine design first'}>
+            <span>
+              <Button
+                className="toolbar-btn toolbar-btn--sweep"
+                variant="outlined"
+                size="small"
+                startIcon={<FileDownloadIcon sx={{ fontSize: 14 }} />}
+                onClick={handleExportDXF}
+                disabled={!displayValues}
+              >
+                Export DXF
               </Button>
             </span>
           </Tooltip>
