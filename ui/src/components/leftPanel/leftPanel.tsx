@@ -6,6 +6,8 @@ import {
   MenuItem,
   FormControl,
   Tooltip,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -43,7 +45,7 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
     });
   }, []);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<EngineFormInputs>({
     engineName: 'Engine1',
     engineVersion: '0.1',
     fuel: '',
@@ -52,9 +54,7 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
     maxMixtureRatio: '5.5',
     targetThrust: '1',
     chamberPressure: '10.0',
-    exitPressure: '1.013',
-    altitude: '0',
-    ambientPressure: '1.013',
+    performanceMode: 'sea_level',
   });
 
   useEffect(() => {
@@ -62,11 +62,10 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
 
     const thrust = parseFloat(form.targetThrust);
     const pc = parseFloat(form.chamberPressure);
-    const pe = parseFloat(form.exitPressure);
     const mrMin = parseFloat(form.minMixtureRatio);
     const mrMax = parseFloat(form.maxMixtureRatio);
 
-    if (isNaN(thrust) || isNaN(pc) || isNaN(pe) || isNaN(mrMin) || isNaN(mrMax)) return;
+    if (isNaN(thrust) || isNaN(pc) || isNaN(mrMin) || isNaN(mrMax)) return;
 
     const timer = setTimeout(async () => {
       onDesignStart();
@@ -76,7 +75,7 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
           fuel_code: form.fuel,
           target_thrust_N: thrust * 1000,
           pc_bar: pc,
-          pe_bar: pe,
+          performance_mode: form.performanceMode,
           mr_min: mrMin,
           mr_max: mrMax,
         });
@@ -87,17 +86,11 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [form.fuel, form.oxidizer, form.targetThrust, form.chamberPressure, form.exitPressure, form.minMixtureRatio, form.maxMixtureRatio, onDesignStart, onDesignResult, onDesignError]);
+  }, [form.fuel, form.oxidizer, form.targetThrust, form.chamberPressure, form.performanceMode, form.minMixtureRatio, form.maxMixtureRatio, onDesignStart, onDesignResult, onDesignError]);
 
   useEffect(() => {
     onEngineMetaChange(form.engineName, form.engineVersion);
   }, [form.engineName, form.engineVersion, onEngineMetaChange]);
-
-  useEffect(() => {
-    if (!onAmbientPressureChange) return;
-    const v = parseFloat(form.ambientPressure);
-    if (!isNaN(v) && v > 0) onAmbientPressureChange(v);
-  }, [form.ambientPressure, onAmbientPressureChange]);
 
   useEffect(() => {
     onFormChange?.(form);
@@ -263,37 +256,18 @@ export default function LeftPanel({ collapsed, onToggle, isLoading, onDesignStar
               </div>
 
               <div className="form-group">
-                <label className="form-label">Exit Pressure</label>
-                <div className="input-with-unit">
-                  <TextField
-                    value={form.exitPressure}
-                    onChange={handleChange('exitPressure')}
-                    variant="outlined"
-                    size="small"
-                    type="number"
-                    disabled={isLoading}
-                    className="read-input"
-                    sx={{ flex: 1 }}
-                  />
-                  <span className="unit-badge">bar</span>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Ambient Pressure</label>
-                <div className="input-with-unit">
-                  <TextField
-                    value={form.ambientPressure}
-                    onChange={handleChange('ambientPressure')}
-                    variant="outlined"
-                    size="small"
-                    type="number"
-                    disabled={isLoading}
-                    className="read-input"
-                    sx={{ flex: 1 }}
-                  />
-                  <span className="unit-badge">bar</span>
-                </div>
+                <label className="form-label">Performance Mode</label>
+                <ToggleButtonGroup
+                  value={form.performanceMode}
+                  exclusive
+                  onChange={(_, val) => val && setForm((p) => ({ ...p, performanceMode: val }))}
+                  size="small"
+                  disabled={isLoading}
+                  fullWidth
+                >
+                  <ToggleButton value="sea_level" sx={{ flex: 1, fontSize: '0.7rem' }}>Sea Level</ToggleButton>
+                  <ToggleButton value="vacuum" sx={{ flex: 1, fontSize: '0.7rem' }}>Vacuum</ToggleButton>
+                </ToggleButtonGroup>
               </div>
             </div>
           )}

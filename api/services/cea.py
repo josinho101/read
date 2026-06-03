@@ -5,6 +5,9 @@ from rocketcea.cea_obj_w_units import CEA_Obj
 
 from services.propellants_service import get_fuel_name_by_code, get_oxidizer_name_by_code
 
+VACUUM_EPS = 40.0
+SEA_LEVEL_PRESSURE_BAR = 1.01325
+
 def plot_propulsion_tradeoffs(mr_list, isp_list, tc_list, opt_mr):
     """
     Dedicated function to plot the trade-off curves for Specific Impulse
@@ -12,7 +15,6 @@ def plot_propulsion_tradeoffs(mr_list, isp_list, tc_list, opt_mr):
     """
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    # Plot Specific Impulse on the left axis
     color = 'tab:blue'
     ax1.set_xlabel('Mixture Ratio (O/F)', fontweight='bold')
     ax1.set_ylabel('Ideal Sea Level Isp (s)', color=color, fontweight='bold')
@@ -20,24 +22,21 @@ def plot_propulsion_tradeoffs(mr_list, isp_list, tc_list, opt_mr):
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.grid(True, linestyle=':', alpha=0.6)
 
-    # Instantiate a second axis that shares the same x-axis for temperature
     ax2 = ax1.twinx()
     color = 'tab:red'
     ax2.set_ylabel('Chamber Flame Temp Tc (K)', color=color, fontweight='bold')
     ax2.plot(mr_list, tc_list, color=color, linewidth=2, linestyle='--', label='Chamber Temp (Tc)')
     ax2.tick_params(axis='y', labelcolor=color)
 
-    # Highlight the optimal performance operating point
     ax1.axvline(opt_mr, color='green', linestyle=':', linewidth=2, label=f'Optimal O/F ({opt_mr:.2f})')
-    
+
     plt.title('Rocket Propellant Performance Trade-offs', fontsize=14, fontweight='bold')
     fig.tight_layout()
-    
-    # Combine labels from both axes for a clean unified legend box
+
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc='lower center')
-    
+
     print("Displaying Mixture Ratio trade-off chart window")
     plt.show()
 
@@ -48,13 +47,14 @@ def print_output_data(output_data):
     fuel_name = engine_inputs["propellants"]["fuel"]["name"]
     oxidizer_code = engine_inputs["propellants"]["oxidizer"]["code"]
     fuel_code = engine_inputs["propellants"]["fuel"]["code"]
+    performance_mode = engine_inputs.get("performanceMode", "sea_level")
 
     print(f"========================================================================================================")
     print(f"                               RUNNING PROPULSION SWEEP ACROSS O/F RANGE                               ")
     print(f"========================================================================================================")
     print(f"{'MR (O/F)':<10} | {'Isp (s)':<8} | {'Tc (K)':<8} | {'C* (m/s)':<10} | {'Total Flow (g/s)':<18} | {'Ox Flow (g/s)':<15} | {'Fuel Flow (g/s)':<15}")
     print(f"-------------------------------------------------------------------------------------------------------")
-    
+
     sweep_data = engine_outputs.get('mixtureRatio', {}).get('sweep', {})
     sweep_values = sweep_data.get('values', [])
     for item in sweep_values:
@@ -66,7 +66,7 @@ def print_output_data(output_data):
         mdot_ox = item['oxidizerMassFlow']
         mdot_fuel = item['fuelMassFlow']
         print(f"{mr:<10.2f} | {isp:<8.2f} | {tc:<8.1f} | {cstar:<10.2f} | {mdot_total:<18.2f} | {mdot_ox:<15.2f} | {mdot_fuel:<15.2f}")
-    
+
     print(f"========================================================================================================")
 
     print(f"==================================================")
@@ -75,7 +75,7 @@ def print_output_data(output_data):
     print(f"Target Thrust:       {engine_inputs['targetThrust']['value']:.1f} N")
     print(f"Propellants:         {oxidizer_name} ({oxidizer_code}) / {fuel_name} ({fuel_code})")
     print(f"Chamber Pressure:    {engine_inputs['chamberPressure']['value']:.1f} bar")
-    print(f"Exit Pressure:       {engine_inputs['exitPressure']['value']:.3f} bar")
+    print(f"Performance Mode:    {performance_mode.replace('_', ' ').title()}")
     opt = engine_outputs['mixtureRatio']['optimum']
     print(f"Optimum O/F Ratio:   {opt['mixtureRatio']['value']:.2f}")
     print(f"Nozzle Expansion Ratio:   {opt['expansionRatio']['value']:.3f}")
@@ -98,23 +98,36 @@ def print_output_data(output_data):
     print(f"Fuel Flow rate:      {opt['fuelMassFlow']['value']:.2f} g/s")
     print(f"==================================================")
 
-def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=500.0, pc_bar=20.0, pe_bar=1.013, mr_min=3.0, mr_max=6.5, console_output=False):
+def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=500.0, pc_bar=20.0, mr_min=3.0, mr_max=6.5, performance_mode='sea_level', console_output=False):
     """Main execution wrapper to compute core engine characteristics and drive sub-modules."""
-    g0 = 9.80665  
+    g0 = 9.80665
     cea_obj = CEA_Obj(oxName=ox_code, fuelName=fuel_code, pressure_units='bar', isp_units='sec', cstar_units='m/s', temperature_units='K')
-    pc_ov_pe = pc_bar / pe_bar
-    
-    # Evaluate performance parameters iteratively across the specified O/F sweep boundaries
+
     contraction_ratio = 8.0
     mr_range = np.linspace(mr_min, mr_max, 25)
     isp_list, tc_list, records = [], [], []
     json_sweep_array = []
 
     for mr in mr_range:
-        eps_step = cea_obj.get_eps_at_PcOvPe(PcOvPe=pc_ov_pe, MR=mr)
-        isp_step = cea_obj.get_Isp(Pc=pc_bar, MR=mr, eps=eps_step)
         cstar_step = cea_obj.get_Cstar(Pc=pc_bar, MR=mr)
         tc_step = cea_obj.get_Tcomb(Pc=pc_bar, MR=mr)
+
+        if performance_mode == 'vacuum':
+            eps_step = VACUUM_EPS
+        else:
+            eps_step = cea_obj.get_eps_at_PcOvPe(PcOvPe=pc_bar / SEA_LEVEL_PRESSURE_BAR, MR=mr)
+
+        # Get vacuum Isp at this eps, back-calculate vacuum Cf, then apply ambient correction
+        isp_vac_step = cea_obj.get_Isp(Pc=pc_bar, MR=mr, eps=eps_step)
+        cf_vac_step = (isp_vac_step * g0) / cstar_step
+
+        if performance_mode == 'vacuum':
+            cf_step = cf_vac_step
+            isp_step = isp_vac_step
+        else:
+            cf_step = cf_vac_step - eps_step * (SEA_LEVEL_PRESSURE_BAR / pc_bar)
+            isp_step = (cf_step * cstar_step) / g0
+
         ch_mw_step, gamma_step = cea_obj.get_Chamber_MolWt_gamma(Pc=pc_bar, MR=mr, eps=eps_step)
 
         isp_list.append(isp_step)
@@ -123,7 +136,6 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
         mdot_total_step = thrust_N / (isp_step * g0)
         mdot_fuel_step = mdot_total_step / (1.0 + mr)
         mdot_ox_step = mdot_total_step - mdot_fuel_step
-        cf_step = (isp_step * g0) / cstar_step
 
         A_throat_step = (mdot_total_step * cstar_step) / (pc_bar * 1e5)
         throat_radius_mm_step = np.sqrt(A_throat_step / np.pi) * 1000
@@ -148,22 +160,25 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
             "chamberRadius": round(float(chamber_radius_mm_step), 3),
             "contractionRatio": round(float(contraction_ratio), 3)
         })
-        
-    # Isolate optimum indexing entries matching peak specific impulse conditions
+
     opt_idx = np.argmax(np.array(isp_list))
     opt_mr, peak_isp, cstar, t_comb, mdot_total, mdot_ox, mdot_fuel, opt_eps = records[opt_idx]
     ch_mw, gamma_throat = cea_obj.get_Chamber_MolWt_gamma(Pc=pc_bar, MR=opt_mr, eps=opt_eps)
-    
-    # Geometric sizing calculations at optimum MR
-    cf = (peak_isp * g0) / cstar
 
-    A_throat = (mdot_total * cstar) / (pc_bar * 1e5)          # m^2
-    A_exit = A_throat * opt_eps                                 # m^2
-    A_chamber = A_throat * contraction_ratio                    # m^2
+    isp_vac_opt = cea_obj.get_Isp(Pc=pc_bar, MR=opt_mr, eps=opt_eps)
+    cf_vac_opt = (isp_vac_opt * g0) / cstar
+    if performance_mode == 'vacuum':
+        cf = cf_vac_opt
+    else:
+        cf = cf_vac_opt - opt_eps * (SEA_LEVEL_PRESSURE_BAR / pc_bar)
+
+    A_throat = (mdot_total * cstar) / (pc_bar * 1e5)
+    A_exit = A_throat * opt_eps
+    A_chamber = A_throat * contraction_ratio
     throat_radius_mm = np.sqrt(A_throat / np.pi) * 1000
     exit_radius_mm = np.sqrt(A_exit / np.pi) * 1000
     chamber_radius_mm = np.sqrt(A_chamber / np.pi) * 1000
-    
+
     output_data = {
         "engineInputs": {
             "propellants": {
@@ -172,7 +187,7 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
             },
             "targetThrust": {"value": thrust_N, "unit": "N"},
             "chamberPressure": {"value": pc_bar, "unit": "bar"},
-            "exitPressure": {"value": pe_bar, "unit": "bar"}
+            "performanceMode": performance_mode
         },
         "engineOutputs": {
             "mixtureRatio": {
@@ -183,7 +198,7 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
                     "thrustCoefficientCf": {"value": round(float(cf), 3), "unit": "dimensionless"},
                     "chamberTemperature": {"value": round(float(t_comb), 3), "unit": "K"},
                     "specificHeatRatioGamma": {"value": round(float(gamma_throat), 3), "unit": "dimensionless"},
-                    "combustionMolecularWeight": {"value": round(float(ch_mw), 3), "unit": "g/mol"},                    
+                    "combustionMolecularWeight": {"value": round(float(ch_mw), 3), "unit": "g/mol"},
                     "totalMassFlow": {"value": round(float(mdot_total * 1000.0), 3), "unit": "g/s"},
                     "oxidizerMassFlow": {"value": round(float(mdot_ox * 1000.0), 3), "unit": "g/s"},
                     "fuelMassFlow": {"value": round(float(mdot_fuel * 1000.0), 3), "unit": "g/s"},
@@ -225,13 +240,13 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
 
 if __name__ == "__main__":
     result = generate_rocket_engine_params(
-        ox_code='N2O', 
+        ox_code='N2O',
         fuel_code='Ethanol',
-        thrust_N=500.0, 
-        pc_bar=10.0, 
-        pe_bar=1.013, 
-        mr_min=3.5, 
-        mr_max=5.5, 
+        thrust_N=500.0,
+        pc_bar=10.0,
+        mr_min=3.5,
+        mr_max=5.5,
+        performance_mode='sea_level',
         console_output=True
     )
     print(json.dumps(result))

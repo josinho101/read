@@ -6,7 +6,7 @@ export interface EngineDesignParams {
   fuel_code: string;
   target_thrust_N: number;
   pc_bar: number;
-  pe_bar: number;
+  performance_mode: 'sea_level' | 'vacuum';
   mr_min: number;
   mr_max: number;
 }
@@ -47,7 +47,7 @@ export interface EngineDesignResult {
     };
     targetThrust: ValueUnit;
     chamberPressure: ValueUnit;
-    exitPressure: ValueUnit;
+    performanceMode: 'sea_level' | 'vacuum';
   };
   engineOutputs: {
     mixtureRatio: {
@@ -85,9 +85,7 @@ export interface EngineFormInputs {
   maxMixtureRatio: string;
   targetThrust: string;
   chamberPressure: string;
-  exitPressure: string;
-  altitude: string;
-  ambientPressure: string;
+  performanceMode: 'sea_level' | 'vacuum';
 }
 
 export interface EngineImportData {
@@ -115,7 +113,7 @@ class EngineDesignService extends BaseApi {
       fuel_code: params.fuel_code,
       target_thrust_N: String(params.target_thrust_N),
       pc_bar: String(params.pc_bar),
-      pe_bar: String(params.pe_bar),
+      performance_mode: params.performance_mode,
       mr_min: String(params.mr_min),
       mr_max: String(params.mr_max),
     });

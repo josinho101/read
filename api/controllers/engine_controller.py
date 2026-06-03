@@ -8,7 +8,7 @@ def get_engine_design():
     ox_code = request.args.get('ox_code', default='LOX')
     fuel_code = request.args.get('fuel_code', default='RP1')
     pc_bar = float(request.args.get('pc_bar', default=20.0))
-    pe_bar = float(request.args.get('pe_bar', default=1.013))
+    performance_mode = request.args.get('performance_mode', default='sea_level')
     target_thrust_N = float(request.args.get('target_thrust_N', default=500.0))
     mr_min = float(request.args.get('mr_min', default=3.5))
     mr_max = float(request.args.get('mr_max', default=5.5))
@@ -17,10 +17,10 @@ def get_engine_design():
         ox_code=ox_code,
         fuel_code=fuel_code,
         pc_bar=pc_bar,
-        pe_bar=pe_bar,
         thrust_N=target_thrust_N,
         mr_min=mr_min,
-        mr_max=mr_max
+        mr_max=mr_max,
+        performance_mode=performance_mode
     )
 
     return jsonify(json_output), 200

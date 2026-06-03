@@ -64,7 +64,7 @@ definitions:
       specificImpulse:
         type: number
         format: float
-        description: "Specific impulse in seconds"
+        description: "Specific impulse in seconds (sea-level or vacuum depending on performance_mode)"
       chamberTemperature:
         type: number
         format: float
@@ -76,7 +76,7 @@ definitions:
       thrustCoefficientCf:
         type: number
         format: float
-        description: "Thrust coefficient (dimensionless)"
+        description: "Thrust coefficient — sea-level corrected or ideal vacuum (dimensionless)"
       specificHeatRatioGamma:
         type: number
         format: float
@@ -150,7 +150,7 @@ definitions:
           - propellants
           - targetThrust
           - chamberPressure
-          - exitPressure
+          - performanceMode
         properties:
           propellants:
             type: object
@@ -166,8 +166,12 @@ definitions:
             $ref: '#/definitions/ValueUnit'
           chamberPressure:
             $ref: '#/definitions/ValueUnit'
-          exitPressure:
-            $ref: '#/definitions/ValueUnit'
+          performanceMode:
+            type: string
+            enum:
+              - sea_level
+              - vacuum
+            description: "Performance mode used for Isp and Cf calculations"
       engineOutputs:
         type: object
         required:
@@ -283,13 +287,15 @@ paths:
           format: "float"
           default: 20.0
           description: "Chamber pressure in bar"
-        - name: "pe_bar"
+        - name: "performance_mode"
           in: "query"
           required: false
-          type: "number"
-          format: "float"
-          default: 1.013
-          description: "Exit pressure in bar"
+          type: "string"
+          enum:
+            - "sea_level"
+            - "vacuum"
+          default: "sea_level"
+          description: "Performance mode. 'sea_level' computes Isp and Cf corrected for 1.01325 bar ambient back-pressure; 'vacuum' computes uncorrected ideal vacuum values at a fixed large expansion ratio."
         - name: "target_thrust_N"
           in: "query"
           required: false

@@ -88,6 +88,14 @@ export default function MainContent({
   const outputs = engineDesignResult?.engineOutputs ?? null;
   const opt = outputs?.mixtureRatio.optimum ?? null;
   const sweep = outputs?.mixtureRatio.sweep ?? null;
+  const performanceMode = engineDesignResult?.engineInputs.performanceMode ?? 'sea_level';
+  const ispLabel = performanceMode === 'vacuum' ? 'Isp (Vac)' : 'Isp (SL)';
+  const cfLabel = performanceMode === 'vacuum' ? 'Cf (Vac)' : 'Cf (SL)';
+  const sweepColumns = SWEEP_COLUMNS.map((col) => {
+    if (col.key === 'specificImpulse') return { ...col, label: ispLabel };
+    if (col.key === 'thrustCoefficientCf') return { ...col, label: cfLabel };
+    return col;
+  });
 
   const fmt = (v: number, decimals: number) => v.toFixed(decimals);
 
@@ -174,7 +182,7 @@ export default function MainContent({
     : null;
 
   const stats = [
-    { label: 'SPECIFIC IMPULSE',     value: displayValues ? fmt(displayValues.specificImpulse, 1) : '--',               unit: 's'    },
+    { label: `SPECIFIC IMPULSE (${performanceMode === 'vacuum' ? 'VAC' : 'SL'})`, value: displayValues ? fmt(displayValues.specificImpulse, 1) : '--', unit: 's' },
     { label: 'MASS FLOW RATE',        value: displayValues ? fmt(displayValues.totalMassFlow / 1000, 2) : '--',          unit: 'kg/s' },
     { label: 'CHAMBER DIAMETER (DC)', value: displayValues ? fmt(displayValues.chamberRadius * 2 / 10, 2) : '--',       unit: 'cm'   },
     { label: 'THROAT DIAMETER (DT)',  value: displayValues ? fmt(displayValues.throatRadius * 2 / 10, 2) : '--',        unit: 'cm'   },
@@ -269,7 +277,7 @@ export default function MainContent({
               chamberPressureBar={engineDesignResult!.engineInputs.chamberPressure.value}
               chamberTemperatureK={displayValues.chamberTemperature}
               molecularWeightGMol={displayValues.molecularWeightGMol}
-              exitPressureBar={engineDesignResult!.engineInputs.exitPressure.value}
+              exitPressureBar={performanceMode === 'sea_level' ? 1.01325 : 0.001}
               ambientPressureBar={ambientPressureBar}
               nozzleType={nozzleType}
               onNozzleTypeChange={onNozzleTypeChange}
@@ -337,7 +345,7 @@ export default function MainContent({
                   <thead>
                     <tr>
                       <th className="sweep-th sweep-th--check" />
-                      {SWEEP_COLUMNS.map((col) => (
+                      {sweepColumns.map((col) => (
                         <th
                           key={col.key}
                           className={`sweep-th sweep-th--sortable ${sortCol === col.key ? 'sweep-th--sorted' : ''}`}
@@ -374,7 +382,7 @@ export default function MainContent({
                               aria-label={`Select O/F ${row.mixtureRatio.toFixed(3)}`}
                             />
                           </td>
-                          {SWEEP_COLUMNS.map((col) => (
+                          {sweepColumns.map((col) => (
                             <td key={col.key} className="sweep-td">
                               {row[col.key].toFixed(col.decimals)}
                             </td>
