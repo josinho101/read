@@ -132,6 +132,9 @@
 }
 
 .form-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
   font-weight: 700;
@@ -141,6 +144,83 @@
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(0, 229, 255, 0.2);
   text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-section-chevron {
+  font-size: 12px;
+  color: rgba(0, 229, 255, 0.5);
+  text-shadow: none;
+  letter-spacing: 0;
+}
+
+.lp-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.lp-lstar-range {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(0, 229, 255, 0.55);
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 3px;
+  padding: 3px 6px;
+  margin-top: 4px;
+}
+
+.lp-lstar-warning {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(244, 67, 54, 0.9);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.lp-tab-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: #00e5ff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.lp-tab-link:hover {
+  color: #4dfaff;
+}
+
+.lp-derived {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.45);
+  margin-top: 4px;
+}
+
+.lp-reset-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(0, 229, 255, 0.8);
+  background-color: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lp-reset-btn:hover {
+  background-color: rgba(0, 229, 255, 0.15);
+  border-color: #00e5ff;
+  color: #00e5ff;
 }
 
 /* Advanced toggle */
@@ -224,3 +304,4 @@
 .read-select svg {
   color: rgba(0, 229, 255, 0.6);
 }
+

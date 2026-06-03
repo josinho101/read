@@ -1,0 +1,294 @@
+.ca-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: 20px 24px;
+  font-family: 'Courier New', Courier, monospace;
+  background: #090d12;
+  color: rgba(200, 220, 230, 0.85);
+  box-sizing: border-box;
+}
+
+.ca-root--empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.ca-empty-text {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: rgba(200, 220, 230, 0.3);
+}
+
+/* Header */
+.ca-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  flex-wrap: wrap;
+}
+
+.ca-header-propellants {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.ca-ox-name {
+  color: #00e5ff;
+}
+
+.ca-slash {
+  color: rgba(200, 220, 230, 0.4);
+  margin: 0 4px;
+}
+
+.ca-fuel-name {
+  color: rgba(220, 235, 245, 0.9);
+}
+
+.ca-header-meta {
+  font-size: 12px;
+  color: rgba(200, 220, 230, 0.5);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ca-sep {
+  color: rgba(0, 229, 255, 0.25);
+}
+
+/* Body */
+.ca-body {
+  display: flex;
+  gap: 28px;
+  flex: 1;
+  margin-top: 16px;
+  min-height: 0;
+}
+
+.ca-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ca-section--species {
+  flex: 1.4;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
+}
+
+.ca-section--quality {
+  flex: 1;
+}
+
+.ca-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: rgba(0, 229, 255, 0.7);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+  padding-bottom: 5px;
+  text-transform: uppercase;
+}
+
+/* Legend */
+.ca-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.ca-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.5);
+}
+
+.ca-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Species rows */
+.ca-species-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ca-species-row {
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.ca-species-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+}
+
+.ca-species-name {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 38px;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.ca-bar-wrap {
+  flex: 1;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ca-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.ca-species-pct {
+  font-size: 11px;
+  min-width: 38px;
+  text-align: right;
+  color: rgba(200, 220, 230, 0.6);
+  flex-shrink: 0;
+}
+
+
+.ca-no-species {
+  font-size: 11px;
+  color: rgba(200, 220, 230, 0.3);
+  padding: 12px 0;
+}
+
+/* Combustion quality */
+.ca-quality {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ca-quality-bar {
+  display: flex;
+  height: 16px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ca-quality-seg {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.ca-quality-seg--complete   { background: #4fc3f7; }
+.ca-quality-seg--incomplete { background: #ffb300; }
+.ca-quality-seg--radical    { background: #ef5350; }
+
+.ca-quality-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ca-ql-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.6);
+}
+
+.ca-ql-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ca-quality-note {
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.38);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Chamber geometry */
+.ca-geom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ca-geom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ca-geom-label {
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.5);
+  flex: 1;
+  min-width: 120px;
+}
+
+.ca-geom-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(220, 235, 245, 0.85);
+  white-space: nowrap;
+}
+
+.ca-geom-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.ca-geom-badge--ok {
+  background: rgba(79, 195, 247, 0.12);
+  color: #4fc3f7;
+  border: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+.ca-geom-badge--warn {
+  background: rgba(255, 179, 0, 0.1);
+  color: #ffb300;
+  border: 1px solid rgba(255, 179, 0, 0.3);
+}
+
+.ca-geom-subtext {
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.35);
+  padding-left: 4px;
+}
+
+.ca-geom-explainer {
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.35);
+  line-height: 1.6;
+  margin: 6px 0 0 0;
+}

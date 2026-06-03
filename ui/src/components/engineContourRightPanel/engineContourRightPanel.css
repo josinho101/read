@@ -105,3 +105,80 @@
 .rp-switch-label--active {
   color: #00e5ff;
 }
+
+.rp-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0 4px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rp-section-title {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(0, 229, 255, 0.7);
+  text-transform: uppercase;
+}
+
+.rp-section-chevron {
+  font-size: 12px;
+  color: rgba(0, 229, 255, 0.5);
+}
+
+.rp-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.rp-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rp-lstar-range {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(0, 229, 255, 0.55);
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 3px;
+  padding: 3px 6px;
+  margin-top: 4px;
+}
+
+.rp-lstar-warning {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(244, 67, 54, 0.9);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.rp-tab-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: #00e5ff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.rp-tab-link:hover {
+  color: #4dfaff;
+}
+
+.rp-derived {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.45);
+  margin-top: 4px;
+}

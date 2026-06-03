@@ -8,6 +8,19 @@ from services.propellants_service import get_fuel_name_by_code, get_oxidizer_nam
 VACUUM_EPS = 40.0
 SEA_LEVEL_PRESSURE_BAR = 1.01325
 
+L_STAR_DEFAULTS: dict[tuple[str, str], tuple[float, float]] = {
+    ('LOX',   'LH2'):     (0.50, 0.80),
+    ('LOX',   'RP1'):     (0.90, 1.10),
+    ('LOX',   'CH4'):     (0.80, 1.10),
+    ('LOX',   'Ethanol'): (0.90, 1.10),
+    ('N2O4',  'MMH'):     (0.80, 1.10),
+    ('N2O4',  'UDMH'):    (0.80, 1.10),
+    ('N2O4',  'N2H4'):    (0.90, 1.20),
+    ('N2O',   'Ethanol'): (1.00, 1.30),
+    ('N2O',   'RP1'):     (0.90, 1.20),
+}
+L_STAR_FALLBACK = (0.90, 1.20)
+
 def plot_propulsion_tradeoffs(mr_list, isp_list, tc_list, opt_mr):
     """
     Dedicated function to plot the trade-off curves for Specific Impulse
@@ -98,12 +111,34 @@ def print_output_data(output_data):
     print(f"Fuel Flow rate:      {opt['fuelMassFlow']['value']:.2f} g/s")
     print(f"==================================================")
 
-def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=500.0, pc_bar=20.0, mr_min=3.0, mr_max=6.5, performance_mode='sea_level', console_output=False):
+def _extract_chamber_species(cea_obj, pc_bar: float, mr: float, eps: float) -> list:
+    """Extract chamber species mass fractions from CEA, returning sorted list of {species, massFraction}."""
+    CHM_IDX = 1  # injface=0, chamber=1, throat=2, exit=3
+    try:
+        _molwt, mass_frac_d = cea_obj.get_SpeciesMassFractions(Pc=pc_bar, MR=mr, eps=eps, min_fraction=0.0001)
+    except Exception:
+        return []
+    result = []
+    for name, frac_list in mass_frac_d.items():
+        chm_frac = float(frac_list[CHM_IDX])
+        if chm_frac >= 0.0001:
+            result.append({"species": name.strip(), "massFraction": round(chm_frac, 6)})
+    result.sort(key=lambda x: x["massFraction"], reverse=True)
+    return result
+
+
+def generate_rocket_engine_params(
+    ox_code='N2O', fuel_code='Ethanol',
+    thrust_N=500.0, pc_bar=20.0,
+    mr_min=3.0, mr_max=6.5,
+    l_star_m: float | None = None,
+    contraction_ratio: float = 8.0,
+    performance_mode='sea_level',
+    console_output=False,
+):
     """Main execution wrapper to compute core engine characteristics and drive sub-modules."""
     g0 = 9.80665
     cea_obj = CEA_Obj(oxName=ox_code, fuelName=fuel_code, pressure_units='bar', isp_units='sec', cstar_units='m/s', temperature_units='K')
-
-    contraction_ratio = 8.0
     mr_range = np.linspace(mr_min, mr_max, 25)
     isp_list, tc_list, records = [], [], []
     json_sweep_array = []
@@ -179,6 +214,24 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
     exit_radius_mm = np.sqrt(A_exit / np.pi) * 1000
     chamber_radius_mm = np.sqrt(A_chamber / np.pi) * 1000
 
+    # L* resolution and chamber geometry derivation
+    l_star_range = L_STAR_DEFAULTS.get((ox_code, fuel_code), L_STAR_FALLBACK)
+    if l_star_m is None:
+        l_star_m = (l_star_range[0] + l_star_range[1]) / 2.0
+
+    CONV_HALF_DEG = 30.0
+    Rc_m = chamber_radius_mm / 1000.0
+    Rt_m = throat_radius_mm / 1000.0
+    Lconv_m = (Rc_m - Rt_m) / np.tan(np.radians(CONV_HALF_DEG))
+    V_conv = (np.pi / 3.0) * Lconv_m * (Rc_m**2 + Rt_m**2 + Rc_m * Rt_m)
+    V_cyl = max(l_star_m * A_throat - V_conv, 0.0)
+    floor_length_m = 1.5 * 2.0 * Rt_m
+    computed_length_m = V_cyl / (np.pi * Rc_m**2)
+    l_star_floor_active = bool(computed_length_m < floor_length_m)
+    Lc_cyl_m = max(computed_length_m, floor_length_m)
+
+    species_composition = _extract_chamber_species(cea_obj, pc_bar, opt_mr, opt_eps)
+
     output_data = {
         "engineInputs": {
             "propellants": {
@@ -187,7 +240,9 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
             },
             "targetThrust": {"value": thrust_N, "unit": "N"},
             "chamberPressure": {"value": pc_bar, "unit": "bar"},
-            "performanceMode": performance_mode
+            "performanceMode": performance_mode,
+            "contractionRatio": {"value": contraction_ratio, "unit": "dimensionless"},
+            "characteristicLength": {"value": round(float(l_star_m), 4), "unit": "m"}
         },
         "engineOutputs": {
             "mixtureRatio": {
@@ -206,7 +261,13 @@ def generate_rocket_engine_params(ox_code='N2O', fuel_code='Ethanol', thrust_N=5
                     "exitRadius": {"value": round(float(exit_radius_mm), 3), "unit": "mm"},
                     "chamberRadius": {"value": round(float(chamber_radius_mm), 3), "unit": "mm"},
                     "contractionRatio": {"value": contraction_ratio, "unit": "dimensionless"},
-                    "expansionRatio": {"value": round(float(opt_eps), 3), "unit": "dimensionless"}
+                    "expansionRatio": {"value": round(float(opt_eps), 3), "unit": "dimensionless"},
+                    "characteristicLength": {"value": round(float(l_star_m), 4), "unit": "m"},
+                    "cylindricalLength": {"value": round(float(Lc_cyl_m * 1000), 3), "unit": "mm"},
+                    "convergentLength": {"value": round(float(Lconv_m * 1000), 3), "unit": "mm"},
+                    "lStarFloorActive": l_star_floor_active,
+                    "lStarRange": {"min": l_star_range[0], "max": l_star_range[1], "unit": "m"},
+                    "speciesComposition": species_composition
                 },
                 "sweep": {
                     "units": {

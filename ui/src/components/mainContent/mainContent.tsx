@@ -8,10 +8,11 @@ import { type NozzleType, type AngleOverrides, type FlowProperty, computeGeometr
 import { generateEngineDXF, downloadDXF } from '../../utils/dxfExport';
 import MrGraph from '../mrGraph/MrGraph';
 import EngineContour from '../engineContour/EngineContour';
+import CombustionAnalysis from '../combustionAnalysis/CombustionAnalysis';
 import './mainContent.css';
 import Reference from '../reference/reference';
 
-const TABS = ['ENGINE CONTOUR', 'REFERENCE'] as const;
+const TABS = ['ENGINE CONTOUR', 'COMBUSTION', 'REFERENCE'] as const;
 export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
@@ -25,6 +26,7 @@ interface StatsDisplayData {
   contractionRatio: number;
   gamma: number;
   molecularWeightGMol: number;
+  characteristicLength: number;
 }
 
 const SWEEP_COLUMNS: { key: keyof MixtureRatioSweepEntry; label: string; decimals: number }[] = [
@@ -165,6 +167,7 @@ export default function MainContent({
         contractionRatio: confirmedRow.contractionRatio,
         gamma: confirmedRow.specificHeatRatioGamma,
         molecularWeightGMol: confirmedRow.combustionMolecularWeight,
+        characteristicLength: opt?.characteristicLength.value ?? 0,
       }
     : opt
     ? {
@@ -178,6 +181,7 @@ export default function MainContent({
         contractionRatio: opt.contractionRatio.value,
         gamma: opt.specificHeatRatioGamma.value,
         molecularWeightGMol: opt.combustionMolecularWeight.value,
+        characteristicLength: opt.characteristicLength.value,
       }
     : null;
 
@@ -189,6 +193,7 @@ export default function MainContent({
     { label: 'EXIT DIAMETER (DE)',    value: displayValues ? fmt(displayValues.exitRadius * 2 / 10, 2) : '--',          unit: 'cm'   },
     { label: 'EXPANSION RATIO (E)',   value: displayValues ? fmt(displayValues.expansionRatio, 2) : '--',               unit: ''     },
     { label: 'CHAMBER TEMPERATURE',  value: displayValues ? fmt(displayValues.chamberTemperature, 0) : '--',            unit: 'K'    },
+    { label: 'CHAR. LENGTH (L*)',    value: displayValues ? fmt(displayValues.characteristicLength, 2) : '--',            unit: 'm'    },
   ];
 
   return (
@@ -299,6 +304,7 @@ export default function MainContent({
             </div>
           )
         )}
+        {activeTab === 'COMBUSTION' && <CombustionAnalysis engineDesignResult={engineDesignResult} />}
         {activeTab === 'REFERENCE' && <Reference engineDesignResult={engineDesignResult} />}
       </div>
 

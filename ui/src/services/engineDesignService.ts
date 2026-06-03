@@ -9,6 +9,19 @@ export interface EngineDesignParams {
   performance_mode: 'sea_level' | 'vacuum';
   mr_min: number;
   mr_max: number;
+  l_star_m?: number;
+  contraction_ratio?: number;
+}
+
+export interface SpeciesEntry {
+  species: string;
+  massFraction: number;
+}
+
+interface LStarRange {
+  min: number;
+  max: number;
+  unit: string;
 }
 
 interface PropellantInfo {
@@ -48,6 +61,8 @@ export interface EngineDesignResult {
     targetThrust: ValueUnit;
     chamberPressure: ValueUnit;
     performanceMode: 'sea_level' | 'vacuum';
+    contractionRatio: ValueUnit;
+    characteristicLength: ValueUnit;
   };
   engineOutputs: {
     mixtureRatio: {
@@ -67,6 +82,12 @@ export interface EngineDesignResult {
         chamberRadius: ValueUnit;
         contractionRatio: ValueUnit;
         expansionRatio: ValueUnit;
+        characteristicLength: ValueUnit;
+        cylindricalLength: ValueUnit;
+        convergentLength: ValueUnit;
+        lStarFloorActive: boolean;
+        lStarRange: LStarRange;
+        speciesComposition: SpeciesEntry[];
       };
       sweep: {
         units: Record<string, string>;
@@ -100,6 +121,10 @@ export interface EngineImportData {
       tEDeg?: number;
     };
   };
+  chamberDesign?: {
+    lStarM?: number;
+    contractionRatio: number;
+  };
 }
 
 class EngineDesignService extends BaseApi {
@@ -117,6 +142,8 @@ class EngineDesignService extends BaseApi {
       mr_min: String(params.mr_min),
       mr_max: String(params.mr_max),
     });
+    if (params.l_star_m !== undefined) query.set('l_star_m', String(params.l_star_m));
+    if (params.contraction_ratio !== undefined) query.set('contraction_ratio', String(params.contraction_ratio));
     return this.get<EngineDesignResult>(`/api/v1/engine/design?${query}`);
   }
 }

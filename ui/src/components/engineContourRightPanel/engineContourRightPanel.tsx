@@ -48,6 +48,7 @@ export default function EngineContourRightPanel({
       {!collapsed && (
         <div className="right-panel-content">
           <div className="panel-form">
+
             <div className="form-group">
               <span className="form-label">Nozzle Type</span>
               <FormControl fullWidth size="small">

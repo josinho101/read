@@ -76,6 +76,8 @@ export default function App() {
   const [flowProperty, setFlowProperty]             = useState<FlowProperty>('mach');
   const [showParticles, setShowParticles]           = useState(false);
   const [showPlume, setShowPlume]                   = useState(false);
+  const [lStarM, setLStarM]                         = useState<number | undefined>(undefined);
+  const [contractionRatio, setContractionRatio]     = useState<number>(8.0);
 
   const handleLeftToggle = useCallback(() => setLeftCollapsed(prev => !prev), []);
 
@@ -100,6 +102,7 @@ export default function App() {
       version: '1.0',
       inputs: { ...form },
       nozzleAdjustments: { nozzleType, angleOverrides },
+      chamberDesign: { lStarM, contractionRatio },
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -108,12 +111,16 @@ export default function App() {
     a.download = `${form.engineName || 'engine'}_v${form.engineVersion || '0'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [nozzleType, angleOverrides]);
+  }, [nozzleType, angleOverrides, lStarM, contractionRatio]);
 
   const handleImportData = useCallback((data: EngineImportData) => {
     setNozzleType(data.nozzleAdjustments.nozzleType);
     setAngleOverrides(data.nozzleAdjustments.angleOverrides);
     setImportData(data.inputs);
+    if (data.chamberDesign) {
+      setLStarM(data.chamberDesign.lStarM);
+      setContractionRatio(data.chamberDesign.contractionRatio);
+    }
   }, []);
 
   return (
@@ -133,6 +140,11 @@ export default function App() {
             onAmbientPressureChange={handleAmbientPressureChange}
             onFormChange={(f) => { formSnapshotRef.current = f; }}
             importData={importData}
+            lStarM={lStarM}
+            contractionRatio={contractionRatio}
+            onLStarChange={setLStarM}
+            onContractionRatioChange={setContractionRatio}
+            onNavigateToCombustion={() => setActiveTab('COMBUSTION')}
           />
           <MainContent
             engineDesignResult={engineDesignResult}
