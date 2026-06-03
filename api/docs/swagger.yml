@@ -11,6 +11,239 @@ consumes:
   - application/json
 produces:
   - application/json
+
+definitions:
+  PropellantInfo:
+    type: object
+    required:
+      - name
+      - code
+    properties:
+      name:
+        type: string
+        example: "Liquid Oxygen"
+      code:
+        type: string
+        example: "LOX"
+
+  ValueUnit:
+    type: object
+    required:
+      - value
+      - unit
+    properties:
+      value:
+        type: number
+        format: float
+      unit:
+        type: string
+
+  MixtureRatioSweepEntry:
+    type: object
+    required:
+      - mixtureRatio
+      - specificImpulse
+      - chamberTemperature
+      - characteristicVelocityCstar
+      - thrustCoefficientCf
+      - specificHeatRatioGamma
+      - combustionMolecularWeight
+      - expansionRatio
+      - totalMassFlow
+      - oxidizerMassFlow
+      - fuelMassFlow
+      - throatRadius
+      - exitRadius
+      - chamberRadius
+      - contractionRatio
+    properties:
+      mixtureRatio:
+        type: number
+        format: float
+        description: "O/F mass ratio"
+      specificImpulse:
+        type: number
+        format: float
+        description: "Specific impulse in seconds"
+      chamberTemperature:
+        type: number
+        format: float
+        description: "Chamber temperature in K"
+      characteristicVelocityCstar:
+        type: number
+        format: float
+        description: "Characteristic velocity C* in m/s"
+      thrustCoefficientCf:
+        type: number
+        format: float
+        description: "Thrust coefficient (dimensionless)"
+      specificHeatRatioGamma:
+        type: number
+        format: float
+        description: "Specific heat ratio gamma (dimensionless)"
+      combustionMolecularWeight:
+        type: number
+        format: float
+        description: "Combustion molecular weight in g/mol"
+      expansionRatio:
+        type: number
+        format: float
+        description: "Nozzle expansion ratio (dimensionless)"
+      totalMassFlow:
+        type: number
+        format: float
+        description: "Total mass flow rate in g/s"
+      oxidizerMassFlow:
+        type: number
+        format: float
+        description: "Oxidizer mass flow rate in g/s"
+      fuelMassFlow:
+        type: number
+        format: float
+        description: "Fuel mass flow rate in g/s"
+      throatRadius:
+        type: number
+        format: float
+        description: "Nozzle throat radius in mm"
+      exitRadius:
+        type: number
+        format: float
+        description: "Nozzle exit radius in mm"
+      chamberRadius:
+        type: number
+        format: float
+        description: "Chamber radius in mm"
+      contractionRatio:
+        type: number
+        format: float
+        description: "Contraction ratio (dimensionless)"
+
+  PropellantsResponse:
+    type: object
+    required:
+      - propellants
+    properties:
+      propellants:
+        type: object
+        required:
+          - fuels
+          - oxidizers
+        properties:
+          fuels:
+            type: array
+            items:
+              $ref: '#/definitions/PropellantInfo'
+          oxidizers:
+            type: array
+            items:
+              $ref: '#/definitions/PropellantInfo'
+
+  EngineDesignResult:
+    type: object
+    required:
+      - engineInputs
+      - engineOutputs
+    properties:
+      engineInputs:
+        type: object
+        required:
+          - propellants
+          - targetThrust
+          - chamberPressure
+          - exitPressure
+        properties:
+          propellants:
+            type: object
+            required:
+              - oxidizer
+              - fuel
+            properties:
+              oxidizer:
+                $ref: '#/definitions/PropellantInfo'
+              fuel:
+                $ref: '#/definitions/PropellantInfo'
+          targetThrust:
+            $ref: '#/definitions/ValueUnit'
+          chamberPressure:
+            $ref: '#/definitions/ValueUnit'
+          exitPressure:
+            $ref: '#/definitions/ValueUnit'
+      engineOutputs:
+        type: object
+        required:
+          - mixtureRatio
+        properties:
+          mixtureRatio:
+            type: object
+            required:
+              - optimum
+              - sweep
+            properties:
+              optimum:
+                type: object
+                required:
+                  - mixtureRatio
+                  - specificImpulse
+                  - characteristicVelocityCstar
+                  - thrustCoefficientCf
+                  - chamberTemperature
+                  - specificHeatRatioGamma
+                  - combustionMolecularWeight
+                  - totalMassFlow
+                  - oxidizerMassFlow
+                  - fuelMassFlow
+                  - throatRadius
+                  - exitRadius
+                  - chamberRadius
+                  - contractionRatio
+                  - expansionRatio
+                properties:
+                  mixtureRatio:
+                    $ref: '#/definitions/ValueUnit'
+                  specificImpulse:
+                    $ref: '#/definitions/ValueUnit'
+                  characteristicVelocityCstar:
+                    $ref: '#/definitions/ValueUnit'
+                  thrustCoefficientCf:
+                    $ref: '#/definitions/ValueUnit'
+                  chamberTemperature:
+                    $ref: '#/definitions/ValueUnit'
+                  specificHeatRatioGamma:
+                    $ref: '#/definitions/ValueUnit'
+                  combustionMolecularWeight:
+                    $ref: '#/definitions/ValueUnit'
+                  totalMassFlow:
+                    $ref: '#/definitions/ValueUnit'
+                  oxidizerMassFlow:
+                    $ref: '#/definitions/ValueUnit'
+                  fuelMassFlow:
+                    $ref: '#/definitions/ValueUnit'
+                  throatRadius:
+                    $ref: '#/definitions/ValueUnit'
+                  exitRadius:
+                    $ref: '#/definitions/ValueUnit'
+                  chamberRadius:
+                    $ref: '#/definitions/ValueUnit'
+                  contractionRatio:
+                    $ref: '#/definitions/ValueUnit'
+                  expansionRatio:
+                    $ref: '#/definitions/ValueUnit'
+              sweep:
+                type: object
+                required:
+                  - units
+                  - values
+                properties:
+                  units:
+                    type: object
+                    description: "Unit labels for each field in the sweep values array"
+                    additionalProperties:
+                      type: string
+                  values:
+                    type: array
+                    items:
+                      $ref: '#/definitions/MixtureRatioSweepEntry'
+
 paths:
   /api/v1/propellants:
     get:
@@ -20,12 +253,10 @@ paths:
         - "Propellants"
       responses:
         200:
-          description: "A JSON array of propellant definitions."
+          description: "Available fuels and oxidizers grouped by type."
           schema:
-            type: array
-            items:
-              type: object
-              additionalProperties: true
+            $ref: '#/definitions/PropellantsResponse'
+
   /api/v1/engine/design:
     get:
       summary: "Generate an engine design"
@@ -84,5 +315,4 @@ paths:
         200:
           description: "Generated engine design results."
           schema:
-            type: object
-            additionalProperties: true
+            $ref: '#/definitions/EngineDesignResult'
