@@ -11,7 +11,7 @@ import EngineContour from '../engineContour/EngineContour';
 import './mainContent.css';
 import Reference from '../reference/reference';
 
-const TABS = ['ENGINE CONTOUR', 'CALCULATED STEPS & EQUATIONS', 'REFERENCE'] as const;
+const TABS = ['ENGINE CONTOUR', 'REFERENCE'] as const;
 export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
@@ -299,12 +299,7 @@ export default function MainContent({
             </div>
           )
         )}
-        {activeTab === 'CALCULATED STEPS & EQUATIONS' && (
-          <div className="canvas-placeholder canvas-placeholder--text">
-            <div className="canvas-label">Calculated steps and equations will appear here</div>
-          </div>
-        )}
-        {activeTab === 'REFERENCE' && <Reference />}
+        {activeTab === 'REFERENCE' && <Reference engineDesignResult={engineDesignResult} />}
       </div>
 
       {/* Stats bar — Engine Contour tab only */}
