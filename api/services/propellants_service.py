@@ -3,14 +3,8 @@ def get_propellants():
         "propellants": {
             "fuels": [
                 {"name": "Liquid Hydrogen", "code": "LH2"},
-                {"name": "Gaseous Hydrogen", "code": "GH2"},
                 {"name": "RP1 - Rocket Grade Kerosene", "code": "RP1"},
                 {"name": "Liquid Methane", "code": "CH4"},
-                {"name": "Gaseous Methane", "code": "GCH4"},
-                {"name": "Monomethylhydrazine", "code": "MMH"},
-                {"name": "Unsymmetrical Dimethylhydrazine", "code": "UDMH"},
-                {"name": "Aerozine 50", "code": "A50"},
-                {"name": "Pure Hydrazine", "code": "N2H4"},
                 {"name": "Liquid Propane", "code": "C3H8"},
                 {"name": "Liquid Ethane", "code": "C2H6"},
                 {"name": "Liquid Ethanol", "code": "Ethanol"},
@@ -20,15 +14,11 @@ def get_propellants():
             ],
             "oxidizers": [
                 {"name": "Liquid Oxygen", "code": "LOX"},
-                {"name": "Gaseous Oxygen", "code": "GOX"},
-                {"name": "Nitrogen Tetroxide", "code": "N2O4"},
                 {"name": "Nitrous Oxide", "code": "N2O"},
                 {"name": "Nitrous Oxide (Boiling Point)", "code": "N2O_nbp"},
                 {"name": "90% Hydrogen Peroxide", "code": "90_H2O2"},
                 {"name": "98% Hydrogen Peroxide", "code": "98_H2O2"},
-                {"name": "Pure Nitric Acid", "code": "HNO3"},
                 {"name": "Liquid Fluorine", "code": "F2"},
-                {"name": "Atmospheric Air", "code": "AIR"},
                 {"name": "Water", "code": "H2O"}
             ]
         }

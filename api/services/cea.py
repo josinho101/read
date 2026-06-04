@@ -13,9 +13,6 @@ L_STAR_DEFAULTS: dict[tuple[str, str], tuple[float, float]] = {
     ('LOX',   'RP1'):     (0.90, 1.10),
     ('LOX',   'CH4'):     (0.80, 1.10),
     ('LOX',   'Ethanol'): (0.90, 1.10),
-    ('N2O4',  'MMH'):     (0.80, 1.10),
-    ('N2O4',  'UDMH'):    (0.80, 1.10),
-    ('N2O4',  'N2H4'):    (0.90, 1.20),
     ('N2O',   'Ethanol'): (1.00, 1.30),
     ('N2O',   'RP1'):     (0.90, 1.20),
 }
