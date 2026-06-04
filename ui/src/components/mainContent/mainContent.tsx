@@ -6,13 +6,16 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { type EngineDesignResult, type MixtureRatioSweepEntry } from '../../services/engineDesignService';
 import { type NozzleType, type AngleOverrides, type FlowProperty, computeGeometry } from '../engineContour/isentropicFlow';
 import { generateEngineDXF, downloadDXF } from '../../utils/dxfExport';
+import { type InjectorType, type InjectorSweepRow } from '../../services/injectorSweepService';
 import MrGraph from '../mrGraph/MrGraph';
 import EngineContour from '../engineContour/EngineContour';
 import CombustionAnalysis from '../combustionAnalysis/CombustionAnalysis';
+import InjectorFace from '../injectorFace/InjectorFace';
+import InjectorRightPanel from '../injectorRightPanel/InjectorRightPanel';
 import './mainContent.css';
 import Reference from '../reference/reference';
 
-const TABS = ['ENGINE CONTOUR', 'COMBUSTION', 'REFERENCE'] as const;
+const TABS = ['ENGINE CONTOUR', 'INJECTOR FACE', 'COMBUSTION', 'REFERENCE'] as const;
 export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
@@ -81,6 +84,14 @@ export default function MainContent({
   const [confirmedRow, setConfirmedRow] = useState<MixtureRatioSweepEntry | null>(null);
   const [sortCol, setSortCol] = useState<keyof MixtureRatioSweepEntry>('mixtureRatio');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  // Injector Face tab state
+  const [injectorType, setInjectorType] = useState<InjectorType>('impinging');
+  const [dOxMm, setDOxMm] = useState(1.5);
+  const [dFuelMm, setDFuelMm] = useState(1.2);
+  const [impingementHalfAngleDeg, setImpingementHalfAngleDeg] = useState(45);
+  const [injectorSelectedRow, setInjectorSelectedRow] = useState<InjectorSweepRow | null>(null);
+  const [injectorRightCollapsed, setInjectorRightCollapsed] = useState(false);
 
   useEffect(() => {
     setConfirmedRow(null);
@@ -306,6 +317,46 @@ export default function MainContent({
         )}
         {activeTab === 'COMBUSTION' && <CombustionAnalysis engineDesignResult={engineDesignResult} />}
         {activeTab === 'REFERENCE' && <Reference engineDesignResult={engineDesignResult} />}
+        {activeTab === 'INJECTOR FACE' && (
+          engineDesignResult ? (
+            <div className="injector-tab-layout">
+              <InjectorFace
+                chamberRadiusMm={
+                  (injectorSelectedRow
+                    ? (opt?.chamberRadius.value ?? 0)
+                    : (opt?.chamberRadius.value ?? 0))
+                }
+                nOxidizer={injectorSelectedRow?.oxidizer_hole_count ?? 0}
+                nFuel={injectorSelectedRow?.fuel_hole_count ?? 0}
+                dOxMm={dOxMm}
+                dFuelMm={dFuelMm}
+                injectorType={injectorType}
+                impingementHalfAngleDeg={impingementHalfAngleDeg}
+                selectedRow={injectorSelectedRow}
+              />
+              <InjectorRightPanel
+                engineDesignResult={engineDesignResult}
+                injectorType={injectorType}
+                onInjectorTypeChange={setInjectorType}
+                dOxMm={dOxMm}
+                onDOxChange={setDOxMm}
+                dFuelMm={dFuelMm}
+                onDFuelChange={setDFuelMm}
+                impingementHalfAngleDeg={impingementHalfAngleDeg}
+                onImpingementAngleChange={setImpingementHalfAngleDeg}
+                selectedRow={injectorSelectedRow}
+                onRowSelect={setInjectorSelectedRow}
+                collapsed={injectorRightCollapsed}
+                onToggle={() => setInjectorRightCollapsed((c) => !c)}
+              />
+            </div>
+          ) : (
+            <div className="canvas-placeholder">
+              <div className="canvas-centerline" />
+              <div className="canvas-label">Run engine design first to size the injector</div>
+            </div>
+          )
+        )}
       </div>
 
       {/* Stats bar — Engine Contour tab only */}

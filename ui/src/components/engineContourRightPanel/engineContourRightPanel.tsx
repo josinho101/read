@@ -39,7 +39,7 @@ export default function EngineContourRightPanel({
     <aside className={`right-panel ${collapsed ? 'right-panel--collapsed' : ''}`}>
       <div className="right-panel-toggle">
         <Tooltip title={collapsed ? 'Expand panel' : 'Collapse panel'} placement="left">
-          <IconButton onClick={onToggle} className="toggle-btn" size="small">
+          <IconButton onClick={onToggle} size="small" sx={{ color: 'rgba(0,229,255,0.6)' }}>
             {collapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
           </IconButton>
         </Tooltip>

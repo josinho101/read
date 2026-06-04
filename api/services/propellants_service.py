@@ -17,7 +17,6 @@ def get_propellants():
                 {"name": "Nitrous Oxide", "code": "N2O"},
                 {"name": "Nitrous Oxide (Boiling Point)", "code": "N2O_nbp"},
                 {"name": "90% Hydrogen Peroxide", "code": "90_H2O2"},
-                {"name": "98% Hydrogen Peroxide", "code": "98_H2O2"},
                 {"name": "Liquid Fluorine", "code": "F2"},
                 {"name": "Water", "code": "H2O"}
             ]

@@ -228,6 +228,15 @@
   position: relative;
 }
 
+/* Injector Face tab — full-height row containing canvas + right panel */
+.injector-tab-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
 .canvas-centerline {
   position: absolute;
   top: 50%;

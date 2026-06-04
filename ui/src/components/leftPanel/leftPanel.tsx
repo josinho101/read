@@ -138,7 +138,7 @@ export default function LeftPanel({
     <aside className={`left-panel ${collapsed ? 'left-panel--collapsed' : ''}`}>
       <div className="left-panel-toggle">
         <Tooltip title={collapsed ? 'Expand panel' : 'Collapse panel'} placement="right">
-          <IconButton onClick={onToggle} className="toggle-btn" size="small">
+          <IconButton onClick={onToggle} size="small" sx={{ color: 'rgba(0,229,255,0.6)' }}>
             {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
           </IconButton>
         </Tooltip>
