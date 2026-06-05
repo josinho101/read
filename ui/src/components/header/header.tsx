@@ -43,8 +43,22 @@ export default function Header({ onExportClick, onImportData, onSaveToServer, on
       <div className="header-logo">
         <div className="header-logo-icon">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
-            <circle cx="16" cy="16" r="14" stroke="#00e5ff" strokeWidth="2" />
-            <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="#00e5ff" fontSize="10" fontWeight="bold" fontFamily="monospace">A</text>
+            {/* Circular badge border */}
+            <circle cx="16" cy="16" r="14" stroke="#00e5ff" strokeWidth="1.5" fill="rgba(0,229,255,0.06)" />
+            {/* Exhaust flame — drawn behind rocket */}
+            <path d="M 14,22 C 12,26 13,30 16,28 C 19,30 20,26 18,22 Z"
+                  fill="rgba(0,229,255,0.4)" stroke="#00e5ff" strokeWidth="0.6" />
+            {/* Rocket body + nose cone */}
+            <path d="M 16,3 L 20,10 L 20,22 L 12,22 L 12,10 Z"
+                  fill="rgba(0,229,255,0.15)" stroke="#00e5ff" strokeWidth="1.2" strokeLinejoin="round" />
+            {/* Left fin */}
+            <path d="M 12,17 L 7,25 L 12,23 Z"
+                  fill="rgba(0,229,255,0.15)" stroke="#00e5ff" strokeWidth="1" strokeLinejoin="round" />
+            {/* Right fin */}
+            <path d="M 20,17 L 25,25 L 20,23 Z"
+                  fill="rgba(0,229,255,0.15)" stroke="#00e5ff" strokeWidth="1" strokeLinejoin="round" />
+            {/* Porthole window */}
+            <circle cx="16" cy="14" r="2" fill="rgba(0,229,255,0.35)" stroke="#00e5ff" strokeWidth="0.8" />
           </svg>
         </div>
         <span className="header-logo-name">READ</span>
