@@ -29,10 +29,12 @@ interface InjectorRightPanelProps {
 }
 
 const INJECTOR_LABELS: Record<InjectorType, string> = {
-  impinging:  'Impinging Doublet',
-  pintle:     'Pintle',
-  coaxial:    'Coaxial',
-  showerhead: 'Showerhead',
+  impinging:     'Impinging Doublet',
+  impinging_fof: 'Impinging Triplet (FOF)',
+  impinging_ofo: 'Impinging Triplet (OFO)',
+  pintle:        'Pintle',
+  coaxial:       'Coaxial',
+  showerhead:    'Showerhead',
 };
 
 const OX_FUEL_DIA_MIN = 0.25;
@@ -108,7 +110,7 @@ export default function InjectorRightPanel({
     fetchSweep();
   }, [fetchSweep]);
 
-  const isImpinging = injectorType === 'impinging';
+  const isImpinging = injectorType === 'impinging' || injectorType === 'impinging_fof' || injectorType === 'impinging_ofo';
 
   return (
     <aside className={`inj-rp ${collapsed ? 'inj-rp--collapsed' : ''}`}>

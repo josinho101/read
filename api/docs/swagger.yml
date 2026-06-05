@@ -118,6 +118,94 @@ definitions:
         format: float
         description: "Contraction ratio (dimensionless)"
 
+  InjectorSweepRow:
+    type: object
+    properties:
+      dp_percentage:
+        type: number
+        format: float
+        description: "Pressure drop as a percentage of chamber pressure (%)"
+      delta_P_bar:
+        type: number
+        format: float
+        description: "Absolute pressure drop across orifices (bar)"
+      oxidizer_total_area_mm2:
+        type: number
+        format: float
+        description: "Required oxidizer orifice area before rounding (mm²)"
+      fuel_total_area_mm2:
+        type: number
+        format: float
+        description: "Required fuel orifice area before rounding (mm²)"
+      oxidizer_hole_count:
+        type: integer
+        description: "Number of oxidizer orifices to drill (rounded up)"
+      fuel_hole_count:
+        type: integer
+        description: "Number of fuel orifices to drill (rounded up; 2× element count for FOF, 1× for OFO)"
+      oxidizer_velocity_ms:
+        type: number
+        format: float
+        description: "Oxidizer exit velocity through actual drilled area (m/s)"
+      fuel_velocity_ms:
+        type: number
+        format: float
+        description: "Fuel exit velocity through actual drilled area (m/s)"
+      v_ratio:
+        type: number
+        format: float
+        x-nullable: true
+        description: "Velocity ratio v_fuel / v_ox — target ~10–15 for coaxial shear"
+      momentum_flux_ratio:
+        type: number
+        format: float
+        x-nullable: true
+        description: "Momentum flux ratio (ρ_f·v_f²)/(ρ_o·v_o²) — target ~0.8–1.2 for impinging balance"
+      impingement_point_dist_mm:
+        type: number
+        format: float
+        x-nullable: true
+        description: "Axial distance from face to jet convergence point (mm) — impinging types only, null otherwise"
+      recommended:
+        type: boolean
+        description: "True on the midpoint sweep row — recommended balanced design point"
+
+  InjectorSweepResult:
+    type: object
+    properties:
+      injector_type:
+        type: string
+        description: "Injector architecture used for this sweep"
+      propellant_pair:
+        type: object
+        properties:
+          oxidizer:
+            type: string
+            description: "Oxidizer propellant code (uppercase)"
+          fuel:
+            type: string
+            description: "Fuel propellant code (uppercase)"
+      orifice_diameters_mm:
+        type: object
+        properties:
+          oxidizer:
+            type: number
+            format: float
+            description: "Oxidizer orifice drill diameter (mm)"
+          fuel:
+            type: number
+            format: float
+            description: "Fuel orifice drill diameter (mm)"
+      impingement_half_angle_deg:
+        type: number
+        format: float
+        x-nullable: true
+        description: "Echoed impingement half-angle (degrees) — null for non-impinging types"
+      sweep:
+        type: array
+        items:
+          $ref: '#/definitions/InjectorSweepRow'
+
   PropellantsResponse:
     type: object
     required:
@@ -249,6 +337,88 @@ definitions:
                       $ref: '#/definitions/MixtureRatioSweepEntry'
 
 paths:
+  /api/v1/injector/sweep:
+    get:
+      summary: "Sweep injector designs across pressure-drop range"
+      description: "Iterates ΔP/Pc from the architecture minimum to maximum in 0.5% steps. Returns hydraulic sizing (hole counts, areas, velocities) and mixing metrics for each design point. For FOF/OFO triplets the hole counts enforce a 2:1 pairing constraint per element."
+      tags:
+        - "Injector"
+      parameters:
+        - name: "m_dot_total_kgs"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 1.0
+          description: "Total propellant mass flow rate (kg/s)"
+        - name: "of_ratio"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 2.5
+          description: "Oxidizer-to-fuel mass ratio (dimensionless)"
+        - name: "pc_bar"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 20.0
+          description: "Chamber pressure (bar)"
+        - name: "injector_type"
+          in: "query"
+          required: false
+          type: "string"
+          default: "impinging"
+          enum:
+            - "impinging"
+            - "impinging_fof"
+            - "impinging_ofo"
+            - "pintle"
+            - "coaxial"
+            - "showerhead"
+          description: "Injector architecture. impinging = doublet; impinging_fof = FOF triplet (1 ox + 2 fuel/element); impinging_ofo = OFO triplet (2 ox + 1 fuel/element)"
+        - name: "ox_code"
+          in: "query"
+          required: false
+          type: "string"
+          default: "LOX"
+          description: "Oxidizer propellant code (e.g. LOX, N2O)"
+        - name: "fuel_code"
+          in: "query"
+          required: false
+          type: "string"
+          default: "RP1"
+          description: "Fuel propellant code (e.g. RP1, ETHANOL, LH2, CH4)"
+        - name: "d_o_mm"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 1.5
+          description: "Oxidizer orifice drill diameter (mm)"
+        - name: "d_f_mm"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 1.2
+          description: "Fuel orifice drill diameter (mm)"
+        - name: "impingement_half_angle_deg"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 45.0
+          description: "Impingement convergence half-angle (degrees) — used for impinging, impinging_fof, impinging_ofo; ignored for other types"
+      responses:
+        200:
+          description: "Sweep of valid injector design points across the ΔP/Pc range for the chosen architecture."
+          schema:
+            $ref: '#/definitions/InjectorSweepResult'
+        400:
+          description: "Invalid parameter — unknown injector type or unsupported propellant pair."
+
   /api/v1/propellants:
     get:
       summary: "Get supported propellants"

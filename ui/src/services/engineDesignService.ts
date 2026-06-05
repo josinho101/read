@@ -1,5 +1,6 @@
 import { constants } from '../constants';
 import { BaseApi } from './api/baseApi';
+import { type InjectorType } from './injectorSweepService';
 
 export interface EngineDesignParams {
   ox_code: string;
@@ -124,6 +125,12 @@ export interface EngineImportData {
   chamberDesign?: {
     lStarM?: number;
     contractionRatio: number;
+  };
+  injectorConfig?: {
+    type: InjectorType;
+    dOxMm: number;
+    dFuelMm: number;
+    impingementHalfAngleDeg: number;
   };
 }
 

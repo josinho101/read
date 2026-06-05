@@ -275,7 +275,68 @@ function drawFace(
       ctx.stroke();
     });
 
+  } else if (injectorType === 'impinging_fof') {
+    // FOF triplet: 1 central oxidizer + 2 flanking fuel holes per element.
+    // nOxidizer = element count (N_f = 2 × N_o enforced by BE).
+    const nElements = nOxidizer;
+    const flankSpread = rOx + rFuel + minPitch * 0.5;
+    const elemPitch = flankSpread * 2 + Math.max(rOx, rFuel) * 2 + minPitch * 0.3;
+    const elemPositions = packRings(nElements, usableR, elemPitch, cx, cy);
+
+    elemPositions.forEach(([px, py]) => {
+      const angle = Math.atan2(py - cy, px - cx);
+      const perpAngle = angle + Math.PI / 2;
+
+      const oxX  = px;
+      const oxY  = py;
+      const f1X  = px + Math.cos(perpAngle) * flankSpread;
+      const f1Y  = py + Math.sin(perpAngle) * flankSpread;
+      const f2X  = px - Math.cos(perpAngle) * flankSpread;
+      const f2Y  = py - Math.sin(perpAngle) * flankSpread;
+
+      // Y-shaped convergence lines: both fuel jets aim at the central ox hole
+      ctx.beginPath(); ctx.moveTo(f1X, f1Y); ctx.lineTo(oxX, oxY);
+      ctx.strokeStyle = COLOR_IMP_LINE; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(f2X, f2Y); ctx.lineTo(oxX, oxY);
+      ctx.strokeStyle = COLOR_IMP_LINE; ctx.lineWidth = 1; ctx.stroke();
+
+      drawHole(ctx, f1X, f1Y, rFuel, COLOR_FUEL);
+      drawHole(ctx, f2X, f2Y, rFuel, COLOR_FUEL);
+      drawHole(ctx, oxX, oxY, rOx,   COLOR_OX);
+    });
+
+  } else if (injectorType === 'impinging_ofo') {
+    // OFO triplet: 1 central fuel + 2 flanking oxidizer holes per element.
+    // nFuel = element count (N_o = 2 × N_f enforced by BE).
+    const nElements = nFuel;
+    const flankSpread = rOx + rFuel + minPitch * 0.5;
+    const elemPitch = flankSpread * 2 + Math.max(rOx, rFuel) * 2 + minPitch * 0.3;
+    const elemPositions = packRings(nElements, usableR, elemPitch, cx, cy);
+
+    elemPositions.forEach(([px, py]) => {
+      const angle = Math.atan2(py - cy, px - cx);
+      const perpAngle = angle + Math.PI / 2;
+
+      const fX   = px;
+      const fY   = py;
+      const o1X  = px + Math.cos(perpAngle) * flankSpread;
+      const o1Y  = py + Math.sin(perpAngle) * flankSpread;
+      const o2X  = px - Math.cos(perpAngle) * flankSpread;
+      const o2Y  = py - Math.sin(perpAngle) * flankSpread;
+
+      // Y-shaped convergence lines: both ox jets aim at the central fuel hole
+      ctx.beginPath(); ctx.moveTo(o1X, o1Y); ctx.lineTo(fX, fY);
+      ctx.strokeStyle = COLOR_IMP_LINE; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(o2X, o2Y); ctx.lineTo(fX, fY);
+      ctx.strokeStyle = COLOR_IMP_LINE; ctx.lineWidth = 1; ctx.stroke();
+
+      drawHole(ctx, o1X, o1Y, rOx,   COLOR_OX);
+      drawHole(ctx, o2X, o2Y, rOx,   COLOR_OX);
+      drawHole(ctx, fX,  fY,  rFuel, COLOR_FUEL);
+    });
+
   } else {
+    // Impinging doublet: 1 ox + 1 fuel per pair, side by side.
     const nPairs = Math.min(nOxidizer, nFuel);
     const pairSpread = (rOx + rFuel + minPitch * 0.4);
     const pairPitch = pairSpread * 3;

@@ -7,6 +7,7 @@ import Header from './components/header/header';
 import LeftPanel from './components/leftPanel/leftPanel';
 import MainContent, { type Tab } from './components/mainContent/mainContent';
 import { type EngineDesignResult, type EngineImportData, type EngineFormInputs } from './services/engineDesignService';
+import { type InjectorType } from './services/injectorSweepService';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from './components/engineContour/isentropicFlow';
 import './App.css';
 
@@ -79,6 +80,12 @@ export default function App() {
   const [lStarM, setLStarM]                         = useState<number | undefined>(undefined);
   const [contractionRatio, setContractionRatio]     = useState<number>(8.0);
 
+  // Injector state (lifted here so export/import can persist it)
+  const [injectorType, setInjectorType]                           = useState<InjectorType>('impinging');
+  const [dOxMm, setDOxMm]                                         = useState(1.5);
+  const [dFuelMm, setDFuelMm]                                     = useState(1.2);
+  const [impingementHalfAngleDeg, setImpingementHalfAngleDeg]     = useState(45);
+
   const handleLeftToggle = useCallback(() => setLeftCollapsed(prev => !prev), []);
 
   const handleDesignStart = useCallback(() => setIsLoading(true), []);
@@ -103,6 +110,7 @@ export default function App() {
       inputs: { ...form },
       nozzleAdjustments: { nozzleType, angleOverrides },
       chamberDesign: { lStarM, contractionRatio },
+      injectorConfig: { type: injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg },
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -120,6 +128,12 @@ export default function App() {
     if (data.chamberDesign) {
       setLStarM(data.chamberDesign.lStarM);
       setContractionRatio(data.chamberDesign.contractionRatio);
+    }
+    if (data.injectorConfig) {
+      setInjectorType(data.injectorConfig.type);
+      setDOxMm(data.injectorConfig.dOxMm);
+      setDFuelMm(data.injectorConfig.dFuelMm);
+      setImpingementHalfAngleDeg(data.injectorConfig.impingementHalfAngleDeg);
     }
   }, []);
 
@@ -165,6 +179,14 @@ export default function App() {
             onShowPlumeChange={setShowPlume}
             activeTab={activeTab}
             onActiveTabChange={setActiveTab}
+            injectorType={injectorType}
+            onInjectorTypeChange={setInjectorType}
+            dOxMm={dOxMm}
+            onDOxMmChange={setDOxMm}
+            dFuelMm={dFuelMm}
+            onDFuelMmChange={setDFuelMm}
+            impingementHalfAngleDeg={impingementHalfAngleDeg}
+            onImpingementHalfAngleDegChange={setImpingementHalfAngleDeg}
           />
         </div>
       </div>

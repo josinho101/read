@@ -69,6 +69,14 @@ interface MainContentProps {
   onShowPlumeChange: (v: boolean) => void;
   activeTab: Tab;
   onActiveTabChange: (tab: Tab) => void;
+  injectorType: InjectorType;
+  onInjectorTypeChange: (t: InjectorType) => void;
+  dOxMm: number;
+  onDOxMmChange: (v: number) => void;
+  dFuelMm: number;
+  onDFuelMmChange: (v: number) => void;
+  impingementHalfAngleDeg: number;
+  onImpingementHalfAngleDegChange: (v: number) => void;
 }
 
 export default function MainContent({
@@ -77,6 +85,10 @@ export default function MainContent({
   showFlowSim, onShowFlowSimChange, flowProperty, onFlowPropertyChange,
   showParticles, onShowParticlesChange, showPlume, onShowPlumeChange,
   activeTab, onActiveTabChange,
+  injectorType, onInjectorTypeChange,
+  dOxMm, onDOxMmChange,
+  dFuelMm, onDFuelMmChange,
+  impingementHalfAngleDeg, onImpingementHalfAngleDegChange,
 }: MainContentProps) {
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -86,10 +98,6 @@ export default function MainContent({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   // Injector Face tab state
-  const [injectorType, setInjectorType] = useState<InjectorType>('impinging');
-  const [dOxMm, setDOxMm] = useState(1.5);
-  const [dFuelMm, setDFuelMm] = useState(1.2);
-  const [impingementHalfAngleDeg, setImpingementHalfAngleDeg] = useState(45);
   const [injectorSelectedRow, setInjectorSelectedRow] = useState<InjectorSweepRow | null>(null);
   const [injectorRightCollapsed, setInjectorRightCollapsed] = useState(false);
 
@@ -337,13 +345,13 @@ export default function MainContent({
               <InjectorRightPanel
                 engineDesignResult={engineDesignResult}
                 injectorType={injectorType}
-                onInjectorTypeChange={setInjectorType}
+                onInjectorTypeChange={onInjectorTypeChange}
                 dOxMm={dOxMm}
-                onDOxChange={setDOxMm}
+                onDOxChange={onDOxMmChange}
                 dFuelMm={dFuelMm}
-                onDFuelChange={setDFuelMm}
+                onDFuelChange={onDFuelMmChange}
                 impingementHalfAngleDeg={impingementHalfAngleDeg}
-                onImpingementAngleChange={setImpingementHalfAngleDeg}
+                onImpingementAngleChange={onImpingementHalfAngleDegChange}
                 selectedRow={injectorSelectedRow}
                 onRowSelect={setInjectorSelectedRow}
                 collapsed={injectorRightCollapsed}

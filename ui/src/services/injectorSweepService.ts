@@ -1,7 +1,7 @@
 import { constants } from '../constants';
 import { BaseApi } from './api/baseApi';
 
-export type InjectorType = 'impinging' | 'pintle' | 'coaxial' | 'showerhead';
+export type InjectorType = 'impinging' | 'impinging_fof' | 'impinging_ofo' | 'pintle' | 'coaxial' | 'showerhead';
 
 export interface InjectorSweepParams {
   /** Total propellant mass flow in kg/s — from optimum.totalMassFlow.value / 1000 (CEA returns g/s) */
