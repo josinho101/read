@@ -346,6 +346,7 @@ export default function MainContent({
                 injectorType={injectorType}
                 impingementHalfAngleDeg={impingementHalfAngleDeg}
                 selectedRow={injectorSelectedRow}
+                chamberPressureBar={engineDesignResult?.engineInputs.chamberPressure.value}
               />
               <InjectorRightPanel
                 engineDesignResult={engineDesignResult}

@@ -85,9 +85,6 @@
 
 /* Two-column layout for orifice diameters */
 .inj-rp-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
 }
 
 .inj-rp-field {

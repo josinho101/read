@@ -158,6 +158,12 @@ def sweep_injector_designs(
             N_elements = max(N_f, math.ceil(N_o / 2))
             N_f = N_elements
             N_o = 2 * N_elements
+        elif injector_type.lower() == 'coaxial':
+            # Each coaxial element = 1 ox post + 1 fuel annulus → counts must be equal.
+            # Take the larger value so neither propellant is under-delivered.
+            N_elements = max(N_o, N_f)
+            N_o = N_elements
+            N_f = N_elements
 
         # --- Actual flow areas after rounding up to whole holes ---
         actual_area_o = N_o * area_single_o   # true oxidizer total orifice area (m^2)

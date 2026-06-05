@@ -24,6 +24,8 @@ interface InjectorFaceProps {
   impingementHalfAngleDeg?: number;
   /** Selected sweep row — rendered as an overlay in the top-right corner */
   selectedRow?: InjectorSweepRow | null;
+  /** Chamber pressure in bar — used to derive propellant inlet pressure */
+  chamberPressureBar?: number;
 }
 
 interface ViewState { panX: number; panY: number; vZoom: number }
@@ -253,24 +255,24 @@ function drawFace(
     }
 
   } else if (injectorType === 'coaxial') {
-    const nElements = Math.min(nOxidizer, nFuel);
     const elemPitch = Math.max(minPitch, (dOxMm + dFuelMm) * scale * 2.5);
-    const positions = packRings(nElements, usableR, elemPitch, cx, cy);
-
+    const positions = packRings(nOxidizer, usableR, elemPitch, cx, cy);
+    const innerR = Math.max(3, rOx);
+    const outerR = Math.max(innerR + 3, rOx + rFuel * 1.5);
+    // Pass 1: all fuel annuli first
     positions.forEach(([ex, ey]) => {
-      const innerR = rOx;
-      const outerR = rOx + rFuel * 1.5;
       ctx.beginPath();
       ctx.arc(ex, ey, outerR, 0, 2 * Math.PI);
       ctx.fillStyle = COLOR_FUEL;
       ctx.fill();
+    });
+    // Pass 2: all ox posts on top
+    positions.forEach(([ex, ey]) => {
       ctx.beginPath();
       ctx.arc(ex, ey, innerR, 0, 2 * Math.PI);
       ctx.fillStyle = COLOR_OX;
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(ex, ey, innerR + (outerR - innerR) * 0.3, 0, 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(10,10,20,0.8)';
+      ctx.strokeStyle = 'rgba(10,10,20,0.9)';
       ctx.lineWidth = 1;
       ctx.stroke();
     });
@@ -395,7 +397,7 @@ function fmt(v: number | null | undefined, dec = 2): string {
 }
 
 export default function InjectorFace(props: InjectorFaceProps) {
-  const { selectedRow, dOxMm, dFuelMm } = props;
+  const { selectedRow, dOxMm, dFuelMm, chamberPressureBar } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<ViewState>(DEFAULT_VIEW);
@@ -412,6 +414,7 @@ export default function InjectorFace(props: InjectorFaceProps) {
     const rect = canvas.getBoundingClientRect();
     const cssW = rect.width;
     const cssH = rect.height;
+    if (cssW === 0 || cssH === 0) return;
     canvas.width  = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
     const ctx = canvas.getContext('2d');
@@ -420,12 +423,21 @@ export default function InjectorFace(props: InjectorFaceProps) {
     drawFace(canvas, cssW, cssH, viewRef.current, props);
   }, [props]);
 
-  // Set centered view once dimensions are known on mount
+  // Set centered view once dimensions are known — retry each frame until layout is ready
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const { width: cW, height: cH } = canvas.getBoundingClientRect();
-    if (cW > 0 && cH > 0) setView(centeredView(cW, cH));
+    let rafId: number;
+    const tryCenter = () => {
+      const { width: cW, height: cH } = canvas.getBoundingClientRect();
+      if (cW > 0 && cH > 0) {
+        setView(centeredView(cW, cH));
+      } else {
+        rafId = requestAnimationFrame(tryCenter);
+      }
+    };
+    rafId = requestAnimationFrame(tryCenter);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   useEffect(() => {
@@ -584,6 +596,21 @@ export default function InjectorFace(props: InjectorFaceProps) {
             <>
               <span className="inj-fo-key">Imp. dist</span>
               <span className="inj-fo-val">{fmt(selectedRow.impingement_point_dist_mm, 2)} <span className="inj-fo-unit">mm</span></span>
+            </>
+          )}
+
+          <span className="inj-fo-key">ΔP</span>
+          <span className="inj-fo-val">
+            {fmt(selectedRow.delta_P_bar, 2)} <span className="inj-fo-unit">bar</span>
+            <span className="inj-fo-sub"> ({fmt(selectedRow.dp_percentage, 1)}%)</span>
+          </span>
+
+          {chamberPressureBar != null && (
+            <>
+              <span className="inj-fo-key">Inlet P</span>
+              <span className="inj-fo-val">
+                {fmt(chamberPressureBar + selectedRow.delta_P_bar, 2)} <span className="inj-fo-unit">bar</span>
+              </span>
             </>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { IconButton, Tooltip, Select, MenuItem, FormControl, TextField } from '@mui/material';
+import { IconButton, Tooltip, Select, MenuItem, FormControl, Slider } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -65,6 +65,10 @@ export default function InjectorRightPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [localDOx, setLocalDOx]     = useState(dOxMm);
+  const [localDFuel, setLocalDFuel] = useState(dFuelMm);
+  const [localAngle, setLocalAngle] = useState(impingementHalfAngleDeg);
+
   const fetchSweep = useCallback(async () => {
     if (!engineDesignResult) return;
     const opt      = engineDesignResult.engineOutputs.mixtureRatio.optimum;
@@ -92,15 +96,14 @@ export default function InjectorRightPanel({
       });
       setSweepResult(result);
 
-      // Pre-select the recommended row, or keep current selection if it matches dp%
       const rec = result.sweep.find((r) => r.recommended);
-      if (rec) {
-        const keepCurrent = selectedRow &&
-          result.sweep.some((r) => r.dp_percentage === selectedRow.dp_percentage);
-        if (!keepCurrent) onRowSelect(rec);
-      }
+      if (rec) onRowSelect(rec);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Sweep failed');
+      if (e instanceof TypeError) {
+        setError('Unable to reach the calculation server. Please ensure the API is running.');
+      } else {
+        setError(e instanceof Error ? e.message : 'Sweep failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -148,35 +151,31 @@ export default function InjectorRightPanel({
             <div className="inj-rp-section-label">Orifice Diameters (mm)</div>
             <div className="inj-rp-two-col">
               <div className="inj-rp-field">
-                <span className="inj-rp-field-label">Oxidizer</span>
-                <TextField
-                  type="number"
+                <span className="inj-rp-field-label">Oxidizer — {localDOx.toFixed(2)} mm</span>
+                <Slider
                   size="small"
-                  fullWidth
-                  value={dOxMm}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (!isNaN(v) && v >= OX_FUEL_DIA_MIN && v <= OX_FUEL_DIA_MAX) onDOxChange(v);
-                  }}
-                  className="read-input"
-                  slotProps={{ input: { inputProps: { step: OX_FUEL_DIA_STEP, min: OX_FUEL_DIA_MIN, max: OX_FUEL_DIA_MAX } } }}
-                  sx={{ '& input': { fontFamily: "'Courier New', monospace", fontSize: '12px' } }}
+                  value={localDOx}
+                  min={OX_FUEL_DIA_MIN}
+                  max={OX_FUEL_DIA_MAX}
+                  step={OX_FUEL_DIA_STEP}
+                  valueLabelDisplay="auto"
+                  onChange={(_, v) => setLocalDOx(v as number)}
+                  onChangeCommitted={(_, v) => onDOxChange(v as number)}
+                  sx={{ color: 'rgba(0,229,255,0.7)' }}
                 />
               </div>
               <div className="inj-rp-field">
-                <span className="inj-rp-field-label">Fuel</span>
-                <TextField
-                  type="number"
+                <span className="inj-rp-field-label">Fuel — {localDFuel.toFixed(2)} mm</span>
+                <Slider
                   size="small"
-                  fullWidth
-                  value={dFuelMm}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (!isNaN(v) && v >= OX_FUEL_DIA_MIN && v <= OX_FUEL_DIA_MAX) onDFuelChange(v);
-                  }}
-                  className="read-input"
-                  slotProps={{ input: { inputProps: { step: OX_FUEL_DIA_STEP, min: OX_FUEL_DIA_MIN, max: OX_FUEL_DIA_MAX } } }}
-                  sx={{ '& input': { fontFamily: "'Courier New', monospace", fontSize: '12px' } }}
+                  value={localDFuel}
+                  min={OX_FUEL_DIA_MIN}
+                  max={OX_FUEL_DIA_MAX}
+                  step={OX_FUEL_DIA_STEP}
+                  valueLabelDisplay="auto"
+                  onChange={(_, v) => setLocalDFuel(v as number)}
+                  onChangeCommitted={(_, v) => onDFuelChange(v as number)}
+                  sx={{ color: 'rgba(0,229,255,0.7)' }}
                 />
               </div>
             </div>
@@ -185,18 +184,18 @@ export default function InjectorRightPanel({
           {/* Impingement angle — only shown for impinging type */}
           {isImpinging && (
             <div className="inj-rp-section">
-              <div className="inj-rp-section-label">Impingement ½-angle (°)</div>
-              <FormControl fullWidth size="small">
-                <Select
-                  className="read-select"
-                  value={impingementHalfAngleDeg}
-                  onChange={(e) => onImpingementAngleChange(e.target.value as number)}
-                >
-                  {HALF_ANGLES_DEG.map((v) => (
-                    <MenuItem key={v} value={v}>{v}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <div className="inj-rp-section-label">Impingement ½-angle — {localAngle}°</div>
+              <Slider
+                size="small"
+                value={localAngle}
+                min={HALF_ANGLES_DEG[0]}
+                max={HALF_ANGLES_DEG[HALF_ANGLES_DEG.length - 1]}
+                step={1}
+                valueLabelDisplay="auto"
+                onChange={(_, v) => setLocalAngle(v as number)}
+                onChangeCommitted={(_, v) => onImpingementAngleChange(v as number)}
+                sx={{ color: 'rgba(0,229,255,0.7)' }}
+              />
               <div className="inj-rp-hint">
                 30° → deep convergence &nbsp;|&nbsp; 60° → near-face
               </div>
@@ -216,10 +215,11 @@ export default function InjectorRightPanel({
               </Tooltip>
             </div>
 
-            {loading && <div className="inj-rp-status">Computing...</div>}
+            {loading && !sweepResult && <div className="inj-rp-status">Computing...</div>}
             {error   && <div className="inj-rp-error">{error}</div>}
 
-            {!loading && !error && sweepResult && (
+            {!error && sweepResult && (
+              <div style={{ opacity: loading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
               <div className="inj-sweep-table-wrap">
                 <table className="inj-sweep-table">
                   <thead>
@@ -250,6 +250,7 @@ export default function InjectorRightPanel({
                     })}
                   </tbody>
                 </table>
+              </div>
               </div>
             )}
 
