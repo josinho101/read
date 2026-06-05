@@ -226,6 +226,29 @@ definitions:
             items:
               $ref: '#/definitions/PropellantInfo'
 
+  SavedEngineEntry:
+    type: object
+    required:
+      - name
+      - version
+      - saved_at
+    properties:
+      name:
+        type: string
+        example: "Merlin1D"
+      version:
+        type: string
+        example: "1.2"
+      saved_at:
+        type: string
+        format: date-time
+        example: "2026-06-04T12:00:00+00:00"
+
+  SavedEngineList:
+    type: array
+    items:
+      $ref: '#/definitions/SavedEngineEntry'
+
   EngineDesignResult:
     type: object
     required:
@@ -492,3 +515,113 @@ paths:
           description: "Generated engine design results."
           schema:
             $ref: '#/definitions/EngineDesignResult'
+
+  /api/v1/engines:
+    get:
+      summary: "List all saved engines"
+      description: "Returns metadata (name, version, saved_at) for every engine JSON file on the server."
+      tags:
+        - "Engine Storage"
+      responses:
+        200:
+          description: "Array of saved engine metadata entries."
+          schema:
+            $ref: '#/definitions/SavedEngineList'
+    post:
+      summary: "Save a new engine"
+      description: "Saves engine configuration to the server. Returns 409 if an engine with the same name and version already exists."
+      tags:
+        - "Engine Storage"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            required:
+              - name
+              - version
+            properties:
+              name:
+                type: string
+                example: "Merlin1D"
+              version:
+                type: string
+                example: "1.2"
+      responses:
+        201:
+          description: "Engine saved successfully."
+          schema:
+            $ref: '#/definitions/SavedEngineEntry'
+        400:
+          description: "Missing name or version field."
+        409:
+          description: "Engine with this name and version already exists."
+
+  /api/v1/engines/{name}/{version}:
+    get:
+      summary: "Get a saved engine"
+      description: "Retrieves the full configuration JSON for the named engine version."
+      tags:
+        - "Engine Storage"
+      parameters:
+        - name: name
+          in: path
+          required: true
+          type: string
+          description: "Engine name"
+        - name: version
+          in: path
+          required: true
+          type: string
+          description: "Engine version"
+      responses:
+        200:
+          description: "Full engine configuration JSON."
+        404:
+          description: "Engine not found."
+    put:
+      summary: "Update a saved engine"
+      description: "Overwrites the configuration for an existing engine version."
+      tags:
+        - "Engine Storage"
+      parameters:
+        - name: name
+          in: path
+          required: true
+          type: string
+        - name: version
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+      responses:
+        200:
+          description: "Engine updated successfully."
+          schema:
+            $ref: '#/definitions/SavedEngineEntry'
+        404:
+          description: "Engine not found."
+    delete:
+      summary: "Delete a saved engine"
+      description: "Permanently removes the engine JSON file from the server."
+      tags:
+        - "Engine Storage"
+      parameters:
+        - name: name
+          in: path
+          required: true
+          type: string
+        - name: version
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Engine deleted successfully."
+        404:
+          description: "Engine not found."

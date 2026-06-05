@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
@@ -9,6 +9,8 @@ import MainContent, { type Tab } from './components/mainContent/mainContent';
 import { type EngineDesignResult, type EngineImportData, type EngineFormInputs } from './services/engineDesignService';
 import { type InjectorType } from './services/injectorSweepService';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from './components/engineContour/isentropicFlow';
+import { engineStorageService } from './services/engineStorageService';
+import SavedEnginesModal from './components/savedEnginesModal/SavedEnginesModal';
 import './App.css';
 
 const darkTheme = createTheme({
@@ -86,6 +88,21 @@ export default function App() {
   const [dFuelMm, setDFuelMm]                                     = useState(1.2);
   const [impingementHalfAngleDeg, setImpingementHalfAngleDeg]     = useState(45);
 
+  // Server-save state
+  const [showSavedModal, setShowSavedModal]     = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const isFirstRender = useRef(true);
+
+  // Mark dirty whenever any design-relevant state changes (skip very first render)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    setHasUnsavedChanges(true);
+  }, [
+    nozzleType, angleOverrides, lStarM, contractionRatio,
+    injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg,
+    engineName, engineVersion,
+  ]);
+
   const handleLeftToggle = useCallback(() => setLeftCollapsed(prev => !prev), []);
 
   const handleDesignStart = useCallback(() => setIsLoading(true), []);
@@ -135,13 +152,54 @@ export default function App() {
       setDFuelMm(data.injectorConfig.dFuelMm);
       setImpingementHalfAngleDeg(data.injectorConfig.impingementHalfAngleDeg);
     }
+    setHasUnsavedChanges(false);
   }, []);
+
+  const handleSaveToServer = useCallback(async () => {
+    const form = formSnapshotRef.current;
+    if (!form) return;
+    const name = form.engineName || 'engine';
+    const version = form.engineVersion || '0';
+    const data: EngineImportData = {
+      version: '1.0',
+      inputs: { ...form },
+      nozzleAdjustments: { nozzleType, angleOverrides },
+      chamberDesign: { lStarM, contractionRatio },
+      injectorConfig: { type: injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg },
+    };
+    try {
+      await engineStorageService.saveEngine(name, version, data);
+      setHasUnsavedChanges(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('409')) {
+        if (confirm(`Engine '${name}' v${version} already exists. Overwrite?`)) {
+          try {
+            await engineStorageService.updateEngine(name, version, data);
+            setHasUnsavedChanges(false);
+          } catch {
+            alert('Failed to update engine on server.');
+          }
+        }
+      } else {
+        alert('Failed to save engine to server.');
+      }
+    }
+  }, [nozzleType, angleOverrides, lStarM, contractionRatio, injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg]);
+
+  const handleOpenSaved = useCallback(() => setShowSavedModal(true), []);
 
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <div className="app-shell">
-        <Header onExportClick={handleExport} onImportData={handleImportData} />
+        <Header
+          onExportClick={handleExport}
+          onImportData={handleImportData}
+          onSaveToServer={handleSaveToServer}
+          onOpenSaved={handleOpenSaved}
+          hasUnsavedChanges={hasUnsavedChanges}
+        />
         <div className="app-body">
           <LeftPanel
             collapsed={leftCollapsed}
@@ -190,6 +248,12 @@ export default function App() {
           />
         </div>
       </div>
+
+      <SavedEnginesModal
+        open={showSavedModal}
+        onClose={() => setShowSavedModal(false)}
+        onImportData={handleImportData}
+      />
 
       {isLoading && (
         <Box sx={{

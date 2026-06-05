@@ -2,15 +2,20 @@ import { useRef } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
 import { type EngineImportData } from '../../services/engineDesignService';
 import './header.css';
 
 interface HeaderProps {
   onExportClick: () => void;
   onImportData: (data: EngineImportData) => void;
+  onSaveToServer: () => void;
+  onOpenSaved: () => void;
+  hasUnsavedChanges: boolean;
 }
 
-export default function Header({ onExportClick, onImportData }: HeaderProps) {
+export default function Header({ onExportClick, onImportData, onSaveToServer, onOpenSaved, hasUnsavedChanges }: HeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,12 +59,26 @@ export default function Header({ onExportClick, onImportData }: HeaderProps) {
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
-        <Tooltip title="Import Engine File">
+        <Tooltip title="Open saved engines">
+          <IconButton className="header-icon-btn" size="small" onClick={onOpenSaved}>
+            <FolderOpenOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Save to server">
+          <IconButton
+            className={`header-icon-btn${hasUnsavedChanges ? ' header-icon-btn--glow' : ''}`}
+            size="small"
+            onClick={onSaveToServer}
+          >
+            <CloudUploadOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Import engine file">
           <IconButton className="header-icon-btn" size="small" onClick={() => fileInputRef.current?.click()}>
             <FileUploadOutlinedIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Export Engine File">
+        <Tooltip title="Export engine file">
           <IconButton className="header-icon-btn" size="small" onClick={onExportClick}>
             <FileDownloadOutlinedIcon fontSize="small" />
           </IconButton>

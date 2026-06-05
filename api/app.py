@@ -7,6 +7,7 @@ from flasgger import Swagger
 from controllers.propellants_controller import propellants_controller
 from controllers.engine_controller import engine_controller
 from controllers.injector_controller import injector_controller
+from controllers.engine_storage_controller import engine_storage_controller
 
 app = Flask(__name__)
 
@@ -34,6 +35,7 @@ Swagger(app, template_file=swagger_template_path, config=swagger_config)
 app.register_blueprint(propellants_controller)
 app.register_blueprint(engine_controller)
 app.register_blueprint(injector_controller)
+app.register_blueprint(engine_storage_controller)
 
 # Serve React frontend static files (only used when running in container)
 # In local dev, Vite handles serving the frontend directly.
