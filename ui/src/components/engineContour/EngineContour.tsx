@@ -48,6 +48,8 @@ interface Props {
   onShowParticlesChange: (v: boolean) => void;
   showPlume: boolean;
   onShowPlumeChange: (v: boolean) => void;
+  rightCollapsed: boolean;
+  onRightToggle: () => void;
 }
 
 const DEG   = Math.PI / 180;
@@ -429,11 +431,11 @@ export default function EngineContour({
   flowProperty, onFlowPropertyChange,
   showParticles, onShowParticlesChange,
   showPlume, onShowPlumeChange,
+  rightCollapsed, onRightToggle,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [showLabels, setShowLabels] = useState(true);
-  const [rightCollapsed, setRightCollapsed] = useState(true);
   const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -807,7 +809,7 @@ export default function EngineContour({
       </div>
       <EngineContourRightPanel
         collapsed={rightCollapsed}
-        onToggle={() => setRightCollapsed(v => !v)}
+        onToggle={onRightToggle}
         nozzleType={nozzleType}
         onNozzleTypeChange={onNozzleTypeChange}
         angleOverrides={angleOverrides}

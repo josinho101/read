@@ -1,0 +1,103 @@
+.cdlg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(9, 13, 18, 0.8);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cdlg-modal {
+  background: #0d1117;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  box-shadow: 0 0 60px rgba(0, 229, 255, 0.07), 0 24px 64px rgba(0, 0, 0, 0.8);
+  width: 380px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cdlg-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+.cdlg-title {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00e5ff;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+.cdlg-body {
+  padding: 18px 16px 14px;
+}
+
+.cdlg-message {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #c8dce6;
+  line-height: 1.6;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.cdlg-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+.cdlg-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 16px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.cdlg-btn--cancel {
+  background: transparent;
+  color: rgba(200, 220, 230, 0.55);
+  border-color: rgba(200, 220, 230, 0.2);
+}
+
+.cdlg-btn--cancel:hover {
+  color: #c8dce6;
+  border-color: rgba(200, 220, 230, 0.45);
+  background: rgba(200, 220, 230, 0.05);
+}
+
+.cdlg-btn--confirm {
+  background: rgba(0, 229, 255, 0.12);
+  color: #00e5ff;
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.cdlg-btn--confirm:hover {
+  background: rgba(0, 229, 255, 0.22);
+  border-color: #00e5ff;
+}
+
+.cdlg-btn--danger {
+  background: rgba(255, 80, 80, 0.1);
+  color: #ff5050;
+  border-color: rgba(255, 80, 80, 0.4);
+}
+
+.cdlg-btn--danger:hover {
+  background: rgba(255, 80, 80, 0.22);
+  border-color: #ff5050;
+}

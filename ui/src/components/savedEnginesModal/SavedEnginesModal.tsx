@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { IconButton, Tooltip, CircularProgress, TextField } from '@mui/material';
+import { IconButton, Tooltip, CircularProgress, TextField, Snackbar, Alert } from '@mui/material';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import FileOpenOutlinedIcon from '@mui/icons-material/FileOpenOutlined';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { engineStorageService, type SavedEngineEntry } from '../../services/engineStorageService';
 import { type EngineImportData } from '../../services/engineDesignService';
+import ConfirmDialog from '../confirmDialog/ConfirmDialog';
 import './SavedEnginesModal.css';
 
 interface Props {
@@ -20,6 +21,8 @@ export default function SavedEnginesModal({ open, onClose, onImportData }: Props
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [notification, setNotification] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ name: string; version: string } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -66,21 +69,27 @@ export default function SavedEnginesModal({ open, onClose, onImportData }: Props
       onImportData(data);
       onClose();
     } catch {
-      alert(`Failed to load engine '${name}' v${version}.`);
+      setNotification({ message: `Failed to load engine '${name}' v${version}.`, severity: 'error' });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleDelete = async (name: string, version: string) => {
-    if (!confirm(`Delete engine '${name}' v${version}? This cannot be undone.`)) return;
+  const handleDelete = (name: string, version: string) => {
+    setPendingDelete({ name, version });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingDelete) return;
+    const { name, version } = pendingDelete;
+    setPendingDelete(null);
     const key = `${name}@${version}`;
     setActionLoading(key);
     try {
       await engineStorageService.deleteEngine(name, version);
       setEngines((prev) => prev.filter((e) => !(e.name === name && e.version === version)));
     } catch {
-      alert(`Failed to delete engine '${name}' v${version}.`);
+      setNotification({ message: `Failed to delete engine '${name}' v${version}.`, severity: 'error' });
     } finally {
       setActionLoading(null);
     }
@@ -143,7 +152,7 @@ export default function SavedEnginesModal({ open, onClose, onImportData }: Props
           )}
 
           {!loading && Array.from(grouped.entries()).map(([name, versions]) => {
-            const isExpanded = expandedGroups.has(name) || versions.length === 1;
+            const isExpanded = !!search.trim() || expandedGroups.has(name) || versions.length === 1;
             return (
               <div key={name} className="sem-group">
                 <button
@@ -207,6 +216,35 @@ export default function SavedEnginesModal({ open, onClose, onImportData }: Props
           })}
         </div>
       </div>
+
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={3500}
+        onClose={() => setNotification(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setNotification(null)}
+          severity={notification?.severity}
+          sx={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '12px' }}
+        >
+          {notification?.message}
+        </Alert>
+      </Snackbar>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="DELETE ENGINE"
+        message={
+          pendingDelete
+            ? `Delete engine '${pendingDelete.name}' v${pendingDelete.version}? This cannot be undone.`
+            : ''
+        }
+        confirmLabel="DELETE"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

@@ -101,6 +101,9 @@ export default function MainContent({
   const [injectorSelectedRow, setInjectorSelectedRow] = useState<InjectorSweepRow | null>(null);
   const [injectorRightCollapsed, setInjectorRightCollapsed] = useState(false);
 
+  // Engine Contour tab state
+  const [engineContourRightCollapsed, setEngineContourRightCollapsed] = useState(true);
+
   useEffect(() => {
     setConfirmedRow(null);
     setDialogSelectedRow(null);
@@ -315,6 +318,8 @@ export default function MainContent({
               onShowParticlesChange={onShowParticlesChange}
               showPlume={showPlume}
               onShowPlumeChange={onShowPlumeChange}
+              rightCollapsed={engineContourRightCollapsed}
+              onRightToggle={() => setEngineContourRightCollapsed(c => !c)}
             />
           ) : (
             <div className="canvas-placeholder">

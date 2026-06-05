@@ -3,6 +3,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import Header from './components/header/header';
 import LeftPanel from './components/leftPanel/leftPanel';
 import MainContent, { type Tab } from './components/mainContent/mainContent';
@@ -11,6 +13,7 @@ import { type InjectorType } from './services/injectorSweepService';
 import { type NozzleType, type AngleOverrides, type FlowProperty } from './components/engineContour/isentropicFlow';
 import { engineStorageService } from './services/engineStorageService';
 import SavedEnginesModal from './components/savedEnginesModal/SavedEnginesModal';
+import ConfirmDialog from './components/confirmDialog/ConfirmDialog';
 import './App.css';
 
 const darkTheme = createTheme({
@@ -92,6 +95,12 @@ export default function App() {
   const [showSavedModal, setShowSavedModal]     = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isFirstRender = useRef(true);
+  const [notification, setNotification] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const showNotification = useCallback((message: string, severity: 'success' | 'error') => {
+    setNotification({ message, severity });
+  }, []);
+  const [overwritePending, setOverwritePending] = useState(false);
+  const pendingOverwriteRef = useRef<{ name: string; version: string; data: EngineImportData } | null>(null);
 
   // Mark dirty whenever any design-relevant state changes (skip very first render)
   useEffect(() => {
@@ -170,24 +179,38 @@ export default function App() {
     try {
       await engineStorageService.saveEngine(name, version, data);
       setHasUnsavedChanges(false);
+      showNotification(`Engine '${name}' v${version} saved.`, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('409')) {
-        if (confirm(`Engine '${name}' v${version} already exists. Overwrite?`)) {
-          try {
-            await engineStorageService.updateEngine(name, version, data);
-            setHasUnsavedChanges(false);
-          } catch {
-            alert('Failed to update engine on server.');
-          }
-        }
+        pendingOverwriteRef.current = { name, version, data };
+        setOverwritePending(true);
       } else {
-        alert('Failed to save engine to server.');
+        showNotification('Failed to save engine to server.', 'error');
       }
     }
-  }, [nozzleType, angleOverrides, lStarM, contractionRatio, injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg]);
+  }, [nozzleType, angleOverrides, lStarM, contractionRatio, injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg, showNotification]);
 
   const handleOpenSaved = useCallback(() => setShowSavedModal(true), []);
+
+  const handleOverwriteConfirm = useCallback(async () => {
+    const pending = pendingOverwriteRef.current;
+    if (!pending) return;
+    setOverwritePending(false);
+    pendingOverwriteRef.current = null;
+    try {
+      await engineStorageService.updateEngine(pending.name, pending.version, pending.data);
+      setHasUnsavedChanges(false);
+      showNotification(`Engine '${pending.name}' v${pending.version} overwritten.`, 'success');
+    } catch {
+      showNotification('Failed to update engine on server.', 'error');
+    }
+  }, [showNotification]);
+
+  const handleOverwriteCancel = useCallback(() => {
+    setOverwritePending(false);
+    pendingOverwriteRef.current = null;
+  }, []);
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -254,6 +277,34 @@ export default function App() {
         onClose={() => setShowSavedModal(false)}
         onImportData={handleImportData}
       />
+
+      <ConfirmDialog
+        open={overwritePending}
+        title="OVERWRITE ENGINE"
+        message={
+          pendingOverwriteRef.current
+            ? `Engine '${pendingOverwriteRef.current.name}' v${pendingOverwriteRef.current.version} already exists. Overwrite it?`
+            : ''
+        }
+        confirmLabel="OVERWRITE"
+        onConfirm={handleOverwriteConfirm}
+        onCancel={handleOverwriteCancel}
+      />
+
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={3500}
+        onClose={() => setNotification(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setNotification(null)}
+          severity={notification?.severity}
+          sx={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '12px' }}
+        >
+          {notification?.message}
+        </Alert>
+      </Snackbar>
 
       {isLoading && (
         <Box sx={{
