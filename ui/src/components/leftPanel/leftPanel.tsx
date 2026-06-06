@@ -37,7 +37,7 @@ interface LeftPanelProps {
 export default function LeftPanel({
   collapsed, onToggle,
   isLoading, onDesignStart, onDesignResult, onDesignError,
-  onEngineMetaChange, onAmbientPressureChange, onFormChange,
+  onEngineMetaChange, onFormChange,
   importData,
   lStarM, contractionRatio = 8.0,
   onLStarChange, onContractionRatioChange, onNavigateToCombustion,

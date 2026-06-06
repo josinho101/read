@@ -1,6 +1,4 @@
-import json
 import numpy as np
-import matplotlib.pyplot as plt
 from rocketcea.cea_obj_w_units import CEA_Obj
 
 from services.propellants_service import get_fuel_name_by_code, get_oxidizer_name_by_code
@@ -17,96 +15,6 @@ L_STAR_DEFAULTS: dict[tuple[str, str], tuple[float, float]] = {
     ('N2O',   'RP1'):     (0.90, 1.20),
 }
 L_STAR_FALLBACK = (0.90, 1.20)
-
-def plot_propulsion_tradeoffs(mr_list, isp_list, tc_list, opt_mr):
-    """
-    Dedicated function to plot the trade-off curves for Specific Impulse
-    and Combustion Chamber Temperature across the swept O/F range.
-    """
-    fig, ax1 = plt.subplots(figsize=(10, 6))
-
-    color = 'tab:blue'
-    ax1.set_xlabel('Mixture Ratio (O/F)', fontweight='bold')
-    ax1.set_ylabel('Ideal Sea Level Isp (s)', color=color, fontweight='bold')
-    ax1.plot(mr_list, isp_list, color=color, linewidth=2.5, label='Specific Impulse')
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.grid(True, linestyle=':', alpha=0.6)
-
-    ax2 = ax1.twinx()
-    color = 'tab:red'
-    ax2.set_ylabel('Chamber Flame Temp Tc (K)', color=color, fontweight='bold')
-    ax2.plot(mr_list, tc_list, color=color, linewidth=2, linestyle='--', label='Chamber Temp (Tc)')
-    ax2.tick_params(axis='y', labelcolor=color)
-
-    ax1.axvline(opt_mr, color='green', linestyle=':', linewidth=2, label=f'Optimal O/F ({opt_mr:.2f})')
-
-    plt.title('Rocket Propellant Performance Trade-offs', fontsize=14, fontweight='bold')
-    fig.tight_layout()
-
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='lower center')
-
-    print("Displaying Mixture Ratio trade-off chart window")
-    plt.show()
-
-def print_output_data(output_data):
-    engine_inputs = output_data.get('engineInputs', {})
-    engine_outputs = output_data.get('engineOutputs', {})
-    oxidizer_name = engine_inputs["propellants"]["oxidizer"]["name"]
-    fuel_name = engine_inputs["propellants"]["fuel"]["name"]
-    oxidizer_code = engine_inputs["propellants"]["oxidizer"]["code"]
-    fuel_code = engine_inputs["propellants"]["fuel"]["code"]
-    performance_mode = engine_inputs.get("performanceMode", "sea_level")
-
-    print(f"========================================================================================================")
-    print(f"                               RUNNING PROPULSION SWEEP ACROSS O/F RANGE                               ")
-    print(f"========================================================================================================")
-    print(f"{'MR (O/F)':<10} | {'Isp (s)':<8} | {'Tc (K)':<8} | {'C* (m/s)':<10} | {'Total Flow (g/s)':<18} | {'Ox Flow (g/s)':<15} | {'Fuel Flow (g/s)':<15}")
-    print(f"-------------------------------------------------------------------------------------------------------")
-
-    sweep_data = engine_outputs.get('mixtureRatio', {}).get('sweep', {})
-    sweep_values = sweep_data.get('values', [])
-    for item in sweep_values:
-        mr = item['mixtureRatio']
-        isp = item['specificImpulse']
-        tc = item['chamberTemperature']
-        cstar = item['characteristicVelocityCstar']
-        mdot_total = item['totalMassFlow']
-        mdot_ox = item['oxidizerMassFlow']
-        mdot_fuel = item['fuelMassFlow']
-        print(f"{mr:<10.2f} | {isp:<8.2f} | {tc:<8.1f} | {cstar:<10.2f} | {mdot_total:<18.2f} | {mdot_ox:<15.2f} | {mdot_fuel:<15.2f}")
-
-    print(f"========================================================================================================")
-
-    print(f"==================================================")
-    print(f"           ROCKET ENGINE DESIGN SUMMARY           ")
-    print(f"==================================================")
-    print(f"Target Thrust:       {engine_inputs['targetThrust']['value']:.1f} N")
-    print(f"Propellants:         {oxidizer_name} ({oxidizer_code}) / {fuel_name} ({fuel_code})")
-    print(f"Chamber Pressure:    {engine_inputs['chamberPressure']['value']:.1f} bar")
-    print(f"Performance Mode:    {performance_mode.replace('_', ' ').title()}")
-    opt = engine_outputs['mixtureRatio']['optimum']
-    print(f"Optimum O/F Ratio:   {opt['mixtureRatio']['value']:.2f}")
-    print(f"Nozzle Expansion Ratio:   {opt['expansionRatio']['value']:.3f}")
-    print(f"Nozzle Throat Radius:   {opt['throatRadius']['value']:.3f} mm")
-    print(f"Nozzle Exit Radius:     {opt['exitRadius']['value']:.3f} mm")
-    print(f"Chamber Radius:         {opt['chamberRadius']['value']:.3f} mm")
-    print(f"Contraction Ratio:      {opt['contractionRatio']['value']:.2f}")
-    print(f"--------------------------------------------------")
-    print(f"THERMOCHEMICAL PERFORMANCE AT OPTIMUM MR:")
-    print(f"Chamber Temp (Tc):   {opt['chamberTemperature']['value']:.1f} K")
-    print(f"Peak Isp Found:      {opt['specificImpulse']['value']:.2f} s")
-    print(f"C* (Characteristic): {opt['characteristicVelocityCstar']['value']:.2f} m/s")
-    print(f"Thrust Coeff (Cf):   {opt['thrustCoefficientCf']['value']:.3f}")
-    print(f"Gamma (Chamber):     {opt['specificHeatRatioGamma']['value']:.4f}")
-    print(f"Molecular Wt (Chm):  {opt['combustionMolecularWeight']['value']:.2f} g/mol")
-    print(f"--------------------------------------------------")
-    print(f"MASS FLOW RATE AT OPTIMUM MR:")
-    print(f"Total Mass Flow:     {opt['totalMassFlow']['value']:.2f} g/s")
-    print(f"Oxidizer Flow rate:  {opt['oxidizerMassFlow']['value']:.2f} g/s")
-    print(f"Fuel Flow rate:      {opt['fuelMassFlow']['value']:.2f} g/s")
-    print(f"==================================================")
 
 def _extract_chamber_species(cea_obj, pc_bar: float, mr: float, eps: float) -> list:
     """Extract chamber species mass fractions from CEA, returning sorted list of {species, massFraction}."""
@@ -131,7 +39,6 @@ def generate_rocket_engine_params(
     l_star_m: float | None = None,
     contraction_ratio: float = 8.0,
     performance_mode='sea_level',
-    console_output=False,
 ):
     """Main execution wrapper to compute core engine characteristics and drive sub-modules."""
     g0 = 9.80665
@@ -290,21 +197,4 @@ def generate_rocket_engine_params(
         }
     }
 
-    if console_output:
-        print_output_data(output_data)
-        plot_propulsion_tradeoffs(mr_range, isp_list, tc_list, opt_mr)
-    else:
-        return output_data
-
-if __name__ == "__main__":
-    result = generate_rocket_engine_params(
-        ox_code='N2O',
-        fuel_code='Ethanol',
-        thrust_N=500.0,
-        pc_bar=10.0,
-        mr_min=3.5,
-        mr_max=5.5,
-        performance_mode='sea_level',
-        console_output=True
-    )
-    print(json.dumps(result))
+    return output_data

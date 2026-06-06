@@ -477,8 +477,6 @@ function buildSteps(r: EngineDesignResult): Step[] {
     const CR = opt.contractionRatio.value;
 
     const At_m2 = Math.PI * (Rt_mm / 1000) ** 2;
-    const Ac_m2 = Math.PI * (Rc_mm / 1000) ** 2;
-    const Ae_m2 = Math.PI * (Re_mm / 1000) ** 2;
 
     const cf_vac = (isp * G0) / cstar;
     const isp_vac = isVac ? isp : (cf_vac * cstar) / G0;

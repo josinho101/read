@@ -279,6 +279,471 @@
   }
 }
 
+/* ─── Lift of Mass ───────────────────────────────────────────────────────────── */
+.lom-intro {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.75;
+  color: rgba(200, 220, 230, 0.5);
+  letter-spacing: 0.2px;
+  margin-bottom: 8px;
+}
+
+.lom-intro p {
+  margin: 0;
+}
+
+.lom-highlight {
+  color: #00e5ff;
+  font-weight: 700;
+}
+
+/* Badge row */
+.lom-badge-row {
+  margin-bottom: 28px;
+}
+
+.lom-thrust-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-left: 3px solid #00e5ff;
+  border-radius: 4px;
+  padding: 10px 16px;
+}
+
+.lom-badge-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0, 229, 255, 0.55);
+}
+
+.lom-badge-value {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #00e5ff;
+  letter-spacing: 0.5px;
+}
+
+.lom-badge-source {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.25);
+  letter-spacing: 0.3px;
+}
+
+/* Slider section */
+.lom-slider-section {
+  background: #0d1117;
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 5px;
+  padding: 16px 20px 14px;
+  margin-bottom: 24px;
+}
+
+.lom-slider-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.lom-slider-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(200, 220, 230, 0.4);
+}
+
+.lom-reset-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(0, 229, 255, 0.55);
+  background: transparent;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 3px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.lom-reset-btn:hover {
+  color: #00e5ff;
+  border-color: rgba(0, 229, 255, 0.5);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.lom-slider-track-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lom-range-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lom-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: rgba(0, 229, 255, 0.15);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.lom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.lom-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.9);
+}
+
+.lom-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  border: none;
+  cursor: pointer;
+}
+
+.lom-slider-current {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.lom-current-value {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(200, 220, 230, 0.9);
+}
+
+.lom-current-delta {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(0, 229, 255, 0.5);
+  letter-spacing: 0.3px;
+}
+
+.lom-current-delta--base {
+  color: rgba(200, 220, 230, 0.25);
+}
+
+/* Tick marks */
+.lom-tick-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 2px 0;
+}
+
+.lom-tick {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0, 229, 255, 0.18);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.lom-tick:hover {
+  background: rgba(0, 229, 255, 0.45);
+}
+
+.lom-tick--active {
+  background: #00e5ff;
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.7);
+}
+
+.lom-tick--center:not(.lom-tick--active) {
+  background: rgba(0, 229, 255, 0.35);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+}
+
+/* TWR Table */
+.lom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  margin-bottom: 16px;
+}
+
+.lom-table th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(0, 229, 255, 0.55);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.lom-col-center {
+  text-align: center !important;
+}
+
+.lom-table td {
+  font-size: 11px;
+  color: rgba(200, 220, 230, 0.6);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.06);
+  padding: 12px 12px;
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.lom-td-goal {
+  font-weight: 700;
+  color: rgba(200, 220, 230, 0.8);
+  white-space: nowrap;
+}
+
+.lom-td-twr {
+  font-weight: 700;
+  color: rgba(200, 220, 230, 0.55);
+}
+
+.lom-td-mass {
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(200, 220, 230, 0.9);
+  white-space: nowrap;
+}
+
+.lom-td-behavior {
+  color: rgba(200, 220, 230, 0.4);
+  font-size: 10px;
+  letter-spacing: 0.2px;
+}
+
+.lom-tr--recommended td {
+  background: rgba(0, 229, 255, 0.03);
+}
+
+.lom-tr--recommended td:first-child {
+  border-left: 3px solid #00e5ff;
+}
+
+.lom-tr--recommended .lom-td-mass {
+  color: #00e5ff;
+}
+
+.lom-tr--threshold td {
+  background: rgba(255, 196, 0, 0.02);
+}
+
+.lom-tr--threshold td:first-child {
+  border-left: 3px solid rgba(255, 196, 0, 0.4);
+}
+
+/* Recommended badge */
+.lom-badge-rec {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Mobile cards */
+.lom-cards {
+  display: none;
+}
+
+.lom-card {
+  background: #0d1117;
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 5px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.lom-card--recommended {
+  border-left: 3px solid #00e5ff;
+  background: rgba(0, 229, 255, 0.03);
+}
+
+.lom-card--threshold {
+  border-left: 3px solid rgba(255, 196, 0, 0.4);
+}
+
+.lom-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.lom-card-goal {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(200, 220, 230, 0.85);
+}
+
+.lom-card-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.lom-card-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lom-card-stat-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0, 229, 255, 0.45);
+}
+
+.lom-card-stat-val {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(200, 220, 230, 0.75);
+}
+
+.lom-card-stat-val--mass {
+  font-size: 16px;
+  color: rgba(200, 220, 230, 0.9);
+}
+
+.lom-card--recommended .lom-card-stat-val--mass {
+  color: #00e5ff;
+}
+
+.lom-card-behavior {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.35);
+  margin: 0;
+  line-height: 1.55;
+  letter-spacing: 0.2px;
+}
+
+/* Dual-slider row */
+.lom-sliders-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.lom-sliders-row .lom-slider-section {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Table scroll wrapper */
+.lom-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lom-table-wrap .lom-table {
+  margin-bottom: 0;
+}
+
+/* Propellant columns */
+.lom-td-prop {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(200, 220, 230, 0.7);
+  white-space: nowrap;
+}
+
+.lom-td-prop-pct {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(0, 229, 255, 0.65);
+  white-space: nowrap;
+}
+
+.lom-tr--recommended .lom-td-prop-pct {
+  color: #00e5ff;
+}
+
+/* Footnote */
+.lom-footnote {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: rgba(200, 220, 230, 0.2);
+  letter-spacing: 0.2px;
+  margin: 4px 0 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .lom-table-wrap {
+    display: none;
+  }
+
+  .lom-cards {
+    display: block;
+  }
+
+  .lom-sliders-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .lom-thrust-badge {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  .lom-badge-value {
+    font-size: 16px;
+  }
+}
+
 /* ─── Steps & Equations — placeholder ───────────────────────────────────────── */
 .eq-placeholder {
   height: 100%;

@@ -168,7 +168,7 @@ function drawFace(
   view: ViewState,
   props: InjectorFaceProps,
 ) {
-  const { chamberRadiusMm, nOxidizer, nFuel, dOxMm, dFuelMm, injectorType, impingementHalfAngleDeg = 45 } = props;
+  const { chamberRadiusMm, nOxidizer, nFuel, dOxMm, dFuelMm, injectorType } = props;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 

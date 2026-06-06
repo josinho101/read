@@ -14,8 +14,9 @@ import InjectorFace from '../injectorFace/InjectorFace';
 import InjectorRightPanel from '../injectorRightPanel/InjectorRightPanel';
 import './mainContent.css';
 import Reference from '../reference/reference';
+import LiftOfMass from '../reference/LiftOfMass';
 
-const TABS = ['ENGINE CONTOUR', 'INJECTOR FACE', 'COMBUSTION', 'REFERENCE'] as const;
+const TABS = ['ENGINE CONTOUR', 'INJECTOR FACE', 'COMBUSTION', 'LIFT OF MASS', 'REFERENCE'] as const;
 export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
@@ -329,6 +330,7 @@ export default function MainContent({
           )
         )}
         {activeTab === 'COMBUSTION' && <CombustionAnalysis engineDesignResult={engineDesignResult} />}
+        {activeTab === 'LIFT OF MASS' && <LiftOfMass engineDesignResult={engineDesignResult} />}
         {activeTab === 'REFERENCE' && <Reference engineDesignResult={engineDesignResult} />}
         {activeTab === 'INJECTOR FACE' && (
           engineDesignResult ? (
