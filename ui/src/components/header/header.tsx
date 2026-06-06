@@ -62,7 +62,7 @@ export default function Header({ onExportClick, onImportData, onSaveToServer, on
           </svg>
         </div>
         <span className="header-logo-name">READ</span>
-        <span className="header-logo-subtitle">[Rocket Engine Analysis and Design - v0.1]</span>
+        <span className="header-logo-subtitle">[Rocket Engine Analysis and Design - v{import.meta.env.VITE_APP_VERSION}]</span>
       </div>
 
       <div className="header-actions">

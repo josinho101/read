@@ -77,12 +77,18 @@ API docs: `http://localhost:5173/swagger/`
 
 The image uses a 3-stage build: Node.js compiles the React frontend, a Python builder stage compiles rocketcea's Fortran code (gfortran/gcc are isolated here and never reach the final image), then a lean runtime stage serves everything from port 5000. No compiler toolchain needed on your machine.
 
+Before building, set the app version in `ui/.env`:
+
+```
+VITE_APP_VERSION=0.0.1
+```
+
 ```bash
 # Build the image (first build takes ~10–15 minutes — rocketcea compiles Fortran)
-docker build -t read-app .
+docker build -t read-app:0.0.1 .
 
 # Run the container
-docker run -d -p 5000:5000 read-app
+docker run -d -p 5000:5000 read-app:0.0.1
 ```
 
 Open `http://localhost:5000` in your browser.
