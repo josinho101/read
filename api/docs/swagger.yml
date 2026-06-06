@@ -510,6 +510,19 @@ paths:
           format: "float"
           default: 5.5
           description: "Maximum mixture ratio"
+        - name: "l_star_m"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          description: "Characteristic chamber length L* in meters. When omitted the service uses a propellant-pair default."
+        - name: "contraction_ratio"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 8.0
+          description: "Chamber-to-throat area contraction ratio (dimensionless). Controls chamber cross-sectional area."
       responses:
         200:
           description: "Generated engine design results."
