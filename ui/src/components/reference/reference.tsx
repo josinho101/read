@@ -108,6 +108,141 @@ const sections: Section[] = [
         ],
     },
     {
+        heading: 'Injector Hydraulics',
+        params: [
+            {
+                symbol: <><i>v</i><sub>ox</sub></>,
+                name: 'Oxidizer Velocity',
+                unit: 'm/s',
+                desc: 'Exit velocity of the oxidizer through each orifice. Derived from the Bernoulli equation corrected by the discharge coefficient: v_ox = C_d × √(2·ΔP / ρ_ox). Higher velocity improves atomisation but demands a larger pressure drop.',
+            },
+            {
+                symbol: <><i>v</i><sub>f</sub></>,
+                name: 'Fuel Velocity',
+                unit: 'm/s',
+                desc: 'Exit velocity of the fuel through each orifice. Derived from the same Bernoulli relation as v_ox using fuel density and its orifice pressure drop.',
+            },
+            {
+                symbol: <><i>v</i><sub>f</sub>/<i>v</i><sub>ox</sub></>,
+                name: 'Velocity Ratio',
+                unit: '—',
+                unitNone: true,
+                desc: 'Ratio of fuel jet velocity to oxidizer jet velocity. For coaxial injectors, a high velocity ratio (target ~10–15) drives shear atomisation: the fast fuel annulus strips droplets from the slower central oxidizer post. Lower ratios reduce mixing quality.',
+            },
+            {
+                symbol: <>J</>,
+                name: 'Momentum Flux Ratio',
+                unit: '—',
+                unitNone: true,
+                desc: 'Ratio of fuel-jet momentum flux to oxidizer-jet momentum flux: J = (ρ_f·v_f²) / (ρ_o·v_o²). For impinging injectors, targeting J ≈ 0.8–1.2 balances the two streams at the impingement point, producing a symmetric, well-mixed spray fan.',
+            },
+            {
+                symbol: <><i>x</i><sub>imp</sub></>,
+                name: 'Impingement Distance',
+                unit: 'mm',
+                desc: 'Distance from the injector face to the jet impingement point, computed from the orifice spacing and the impingement half-angle. Only relevant for impinging injector types. Shorter distances reduce the chance of unburned propellant recirculating back to the face.',
+            },
+            {
+                symbol: <>ΔP</>,
+                name: 'Pressure Drop',
+                unit: 'bar',
+                desc: 'Absolute pressure difference across the injector (manifold inlet to chamber). Sets the driving head for propellant flow. Higher ΔP improves combustion stability and makes the injector less sensitive to chamber pressure oscillations.',
+            },
+            {
+                symbol: <>ΔP%</>,
+                name: 'Pressure Drop Ratio',
+                unit: '%',
+                desc: 'Pressure drop expressed as a percentage of chamber pressure (ΔP / Pc × 100). Typical design targets are 10–35 %: too low risks combustion instability; too high wastes propulsion system energy and requires a heavier feed system.',
+            },
+            {
+                symbol: <><i>d</i><sub>o</sub></>,
+                name: 'Oxidizer Orifice Diameter',
+                unit: 'mm',
+                desc: 'Drill diameter of each oxidizer orifice. Smaller diameters produce finer droplets and higher jet velocities at the same mass flow, but require more holes and are harder to manufacture consistently.',
+            },
+            {
+                symbol: <><i>d</i><sub>f</sub></>,
+                name: 'Fuel Orifice Diameter',
+                unit: 'mm',
+                desc: 'Drill diameter of each fuel orifice. Typically sized relative to the oxidizer diameter to achieve the desired velocity ratio and momentum flux ratio for the chosen injector architecture.',
+            },
+            {
+                symbol: <><i>N</i><sub>ox</sub></>,
+                name: 'Oxidizer Hole Count',
+                unit: '—',
+                unitNone: true,
+                desc: 'Number of oxidizer orifices drilled at the selected diameter. Determined by dividing the required total oxidizer flow area by the area of one orifice. Must be an integer, so the actual ΔP is slightly adjusted from the nominal target.',
+            },
+            {
+                symbol: <><i>N</i><sub>f</sub></>,
+                name: 'Fuel Hole Count',
+                unit: '—',
+                unitNone: true,
+                desc: 'Number of fuel orifices drilled at the selected diameter. For impinging doublets N_f = N_ox; for triplets the ratio is fixed by the pattern (FOF: N_f = 2×N_ox, OFO: N_ox = 2×N_f).',
+            },
+            {
+                symbol: <><i>C</i><sub>d</sub></>,
+                name: 'Discharge Coefficient',
+                unit: '—',
+                unitNone: true,
+                desc: 'Ratio of actual orifice flow to the theoretical ideal (Cd = ṁ_actual / ṁ_ideal). Accounts for viscous losses and vena contracta effects. Sharp-edged holes: ~0.61; rounded or chamfered entries: 0.7–0.85. Assigned per injector architecture in the design model.',
+            },
+            {
+                symbol: <>α<sub>imp</sub></>,
+                name: 'Impingement Half-Angle',
+                unit: '°',
+                desc: 'Half the included angle between the two converging jet axes in an impinging injector. Smaller angles (≈30°) place the impingement point further from the face (deep convergence), reducing face heating but lengthening the mixing region. Larger angles (≈60°) bring the impingement point close to the face for compact mixing.',
+            },
+        ],
+    },
+    {
+        heading: 'Injector Architectures',
+        params: [
+            {
+                symbol: <>SH</>,
+                name: 'Showerhead Injector',
+                unit: '—',
+                unitNone: true,
+                desc: 'Propellants enter through separate banks of parallel holes aimed straight into the chamber with no deliberate cross-stream impingement. Mixing relies entirely on turbulence and diffusion, so combustion efficiency is lower than impinging or coaxial designs. Simple to manufacture and tolerant of chugging instability.',
+            },
+            {
+                symbol: <>CX</>,
+                name: 'Coaxial Injector',
+                unit: '—',
+                unitNone: true,
+                desc: 'A central post carries one propellant (typically oxidizer) while the other (typically fuel) flows through a concentric annular gap around it. The high fuel-to-oxidizer velocity ratio (~10–15) creates intense shear at the interface that atomises both streams. Standard architecture for LOX/LH2 engines (e.g., Vulcain, SSME) due to excellent mixing of the low-density hydrogen.',
+            },
+            {
+                symbol: <>D</>,
+                name: 'Impinging Doublet',
+                unit: '—',
+                unitNone: true,
+                desc: 'One oxidizer jet and one fuel jet aimed to collide at a point. The impingement shatters both streams into a spray fan perpendicular to the jet plane. Simple element geometry that provides good mixing across a wide throttle range. Used in many storable-propellant engines.',
+            },
+            {
+                symbol: <>FOF</>,
+                name: 'Impinging Triplet (FOF)',
+                unit: '—',
+                unitNone: true,
+                desc: 'One central oxidizer jet flanked by two fuel jets that converge on it. N_f = 2 × N_ox. The two fuel streams form a symmetric spray fan around the central oxidizer, producing a locally fuel-rich mixing zone that can protect chamber walls. Used where film cooling effects are desired.',
+            },
+            {
+                symbol: <>OFO</>,
+                name: 'Impinging Triplet (OFO)',
+                unit: '—',
+                unitNone: true,
+                desc: 'One central fuel jet flanked by two oxidizer jets that converge on it. N_ox = 2 × N_f. The symmetric oxidizer attack on the fuel stream creates an oxidizer-rich spray fan that can improve combustion completeness. Used where high combustion efficiency is prioritised over wall protection.',
+            },
+            {
+                symbol: <>PT</>,
+                name: 'Pintle Injector',
+                unit: '—',
+                unitNone: true,
+                desc: 'A central pintle post injects one propellant radially outward while the other enters axially through an annular gap around the post. The two streams impinge at the pintle tip. Inherently throttleable over a wide range (10:1 or more) by varying the annular gap. Used in the Apollo Lunar Module descent engine and SpaceX Merlin (early iterations).',
+            },
+        ],
+    },
+    {
         heading: 'Gas Chemistry',
         params: [
             {
@@ -544,6 +679,20 @@ function buildSteps(r: EngineDesignResult): Step[] {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Terminologies() {
+    const [query, setQuery] = useState('');
+
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? sections
+            .map((s) => ({
+                ...s,
+                params: s.params.filter(
+                    (p) => p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q),
+                ),
+            }))
+            .filter((s) => s.params.length > 0)
+        : sections;
+
     return (
         <div className="reference-page">
             <div className="reference-header">
@@ -551,7 +700,25 @@ function Terminologies() {
                 <p className="reference-subtitle">Symbols, units, and definitions for all engine design parameters</p>
             </div>
 
-            {sections.map((section) => (
+            <div className="ref-search-wrap">
+                <input
+                    className="ref-search-input"
+                    type="text"
+                    placeholder="Search parameters…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    spellCheck={false}
+                />
+                {query && (
+                    <button className="ref-search-clear" onClick={() => setQuery('')}>✕</button>
+                )}
+            </div>
+
+            {filtered.length === 0 && (
+                <div className="ref-no-results">No parameters match "{query}"</div>
+            )}
+
+            {filtered.map((section) => (
                 <div className="reference-section" key={section.heading}>
                     <h2 className="reference-section-heading">{section.heading}</h2>
                     <div className="reference-grid">

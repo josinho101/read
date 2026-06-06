@@ -1,6 +1,7 @@
 import { IconButton, Tooltip, Select, MenuItem, FormControl, Slider } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { type NozzleType, type AngleOverrides } from '../engineContour/isentropicFlow';
 import { interpolateRaoAngles, RAO_LN_DEFAULT, RAO_LN_MIN, RAO_LN_MAX, RAO_LN_STEP } from '../engineContour/raoContour';
 import './engineContourRightPanel.css';
@@ -50,7 +51,12 @@ export default function EngineContourRightPanel({
           <div className="panel-form">
 
             <div className="form-group">
-              <span className="form-label">Nozzle Type</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                <span className="form-label">Nozzle Type</span>
+                <Tooltip title="Conical: constant-angle cone. Bell: curved parabolic shape, shorter than conical at equal efficiency. Rao Optimal: thrust-maximising contour from Rao's 1958 variational analysis — angles are computed automatically." placement="left" arrow>
+                  <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                </Tooltip>
+              </div>
               <FormControl fullWidth size="small">
                 <Select
                   className="read-select"
@@ -70,8 +76,13 @@ export default function EngineContourRightPanel({
             </div>
 
             <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="form-label">θconv</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="form-label">θconv</span>
+                  <Tooltip title="Convergent half-angle (20–50°). Shallower angle = smoother flow deceleration into the throat and lower boundary-layer losses, but a longer engine." placement="left" arrow>
+                    <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                  </Tooltip>
+                </div>
                 <span className="unit-badge">{convVal}°</span>
               </div>
               <Slider
@@ -86,8 +97,13 @@ export default function EngineContourRightPanel({
             {nozzleType === 'bell' && (
               <>
                 <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="form-label">θn</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="form-label">θn</span>
+                      <Tooltip title="Initial divergent angle just past the throat (20–35°). Steep angle rapidly turns the flow axially to avoid oblique shocks forming near the throat region." placement="left" arrow>
+                        <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                      </Tooltip>
+                    </div>
                     <span className="unit-badge">{tNVal}°</span>
                   </div>
                   <Slider
@@ -99,8 +115,13 @@ export default function EngineContourRightPanel({
                   />
                 </div>
                 <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="form-label">θe</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="form-label">θe</span>
+                      <Tooltip title="Exit wall angle (0–30°). Near-zero values keep the exhaust flow nearly axial for maximum thrust. Rao nozzles compute this automatically." placement="left" arrow>
+                        <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                      </Tooltip>
+                    </div>
                     <span className="unit-badge">{tEVal}°</span>
                   </div>
                   <Slider
@@ -116,8 +137,13 @@ export default function EngineContourRightPanel({
 
             {nozzleType === 'conical' && (
               <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span className="form-label">θdiv</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span className="form-label">θdiv</span>
+                    <Tooltip title="Conical divergent half-angle (10–25°). Smaller angle = higher thrust efficiency but a longer, heavier nozzle." placement="left" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                    </Tooltip>
+                  </div>
                   <span className="unit-badge">{divVal}°</span>
                 </div>
                 <Slider
@@ -133,8 +159,13 @@ export default function EngineContourRightPanel({
             {nozzleType === 'rao' && (
               <>
                 <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="form-label">Ln/Lref</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="form-label">Ln/Lref</span>
+                      <Tooltip title="Rao nozzle length as a fraction of the equivalent 15° conical nozzle length. 0.8 = 80% as long — trades a small thrust penalty for reduced weight. θn and θe are computed automatically from this value and the expansion ratio ε." placement="left" arrow>
+                        <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                      </Tooltip>
+                    </div>
                     <span className="unit-badge">{lnFrac.toFixed(2)}</span>
                   </div>
                   <Slider

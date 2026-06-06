@@ -568,38 +568,54 @@ export default function InjectorFace(props: InjectorFaceProps) {
 
       {selectedRow && (
         <div className="inj-face-overlay">
-          <span className="inj-fo-key">Ox holes</span>
+          <Tooltip title="Number of oxidizer orifices at the selected drill diameter" placement="right" arrow>
+            <span className="inj-fo-key">Ox holes</span>
+          </Tooltip>
           <span className="inj-fo-val">
             {selectedRow.oxidizer_hole_count}
             <span className="inj-fo-sub"> @ {dOxMm} mm ⌀</span>
           </span>
 
-          <span className="inj-fo-key">Fuel holes</span>
+          <Tooltip title="Number of fuel orifices at the selected drill diameter" placement="right" arrow>
+            <span className="inj-fo-key">Fuel holes</span>
+          </Tooltip>
           <span className="inj-fo-val">
             {selectedRow.fuel_hole_count}
             <span className="inj-fo-sub"> @ {dFuelMm} mm ⌀</span>
           </span>
 
-          <span className="inj-fo-key">Ox velocity</span>
+          <Tooltip title="Oxidizer exit velocity through each orifice — v_ox = C_d × √(2·ΔP / ρ_ox)" placement="right" arrow>
+            <span className="inj-fo-key">Ox velocity</span>
+          </Tooltip>
           <span className="inj-fo-val">{fmt(selectedRow.oxidizer_velocity_ms, 1)} <span className="inj-fo-unit">m/s</span></span>
 
-          <span className="inj-fo-key">Fuel velocity</span>
+          <Tooltip title="Fuel exit velocity through each orifice — v_f = C_d × √(2·ΔP / ρ_f)" placement="right" arrow>
+            <span className="inj-fo-key">Fuel velocity</span>
+          </Tooltip>
           <span className="inj-fo-val">{fmt(selectedRow.fuel_velocity_ms, 1)} <span className="inj-fo-unit">m/s</span></span>
 
-          <span className="inj-fo-key">Velocity ratio</span>
+          <Tooltip title="v_f / v_ox — coaxial shear-atomisation driver; target ~10–15 for effective mixing" placement="right" arrow>
+            <span className="inj-fo-key">Velocity ratio</span>
+          </Tooltip>
           <span className="inj-fo-val">{fmt(selectedRow.v_ratio, 3)}</span>
 
-          <span className="inj-fo-key">Mom. flux ratio</span>
+          <Tooltip title="J = ρ_f·v_f² / ρ_o·v_o² — impinging mixing quality; target ~0.8–1.2 for a balanced spray fan" placement="right" arrow>
+            <span className="inj-fo-key">Mom. flux ratio</span>
+          </Tooltip>
           <span className="inj-fo-val">{fmt(selectedRow.momentum_flux_ratio, 3)}</span>
 
           {selectedRow.impingement_point_dist_mm != null && (
             <>
-              <span className="inj-fo-key">Imp. dist</span>
+              <Tooltip title="Distance from the injector face to the jet impingement point (impinging types only)" placement="right" arrow>
+                <span className="inj-fo-key">Imp. dist</span>
+              </Tooltip>
               <span className="inj-fo-val">{fmt(selectedRow.impingement_point_dist_mm, 2)} <span className="inj-fo-unit">mm</span></span>
             </>
           )}
 
-          <span className="inj-fo-key">ΔP</span>
+          <Tooltip title="Pressure drop across the injector. Higher ΔP improves combustion stability but increases feed system pressure requirements." placement="right" arrow>
+            <span className="inj-fo-key">ΔP</span>
+          </Tooltip>
           <span className="inj-fo-val">
             {fmt(selectedRow.delta_P_bar, 2)} <span className="inj-fo-unit">bar</span>
             <span className="inj-fo-sub"> ({fmt(selectedRow.dp_percentage, 1)}%)</span>
@@ -607,7 +623,9 @@ export default function InjectorFace(props: InjectorFaceProps) {
 
           {chamberPressureBar != null && (
             <>
-              <span className="inj-fo-key">Inlet P</span>
+              <Tooltip title="Required propellant inlet pressure = Pc + ΔP" placement="right" arrow>
+                <span className="inj-fo-key">Inlet P</span>
+              </Tooltip>
               <span className="inj-fo-val">
                 {fmt(chamberPressureBar + selectedRow.delta_P_bar, 2)} <span className="inj-fo-unit">bar</span>
               </span>

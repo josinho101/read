@@ -132,7 +132,12 @@ export default function InjectorRightPanel({
 
           {/* Architecture selector */}
           <div className="inj-rp-section">
-            <div className="inj-rp-section-label">Architecture</div>
+            <div className="inj-rp-section-label-row">
+              <span className="inj-rp-section-label">Architecture</span>
+              <Tooltip title="Injector pattern controlling how propellants mix. Coaxial: central post + annular gap, high velocity ratio drives shear atomisation. Impinging: jets collide at a point. Pintle: central post, highly throttleable. Showerhead: parallel jets, simplest." placement="left" arrow>
+                <InfoOutlinedIcon sx={{ fontSize: 14, color: 'rgba(0,229,255,0.5)', cursor: 'pointer' }} />
+              </Tooltip>
+            </div>
             <FormControl fullWidth size="small">
               <Select
                 className="read-select"
@@ -148,7 +153,12 @@ export default function InjectorRightPanel({
 
           {/* Orifice diameters */}
           <div className="inj-rp-section">
-            <div className="inj-rp-section-label">Orifice Diameters (mm)</div>
+            <div className="inj-rp-section-label-row">
+              <span className="inj-rp-section-label">Orifice Diameters (mm)</span>
+              <Tooltip title="Drill diameter of each orifice. Smaller holes produce higher jet velocity at the same mass flow (higher ΔP), finer atomisation, but require more holes and tighter manufacturing tolerances." placement="left" arrow>
+                <InfoOutlinedIcon sx={{ fontSize: 14, color: 'rgba(0,229,255,0.5)', cursor: 'pointer' }} />
+              </Tooltip>
+            </div>
             <div className="inj-rp-two-col">
               <div className="inj-rp-field">
                 <span className="inj-rp-field-label">Oxidizer — {localDOx.toFixed(2)} mm</span>
@@ -184,7 +194,12 @@ export default function InjectorRightPanel({
           {/* Impingement angle — only shown for impinging type */}
           {isImpinging && (
             <div className="inj-rp-section">
-              <div className="inj-rp-section-label">Impingement ½-angle — {localAngle}°</div>
+              <div className="inj-rp-section-label-row">
+                <span className="inj-rp-section-label">Impingement ½-angle — {localAngle}°</span>
+                <Tooltip title="Half the included angle between the two converging jet axes. 30° → jets meet far from the face (deep convergence, cooler face). 60° → jets meet close to the face (compact mixing zone)." placement="left" arrow>
+                  <InfoOutlinedIcon sx={{ fontSize: 14, color: 'rgba(0,229,255,0.5)', cursor: 'pointer' }} />
+                </Tooltip>
+              </div>
               <Slider
                 size="small"
                 value={localAngle}
