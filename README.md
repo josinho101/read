@@ -9,6 +9,10 @@ A web-based rocket engine design tool. Input a propellant pair and thrust requir
 - Sweep O/F ratio range to find optimal mixture ratio
 - View engine contour (chamber + nozzle geometry)
 - Interactive O/F ratio vs. performance graphs
+- Injector orifice sizing sweep — hydraulic analysis across ΔP range for six injector architectures (impinging doublet, FOF/OFO triplet, coaxial, showerhead, pintle)
+- Save, load, update, and delete named engine designs (persistent storage)
+- Parameter reference panel with 80+ terms: symbols, units, and physics descriptions
+- Thrust-to-Weight Ratio (TWR) / Lift-of-Mass calculator for mission mass budgeting
 - REST API with Swagger docs at `/swagger/`
 
 ---
@@ -93,19 +97,46 @@ API docs: `http://localhost:5000/swagger/`
 
 ```
 read/
-├── api/                  # Flask backend
-│   ├── app.py            # App entry point, routes, Swagger config
-│   ├── controllers/      # API route handlers
-│   ├── services/         # Business logic (CEA engine, propellant data)
-│   ├── docs/             # Swagger YAML definition
-│   └── requirements.txt  # Python dependencies
-├── ui/                   # React + Vite frontend
+├── api/                              # Flask backend
+│   ├── app.py                        # App entry point, route registration, Swagger config
+│   ├── controllers/
+│   │   ├── propellants_controller.py # GET /api/v1/propellants
+│   │   ├── engine_controller.py      # GET /api/v1/engine/design
+│   │   ├── engine_storage_controller.py  # CRUD /api/v1/engines
+│   │   └── injector_controller.py    # GET /api/v1/injector/sweep
+│   ├── services/
+│   │   ├── cea.py                    # NASA CEA wrapper (thermochemistry + geometry)
+│   │   ├── propellants_service.py    # Propellant database
+│   │   ├── engine_storage_service.py # JSON file persistence for saved engines
+│   │   └── injector.py               # Injector hydraulic sweep calculations
+│   ├── docs/
+│   │   └── swagger.yml               # OpenAPI 2.0 definition
+│   ├── saved_engines/                # Persisted engine JSON files
+│   └── requirements.txt
+├── ui/                               # React + Vite frontend
 │   ├── src/
-│   │   ├── components/   # UI panels and visualizations
-│   │   ├── services/     # API client
-│   │   └── constants.ts  # Shared config (API base URL)
-│   └── vite.config.ts    # Dev server + proxy config
-└── Dockerfile            # 3-stage build: Node frontend → Python builder → lean runtime
+│   │   ├── components/
+│   │   │   ├── leftPanel/            # Propellant & parameter inputs
+│   │   │   ├── mainContent/          # Tab container (5 tabs)
+│   │   │   ├── engineContour/        # 3D nozzle contour visualization
+│   │   │   ├── engineContourRightPanel/  # Contour controls & geometry display
+│   │   │   ├── injectorFace/         # Injector face 2D visualization
+│   │   │   ├── injectorRightPanel/   # Injector sweep controls & results table
+│   │   │   ├── combustionAnalysis/   # O/F sweep performance graphs
+│   │   │   ├── mrGraph/              # Mixture ratio graph widget
+│   │   │   ├── reference/            # Parameter reference & TWR calculator
+│   │   │   ├── savedEnginesModal/    # Save/load engine designs modal
+│   │   │   ├── confirmDialog/        # Generic confirmation dialog
+│   │   │   ├── header/
+│   │   │   └── footer/
+│   │   ├── services/                 # Typed API clients
+│   │   │   ├── engineDesignService.ts
+│   │   │   ├── engineStorageService.ts
+│   │   │   ├── injectorSweepService.ts
+│   │   │   └── propellantService.ts
+│   │   └── constants.ts              # Shared config (API base URL)
+│   └── vite.config.ts                # Dev server + proxy config
+└── Dockerfile                        # 3-stage build: Node frontend → Python builder → lean runtime
 ```
 
 ---
@@ -116,5 +147,11 @@ read/
 |--------|------|-------------|
 | GET | `/api/v1/propellants` | List available propellants |
 | GET | `/api/v1/engine/design` | Run engine design calculation |
+| GET | `/api/v1/engines` | List all saved engine designs |
+| POST | `/api/v1/engines` | Save a new engine design |
+| GET | `/api/v1/engines/<name>/<version>` | Retrieve a saved engine design |
+| PUT | `/api/v1/engines/<name>/<version>` | Update a saved engine design |
+| DELETE | `/api/v1/engines/<name>/<version>` | Delete a saved engine design |
+| GET | `/api/v1/injector/sweep` | Injector orifice hydraulic sweep |
 
 Full parameter reference available at `/swagger/`.
