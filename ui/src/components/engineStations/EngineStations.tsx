@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Tooltip } from '@mui/material';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
+  engineDesignService,
   type EngineDesignResult,
   type MixtureRatioSweepEntry,
+  type StationProperties,
   type CeaStationProps,
 } from '../../services/engineDesignService';
 import MrSweepModal from '../mrSweepModal/MrSweepModal';
@@ -108,6 +110,9 @@ interface Props {
 export default function EngineStations({ engineDesignResult }: Props) {
   const [selectedEntry, setSelectedEntry] = useState<MixtureRatioSweepEntry | null>(null);
   const [sweepOpen, setSweepOpen] = useState(false);
+  const [stationProps, setStationProps] = useState<StationProperties | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const sweep = engineDesignResult?.engineOutputs.mixtureRatio.sweep ?? null;
   const performanceMode = engineDesignResult?.engineInputs.performanceMode ?? 'sea_level';
@@ -122,6 +127,36 @@ export default function EngineStations({ engineDesignResult }: Props) {
     setSelectedEntry(optimumRow);
   }, [optimumRow]);
 
+  const fetchStationProps = useCallback(async () => {
+    if (!engineDesignResult || !selectedEntry) return;
+    const { propellants, chamberPressure, performanceMode: mode } = engineDesignResult.engineInputs;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await engineDesignService.getStationProperties({
+        ox_code: propellants.oxidizer.code,
+        fuel_code: propellants.fuel.code,
+        pc_bar: chamberPressure.value,
+        performance_mode: mode,
+        mixture_ratio: selectedEntry.mixtureRatio,
+      });
+      setStationProps(result);
+    } catch (e: unknown) {
+      if (e instanceof TypeError) {
+        setError('Unable to reach the calculation server. Please ensure the API is running.');
+      } else {
+        setError(e instanceof Error ? e.message : 'Failed to load station properties');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [engineDesignResult, selectedEntry]);
+
+  useEffect(() => {
+    fetchStationProps();
+  }, [fetchStationProps]);
+
   if (!engineDesignResult || !sweep) {
     return (
       <div className="canvas-placeholder">
@@ -130,8 +165,6 @@ export default function EngineStations({ engineDesignResult }: Props) {
       </div>
     );
   }
-
-  const stationProps = selectedEntry?.stationProperties ?? null;
 
   const fmtValue = (row: ParamRow, station: StationKey) => {
     if (!stationProps || !row.stations.includes(station)) return '—';
@@ -168,7 +201,10 @@ export default function EngineStations({ engineDesignResult }: Props) {
         </Tooltip>
       </div>
 
-      <div className="es-table-scroll">
+      {loading && !stationProps && <div className="es-status">Computing station properties…</div>}
+      {error && <div className="es-error">{error}</div>}
+
+      <div className="es-table-scroll" style={{ opacity: loading && stationProps ? 0.5 : 1, transition: 'opacity 0.15s' }}>
         <table className="es-table">
           <thead>
             <tr>
@@ -196,7 +232,7 @@ export default function EngineStations({ engineDesignResult }: Props) {
         </table>
       </div>
 
-      <div className="es-frozen-card">
+      <div className="es-frozen-card" style={{ opacity: loading && stationProps ? 0.5 : 1, transition: 'opacity 0.15s' }}>
         <div className="es-frozen-header">
           <span className="es-frozen-title">Frozen vs. Equilibrium Performance</span>
           <Tooltip

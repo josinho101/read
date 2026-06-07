@@ -56,7 +56,6 @@ definitions:
       - exitRadius
       - chamberRadius
       - contractionRatio
-      - stationProperties
     properties:
       mixtureRatio:
         type: number
@@ -118,8 +117,6 @@ definitions:
         type: number
         format: float
         description: "Contraction ratio (dimensionless)"
-      stationProperties:
-        $ref: '#/definitions/StationProperties'
 
   StationProps:
     type: object
@@ -631,6 +628,53 @@ paths:
           description: "Generated engine design results."
           schema:
             $ref: '#/definitions/EngineDesignResult'
+
+  /api/v1/engine/station-properties:
+    get:
+      summary: "Get station properties for a single mixture ratio"
+      description: "Computes chamber/throat/exit thermo & transport properties plus frozen-flow performance for one mixture-ratio point. Split out from the engine design sweep so the UI can fetch this on demand for just the selected mixture ratio, instead of computing it for every sweep point up front."
+      tags:
+        - "Engine"
+      parameters:
+        - name: "ox_code"
+          in: "query"
+          required: false
+          type: "string"
+          default: "LOX"
+          description: "Oxidizer code"
+        - name: "fuel_code"
+          in: "query"
+          required: false
+          type: "string"
+          default: "RP1"
+          description: "Fuel code"
+        - name: "pc_bar"
+          in: "query"
+          required: false
+          type: "number"
+          format: "float"
+          default: 20.0
+          description: "Chamber pressure in bar"
+        - name: "performance_mode"
+          in: "query"
+          required: false
+          type: "string"
+          enum:
+            - "sea_level"
+            - "vacuum"
+          default: "sea_level"
+          description: "Performance mode. Determines the expansion ratio used to evaluate station properties: 'sea_level' derives it from the chamber-to-ambient pressure ratio; 'vacuum' uses a fixed large expansion ratio."
+        - name: "mixture_ratio"
+          in: "query"
+          required: true
+          type: "number"
+          format: "float"
+          description: "O/F mixture ratio to evaluate station properties at — typically the mixture ratio of a selected sweep entry."
+      responses:
+        200:
+          description: "Chamber/throat/exit station properties and frozen-flow performance for the requested mixture ratio."
+          schema:
+            $ref: '#/definitions/StationProperties'
 
   /api/v1/engines:
     get:

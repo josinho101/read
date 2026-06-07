@@ -2,6 +2,14 @@ import { constants } from '../constants';
 import { BaseApi } from './api/baseApi';
 import { type InjectorType } from './injectorSweepService';
 
+export interface StationPropertiesParams {
+  ox_code: string;
+  fuel_code: string;
+  pc_bar: number;
+  performance_mode: 'sea_level' | 'vacuum';
+  mixture_ratio: number;
+}
+
 export interface EngineDesignParams {
   ox_code: string;
   fuel_code: string;
@@ -77,7 +85,6 @@ export interface MixtureRatioSweepEntry {
   exitRadius: number;
   chamberRadius: number;
   contractionRatio: number;
-  stationProperties: StationProperties;
 }
 
 export interface EngineDesignResult {
@@ -179,6 +186,17 @@ class EngineDesignService extends BaseApi {
     if (params.l_star_m !== undefined) query.set('l_star_m', String(params.l_star_m));
     if (params.contraction_ratio !== undefined) query.set('contraction_ratio', String(params.contraction_ratio));
     return this.get<EngineDesignResult>(`/api/v1/engine/design?${query}`);
+  }
+
+  async getStationProperties(params: StationPropertiesParams): Promise<StationProperties> {
+    const query = new URLSearchParams({
+      ox_code: params.ox_code,
+      fuel_code: params.fuel_code,
+      pc_bar: String(params.pc_bar),
+      performance_mode: params.performance_mode,
+      mixture_ratio: String(params.mixture_ratio),
+    });
+    return this.get<StationProperties>(`/api/v1/engine/station-properties?${query}`);
   }
 }
 

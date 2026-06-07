@@ -93,6 +93,20 @@ def _extract_chamber_species(cea_obj, pc_bar: float, mr: float, eps: float) -> l
     return result
 
 
+def get_station_properties(ox_code: str, fuel_code: str, pc_bar: float, mr: float, performance_mode: str = 'sea_level') -> dict:
+    """Compute chamber/throat/exit station properties for a single mixture-ratio point."""
+    cea_obj = CEA_Obj(oxName=ox_code, fuelName=fuel_code, pressure_units='bar', isp_units='sec', cstar_units='m/s', temperature_units='K',
+                      sonic_velocity_units='m/s', enthalpy_units='kJ/kg', density_units='kg/m^3', specific_heat_units='kJ/kg-K',
+                      thermal_cond_units='W/cm-degC')
+
+    if performance_mode == 'vacuum':
+        eps = VACUUM_EPS
+    else:
+        eps = cea_obj.get_eps_at_PcOvPe(PcOvPe=pc_bar / SEA_LEVEL_PRESSURE_BAR, MR=mr)
+
+    return _extract_station_properties(cea_obj, pc_bar, mr, eps)
+
+
 def generate_rocket_engine_params(
     ox_code='N2O', fuel_code='Ethanol',
     thrust_N=500.0, pc_bar=20.0,
@@ -161,7 +175,6 @@ def generate_rocket_engine_params(
             "exitRadius": round(float(exit_radius_mm_step), 3),
             "chamberRadius": round(float(chamber_radius_mm_step), 3),
             "contractionRatio": round(float(contraction_ratio), 3),
-            "stationProperties": _extract_station_properties(cea_obj, pc_bar, mr, eps_step)
         })
 
     opt_idx = np.argmax(np.array(isp_list))

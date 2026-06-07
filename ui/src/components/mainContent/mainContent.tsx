@@ -18,7 +18,7 @@ import './mainContent.css';
 import Reference from '../reference/reference';
 import LiftOfMass from '../reference/LiftOfMass';
 
-const TABS = ['ENGINE CONTOUR', 'INJECTOR FACE', 'COMBUSTION', 'ENGINE STATIONS', 'LIFT OF MASS', 'REFERENCE'] as const;
+const TABS = ['ENGINE CONTOUR', 'ENGINE STATIONS', 'INJECTOR FACE', 'COMBUSTION', 'LIFT OF MASS', 'REFERENCE'] as const;
 export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
