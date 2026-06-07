@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Button, Tooltip } from '@mui/material';
+import { Button, Tooltip, Tabs, Tab as MuiTab } from '@mui/material';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -178,17 +178,18 @@ export default function MainContent({
   return (
     <div className="main-content">
       {/* Tab bar */}
-      <div className="main-tabs">
+      <Tabs
+        className="main-tabs"
+        value={activeTab}
+        onChange={(_event, newValue: Tab) => onActiveTabChange(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
+        aria-label="main content tabs"
+      >
         {TABS.map((tab) => (
-          <button
-            key={tab}
-            className={`main-tab ${activeTab === tab ? 'main-tab--active' : ''}`}
-            onClick={() => onActiveTabChange(tab)}
-          >
-            {tab}
-          </button>
+          <MuiTab key={tab} value={tab} label={tab} className="main-tab" />
         ))}
-      </div>
+      </Tabs>
 
       {/* Toolbar — Engine Contour tab only */}
       {activeTab === 'ENGINE CONTOUR' && <div className="main-toolbar">

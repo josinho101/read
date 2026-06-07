@@ -9,40 +9,45 @@
 
 /* ─── Tab bar ──────────────────────────────────────────────────────────────── */
 .main-tabs {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
   padding: 10px 16px 0;
   border-bottom: 1px solid rgba(0, 229, 255, 0.2);
   flex-shrink: 0;
-  overflow-x: auto;
+  min-height: 0;
 }
 
-.main-tab {
+.main-tabs .MuiTab-root {
   padding: 8px 18px;
+  min-height: 0;
   font-family: 'Courier New', Courier, monospace;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
+  text-transform: none;
   color: rgba(200, 220, 230, 0.45);
-  background: transparent;
-  border: 1px solid transparent;
-  border-bottom: none;
   border-radius: 4px 4px 0 0;
-  cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.main-tab:hover {
+.main-tabs .MuiTab-root:hover {
   color: rgba(0, 229, 255, 0.8);
   background-color: rgba(0, 229, 255, 0.05);
 }
 
-.main-tab--active {
+.main-tabs .MuiTab-root.Mui-selected {
   color: #00e5ff;
-  border-color: rgba(0, 229, 255, 0.3);
-  background-color: rgba(0, 229, 255, 0.08);
+}
+
+.main-tabs .MuiTabs-indicator {
+  background-color: #00e5ff;
+}
+
+.main-tabs .MuiTabs-scrollButtons {
+  color: rgba(0, 229, 255, 0.6);
+}
+
+.main-tabs .MuiTabs-scrollButtons.Mui-disabled {
+  opacity: 0.25;
 }
 
 /* ─── Toolbar ──────────────────────────────────────────────────────────────── */
@@ -731,7 +736,7 @@
 }
 
 @media (max-width: 600px) {
-  .main-tab {
+  .main-tabs .MuiTab-root {
     font-size: 11px;
     padding: 6px 10px;
   }
