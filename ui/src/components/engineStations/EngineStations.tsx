@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Tooltip } from '@mui/material';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
   engineDesignService,
@@ -10,6 +11,7 @@ import {
   type CeaStationProps,
 } from '../../services/engineDesignService';
 import MrSweepModal from '../mrSweepModal/MrSweepModal';
+import MrGraph from '../mrGraph/MrGraph';
 import './EngineStations.css';
 
 type StationKey = 'chamber' | 'throat' | 'exit';
@@ -110,6 +112,7 @@ interface Props {
 export default function EngineStations({ engineDesignResult }: Props) {
   const [selectedEntry, setSelectedEntry] = useState<MixtureRatioSweepEntry | null>(null);
   const [sweepOpen, setSweepOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
   const [stationProps, setStationProps] = useState<StationProperties | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,20 +188,37 @@ export default function EngineStations({ engineDesignResult }: Props) {
             ? `Showing data for MR = ${selectedEntry.mixtureRatio.toFixed(3)}`
             : '— select a mixture ratio'}
         </span>
-        <Tooltip title={sweep ? 'View mixture ratio sweep data' : 'Run engine design first'}>
-          <span>
-            <Button
-              className="toolbar-btn toolbar-btn--sweep"
-              variant="outlined"
-              size="small"
-              startIcon={<TableChartIcon sx={{ fontSize: 14 }} />}
-              onClick={() => setSweepOpen(true)}
-              disabled={!sweep}
-            >
-              Mix Ratio Sweep
-            </Button>
-          </span>
-        </Tooltip>
+        <div className="es-toolbar-actions">
+          <Tooltip title={sweep ? 'View mixture ratio sweep data' : 'Run engine design first'}>
+            <span>
+              <Button
+                className="toolbar-btn toolbar-btn--sweep"
+                variant="outlined"
+                size="small"
+                startIcon={<TableChartIcon sx={{ fontSize: 14 }} />}
+                onClick={() => setSweepOpen(true)}
+                disabled={!sweep}
+              >
+                Mix Ratio Sweep
+              </Button>
+            </span>
+          </Tooltip>
+
+          <Tooltip title={sweep ? 'View performance trade-off graph' : 'Run engine design first'}>
+            <span>
+              <Button
+                className="toolbar-btn toolbar-btn--sweep"
+                variant="outlined"
+                size="small"
+                startIcon={<ShowChartIcon sx={{ fontSize: 14 }} />}
+                onClick={() => setGraphOpen(true)}
+                disabled={!sweep}
+              >
+                Mix Ratio Graph
+              </Button>
+            </span>
+          </Tooltip>
+        </div>
       </div>
 
       {loading && !stationProps && <div className="es-status">Computing station properties…</div>}
@@ -269,6 +289,15 @@ export default function EngineStations({ engineDesignResult }: Props) {
           performanceMode={performanceMode}
           onConfirm={(row) => { setSelectedEntry(row); setSweepOpen(false); }}
           onClose={() => setSweepOpen(false)}
+        />
+      )}
+
+      {graphOpen && sweep && (
+        <MrGraph
+          values={sweep.values}
+          units={sweep.units}
+          optimumRow={optimumRow}
+          onClose={() => setGraphOpen(false)}
         />
       )}
     </div>
