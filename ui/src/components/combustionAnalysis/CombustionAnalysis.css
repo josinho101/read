@@ -1,7 +1,7 @@
 .ca-root {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  height: 100%;
   overflow: hidden;
   padding: 20px 24px;
   font-family: 'Courier New', Courier, monospace;

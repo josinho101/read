@@ -35,6 +35,32 @@ interface ValueUnit {
   unit: string;
 }
 
+export interface CeaStationProps {
+  temperature: number;          // K
+  density: number;              // kg/m³
+  heatCapacityCp: number;       // kJ/(kg·K)
+  enthalpy: number;             // kJ/kg
+  sonicVelocity: number;        // m/s
+  molecularWeight: number;      // g/mol
+  gamma: number;
+  viscosity: number;            // Pa·s
+  thermalConductivity: number;  // W/(m·K)
+  prandtlNumber: number;
+  pressureRatioToChPc?: number; // Pc/P — throat and exit only
+  machNumber?: number;          // exit only
+}
+
+export interface StationProperties {
+  chamber: CeaStationProps;
+  throat: CeaStationProps;
+  exit: CeaStationProps;
+  frozenPerformance: {
+    ispFrozenVacS: number;
+    cstarFrozenMs: number;
+    frozenVsEquilIspDeltaPct: number;
+  };
+}
+
 export interface MixtureRatioSweepEntry {
   mixtureRatio: number;
   specificImpulse: number;
@@ -51,6 +77,7 @@ export interface MixtureRatioSweepEntry {
   exitRadius: number;
   chamberRadius: number;
   contractionRatio: number;
+  stationProperties: StationProperties;
 }
 
 export interface EngineDesignResult {

@@ -16,6 +16,67 @@ L_STAR_DEFAULTS: dict[tuple[str, str], tuple[float, float]] = {
 }
 L_STAR_FALLBACK = (0.90, 1.20)
 
+def _extract_station_properties(cea_obj, pc_bar: float, mr: float, eps: float) -> dict:
+    """Extract per-station (chamber/throat/exit) thermo & transport properties plus frozen-flow performance."""
+    temps = cea_obj.get_Temperatures(Pc=pc_bar, MR=mr, eps=eps)
+    densities = cea_obj.get_Densities(Pc=pc_bar, MR=mr, eps=eps)
+    cps = cea_obj.get_HeatCapacities(Pc=pc_bar, MR=mr, eps=eps)
+    enthalpies = cea_obj.get_Enthalpies(Pc=pc_bar, MR=mr, eps=eps)
+    sonic_vels = cea_obj.get_SonicVelocities(Pc=pc_bar, MR=mr, eps=eps)
+
+    chm_cp, chm_visc, chm_cond, chm_pr = cea_obj.get_Chamber_Transport(Pc=pc_bar, MR=mr, eps=eps)
+    tht_cp, tht_visc, tht_cond, tht_pr = cea_obj.get_Throat_Transport(Pc=pc_bar, MR=mr, eps=eps)
+    ext_cp, ext_visc, ext_cond, ext_pr = cea_obj.get_Exit_Transport(Pc=pc_bar, MR=mr, eps=eps)
+
+    chm_mw, chm_gamma = cea_obj.get_Chamber_MolWt_gamma(Pc=pc_bar, MR=mr, eps=eps)
+    tht_mw, tht_gamma = cea_obj.get_Throat_MolWt_gamma(Pc=pc_bar, MR=mr, eps=eps)
+    ext_mw, ext_gamma = cea_obj.get_exit_MolWt_gamma(Pc=pc_bar, MR=mr, eps=eps)
+
+    isp_frozen, cstar_frozen, _tc_frozen = cea_obj.getFrozen_IvacCstrTc(Pc=pc_bar, MR=mr, eps=eps)
+    isp_equil = cea_obj.get_Isp(Pc=pc_bar, MR=mr, eps=eps)
+
+    mach_exit = cea_obj.get_MachNumber(Pc=pc_bar, MR=mr, eps=eps)
+    pc_ov_pe = cea_obj.get_PcOvPe(Pc=pc_bar, MR=mr, eps=eps)
+    pc_ov_pt = cea_obj.get_Throat_PcOvPe(Pc=pc_bar, MR=mr)
+
+    VISC_MPOISE_TO_PAS = 1e-4
+    COND_W_PER_CMK_TO_W_PER_MK = 100.0
+
+    def _station(idx, mw, gamma, cp, visc, cond, prandtl):
+        return {
+            "temperature": round(float(temps[idx]), 3),
+            "density": round(float(densities[idx]), 4),
+            "heatCapacityCp": round(float(cps[idx]), 4),
+            "enthalpy": round(float(enthalpies[idx]), 3),
+            "sonicVelocity": round(float(sonic_vels[idx]), 3),
+            "molecularWeight": round(float(mw), 3),
+            "gamma": round(float(gamma), 4),
+            "viscosity": round(float(visc) * VISC_MPOISE_TO_PAS, 8),
+            "thermalConductivity": round(float(cond) * COND_W_PER_CMK_TO_W_PER_MK, 5),
+            "prandtlNumber": round(float(prandtl), 4),
+        }
+
+    chamber = _station(0, chm_mw, chm_gamma, chm_cp, chm_visc, chm_cond, chm_pr)
+
+    throat = _station(1, tht_mw, tht_gamma, tht_cp, tht_visc, tht_cond, tht_pr)
+    throat["pressureRatioToChPc"] = round(float(pc_ov_pt), 4)
+
+    exit_station = _station(2, ext_mw, ext_gamma, ext_cp, ext_visc, ext_cond, ext_pr)
+    exit_station["machNumber"] = round(float(mach_exit), 4)
+    exit_station["pressureRatioToChPc"] = round(float(pc_ov_pe), 4)
+
+    return {
+        "chamber": chamber,
+        "throat": throat,
+        "exit": exit_station,
+        "frozenPerformance": {
+            "ispFrozenVacS": round(float(isp_frozen), 3),
+            "cstarFrozenMs": round(float(cstar_frozen), 3),
+            "frozenVsEquilIspDeltaPct": round((float(isp_equil) - float(isp_frozen)) / float(isp_equil) * 100.0, 3),
+        },
+    }
+
+
 def _extract_chamber_species(cea_obj, pc_bar: float, mr: float, eps: float) -> list:
     """Extract chamber species mass fractions from CEA, returning sorted list of {species, massFraction}."""
     CHM_IDX = 1  # injface=0, chamber=1, throat=2, exit=3
@@ -42,7 +103,9 @@ def generate_rocket_engine_params(
 ):
     """Main execution wrapper to compute core engine characteristics and drive sub-modules."""
     g0 = 9.80665
-    cea_obj = CEA_Obj(oxName=ox_code, fuelName=fuel_code, pressure_units='bar', isp_units='sec', cstar_units='m/s', temperature_units='K')
+    cea_obj = CEA_Obj(oxName=ox_code, fuelName=fuel_code, pressure_units='bar', isp_units='sec', cstar_units='m/s', temperature_units='K',
+                      sonic_velocity_units='m/s', enthalpy_units='kJ/kg', density_units='kg/m^3', specific_heat_units='kJ/kg-K',
+                      thermal_cond_units='W/cm-degC')
     mr_range = np.linspace(mr_min, mr_max, 25)
     isp_list, tc_list, records = [], [], []
     json_sweep_array = []
@@ -97,7 +160,8 @@ def generate_rocket_engine_params(
             "throatRadius": round(float(throat_radius_mm_step), 3),
             "exitRadius": round(float(exit_radius_mm_step), 3),
             "chamberRadius": round(float(chamber_radius_mm_step), 3),
-            "contractionRatio": round(float(contraction_ratio), 3)
+            "contractionRatio": round(float(contraction_ratio), 3),
+            "stationProperties": _extract_station_properties(cea_obj, pc_bar, mr, eps_step)
         })
 
     opt_idx = np.argmax(np.array(isp_list))

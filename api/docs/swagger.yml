@@ -56,6 +56,7 @@ definitions:
       - exitRadius
       - chamberRadius
       - contractionRatio
+      - stationProperties
     properties:
       mixtureRatio:
         type: number
@@ -117,6 +118,108 @@ definitions:
         type: number
         format: float
         description: "Contraction ratio (dimensionless)"
+      stationProperties:
+        $ref: '#/definitions/StationProperties'
+
+  StationProps:
+    type: object
+    required:
+      - temperature
+      - density
+      - heatCapacityCp
+      - enthalpy
+      - sonicVelocity
+      - molecularWeight
+      - gamma
+      - viscosity
+      - thermalConductivity
+      - prandtlNumber
+    properties:
+      temperature:
+        type: number
+        format: float
+        description: "Static temperature at this station, in K"
+      density:
+        type: number
+        format: float
+        description: "Gas density at this station, in kg/m^3"
+      heatCapacityCp:
+        type: number
+        format: float
+        description: "Specific heat capacity at constant pressure, in kJ/(kg*K)"
+      enthalpy:
+        type: number
+        format: float
+        description: "Specific enthalpy at this station, in kJ/kg"
+      sonicVelocity:
+        type: number
+        format: float
+        description: "Local speed of sound at this station, in m/s"
+      molecularWeight:
+        type: number
+        format: float
+        description: "Average molecular weight of the gas at this station, in g/mol"
+      gamma:
+        type: number
+        format: float
+        description: "Ratio of specific heats Cp/Cv at this station (dimensionless)"
+      viscosity:
+        type: number
+        format: float
+        description: "Dynamic viscosity at this station, in Pa*s"
+      thermalConductivity:
+        type: number
+        format: float
+        description: "Thermal conductivity at this station, in W/(m*K)"
+      prandtlNumber:
+        type: number
+        format: float
+        description: "Prandtl number at this station (dimensionless)"
+      pressureRatioToChPc:
+        type: number
+        format: float
+        description: "Ratio of chamber pressure to local pressure Pc/P at this station — throat and exit only (dimensionless)"
+      machNumber:
+        type: number
+        format: float
+        description: "Local flow Mach number — exit only (dimensionless)"
+
+  FrozenPerformance:
+    type: object
+    required:
+      - ispFrozenVacS
+      - cstarFrozenMs
+      - frozenVsEquilIspDeltaPct
+    properties:
+      ispFrozenVacS:
+        type: number
+        format: float
+        description: "Vacuum specific impulse assuming frozen-flow expansion, in seconds"
+      cstarFrozenMs:
+        type: number
+        format: float
+        description: "Characteristic velocity C* assuming frozen-flow expansion, in m/s"
+      frozenVsEquilIspDeltaPct:
+        type: number
+        format: float
+        description: "Percent gap between equilibrium and frozen vacuum Isp — (equilibrium - frozen) / equilibrium * 100"
+
+  StationProperties:
+    type: object
+    required:
+      - chamber
+      - throat
+      - exit
+      - frozenPerformance
+    properties:
+      chamber:
+        $ref: '#/definitions/StationProps'
+      throat:
+        $ref: '#/definitions/StationProps'
+      exit:
+        $ref: '#/definitions/StationProps'
+      frozenPerformance:
+        $ref: '#/definitions/FrozenPerformance'
 
   InjectorSweepRow:
     type: object
