@@ -31,6 +31,7 @@ interface StatsDisplayData {
   gamma: number;
   molecularWeightGMol: number;
   characteristicLength: number;
+  cylindricalLengthMm: number;
 }
 
 const SWEEP_COLUMNS: { key: keyof MixtureRatioSweepEntry; label: string; decimals: number }[] = [
@@ -172,7 +173,7 @@ export default function MainContent({
       displayValues.exitRadius,
       displayValues.expansionRatio,
       displayValues.contractionRatio,
-      angleOverrides,
+      { ...angleOverrides, cylindricalLengthMm: displayValues.cylindricalLengthMm },
     );
     const dxf = generateEngineDXF(geom, nozzleType);
     downloadDXF(dxf, `${engineName}_v${engineVersion}_contour.dxf`);
@@ -191,6 +192,7 @@ export default function MainContent({
         gamma: confirmedRow.specificHeatRatioGamma,
         molecularWeightGMol: confirmedRow.combustionMolecularWeight,
         characteristicLength: opt?.characteristicLength.value ?? 0,
+        cylindricalLengthMm: opt?.cylindricalLength.value ?? 0,
       }
     : opt
     ? {
@@ -205,6 +207,7 @@ export default function MainContent({
         gamma: opt.specificHeatRatioGamma.value,
         molecularWeightGMol: opt.combustionMolecularWeight.value,
         characteristicLength: opt.characteristicLength.value,
+        cylindricalLengthMm: opt.cylindricalLength.value,
       }
     : null;
 
@@ -309,7 +312,7 @@ export default function MainContent({
               ambientPressureBar={ambientPressureBar}
               nozzleType={nozzleType}
               onNozzleTypeChange={onNozzleTypeChange}
-              angleOverrides={angleOverrides}
+              angleOverrides={{ ...angleOverrides, cylindricalLengthMm: displayValues.cylindricalLengthMm }}
               onAngleOverridesChange={onAngleOverridesChange}
               showFlowSim={showFlowSim}
               onShowFlowSimChange={onShowFlowSimChange}

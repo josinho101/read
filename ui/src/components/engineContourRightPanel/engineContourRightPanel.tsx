@@ -33,6 +33,8 @@ export default function EngineContourRightPanel({
   const defaultTEDeg = +Math.max(7, 15 - (expansionRatio - 1) * 0.3).toFixed(1);
   const tEVal        = angleOverrides.tEDeg             ?? defaultTEDeg;
   const lnFrac       = angleOverrides.lnFraction        ?? RAO_LN_DEFAULT;
+  const thrUpVal     = angleOverrides.throatUpR         ?? 1.0;
+  const thrDownVal   = angleOverrides.throatDownR       ?? 0.382;
 
   const { tN: raoTN, tE: raoTE } = interpolateRaoAngles(expansionRatio, lnFrac);
 
@@ -192,6 +194,39 @@ export default function EngineContourRightPanel({
                 </div>
               </>
             )}
+            <div style={{ borderTop: '1px solid rgba(0,229,255,0.15)', marginTop: 8, paddingTop: 8 }}>
+              <span className="form-label" style={{ display: 'block', marginBottom: 4 }}>Fillet Radii (× Rt)</span>
+
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span className="form-label">R upstream</span>
+                    <Tooltip title="Circular arc radius on the convergent side of the throat, as a multiple of the throat radius. Smooths the subsonic approach to the sonic point. Standard range: 0.5 – 1.5 × Rt." placement="left" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                    </Tooltip>
+                  </div>
+                  <span className="unit-badge">{thrUpVal.toFixed(2)} Rt</span>
+                </div>
+                <Slider value={thrUpVal} min={0.2} max={3.0} step={0.05} size="small" sx={sliderSx}
+                  onChange={(_, v) => onAngleOverridesChange({ ...angleOverrides, throatUpR: v as number })} />
+              </div>
+
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span className="form-label">R downstream</span>
+                    <Tooltip title="Circular arc radius on the divergent side of the throat, as a multiple of the throat radius. Rao's classic value is 0.382 × Rt. Controls how sharply the wall opens into the divergent section." placement="left" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: 13, color: 'rgba(0,229,255,0.5)', cursor: 'help' }} />
+                    </Tooltip>
+                  </div>
+                  <span className="unit-badge">{thrDownVal.toFixed(3)} Rt</span>
+                </div>
+                <Slider value={thrDownVal} min={0.1} max={1.5} step={0.01} size="small" sx={sliderSx}
+                  onChange={(_, v) => onAngleOverridesChange({ ...angleOverrides, throatDownR: v as number })} />
+              </div>
+
+            </div>
+
           </div>
         </div>
       )}

@@ -23,6 +23,10 @@ export interface AngleOverrides {
   tNDeg?: number;
   tEDeg?: number;
   lnFraction?: number;  // Rao only — Ln/Lref, range 0.6–1.0, default 0.8
+  cylindricalLengthMm?: number;  // from backend (L*-based); overrides heuristic when provided
+  throatUpR?:      number;  // upstream (conv-side) throat fillet radius as × Rt, default 1.0
+  throatDownR?:    number;  // downstream (div-side) throat fillet radius as × Rt, default 0.382
+  chamberFilletR?: number;  // chamber-to-convergent fillet radius as × Rt, default 0.5
 }
 
 export interface EngineGeometry {
@@ -39,7 +43,11 @@ export interface EngineGeometry {
   bp1x: number; bp1r: number;
   bp2x: number; bp2r: number;
   midY: number; pT: number;
-  sy: number;
+  sx: number; sy: number;
+  // throat arc geometry (all in mm)
+  thrUpR: number; thrDownR: number;
+  thrUpJctX: number; thrUpJctR: number;
+  thrDownJctX: number; thrDownJctR: number;
   px:  (x: number) => number;
   pt:  (r: number) => number;
   pb:  (r: number) => number;
@@ -78,7 +86,9 @@ export function computeGeometry(
   const divergentHalfDeg  = angles?.divergentRefDeg   ?? 15;
   const CR       = Math.max(contractionRatio, 1.1);
   const Lconv    = (Rc - Rt) / Math.tan(convergentHalfDeg * DEG);
-  const Lc_cyl   = Math.max(Rt * 2, 1000 / CR - Lconv);
+  const Lc_cyl   = angles?.cylindricalLengthMm != null
+    ? Math.max(Rt * 2, angles.cylindricalLengthMm)
+    : Math.max(Rt * 2, 1000 / CR - Lconv);
   const Ldiv_ref = (Re - Rt) / Math.tan(divergentHalfDeg * DEG);
   const Ln_bell    = 0.8 * Ldiv_ref;
   const lnFraction = angles?.lnFraction ?? RAO_LN_DEFAULT;
@@ -106,25 +116,43 @@ export function computeGeometry(
   const pb  = (r: number) => midY + r * sy;
   const mir = (y: number) => 2 * midY - y;
 
-  const cDx  = xThroat    - xConvStart;
-  const cDy  = Rc         - Rt;
+  // ── Throat arc radii ──────────────────────────────────────────────────────
+  const junctionAngle = nozzleType === 'conical' ? divergentHalfDeg : tNDeg;
+
+  // Clamp throat arc radii so junctions stay within their respective sections
+  const thrUpRaw   = (angles?.throatUpR   ?? 1.0)   * Rt;
+  const thrDownRaw = (angles?.throatDownR ?? 0.382)  * Rt;
+  const thrUpR   = Math.min(thrUpRaw,   Lconv       / Math.sin(junctionAngle * DEG) * 0.9);
+  const thrDownR = Math.min(thrDownRaw, nozzleLen   / Math.sin(junctionAngle * DEG) * 0.9);
+
+  const thrUpJctX   = xThroat - thrUpR   * Math.sin(junctionAngle * DEG);
+  const thrUpJctR   = Rt      + thrUpR   * (1 - Math.cos(junctionAngle * DEG));
+  const thrDownJctX = xThroat + thrDownR * Math.sin(junctionAngle * DEG);
+  const thrDownJctR = Rt      + thrDownR * (1 - Math.cos(junctionAngle * DEG));
+
+  // ── Convergent Bézier (xConvStart → thrUpJct) — smooth bell, no fillet ──
+  // Start tangent: horizontal (tangent to cylindrical chamber wall, 0°)
+  // End tangent:   junctionAngle (tangent to upstream throat arc)
+  const cDx  = thrUpJctX - xConvStart;
+  const cDy  = Rc        - thrUpJctR;
   const cLen = Math.sqrt(cDx * cDx + cDy * cDy);
-  const cp1x = xConvStart + Math.cos(convergentHalfDeg * DEG) * cLen * 0.38;
-  const cp1r = Rc         - Math.sin(convergentHalfDeg * DEG) * cLen * 0.38;
-  const cp2x = xThroat    - Math.cos(convergentHalfDeg * DEG) * cLen * 0.38;
-  const cp2r = Rt         + Math.sin(convergentHalfDeg * DEG) * cLen * 0.38;
+  const cp1x = xConvStart + cLen * 0.38;
+  const cp1r = Rc;
+  const cp2x = thrUpJctX - Math.cos(junctionAngle * DEG) * cLen * 0.38;
+  const cp2r = thrUpJctR + Math.sin(junctionAngle * DEG) * cLen * 0.38;
   const ccx1 = px(cp1x);
   const ccy1 = pt(cp1r);
   const ccx2 = px(cp2x);
   const ccy2 = pt(cp2r);
 
-  const bDx  = xExit - xThroat;
-  const bDy  = Re    - Rt;
+  // ── Divergent Bézier (thrDownJct → xExit) ────────────────────────────────
+  const bDx  = xExit        - thrDownJctX;
+  const bDy  = Re            - thrDownJctR;
   const bLen = Math.sqrt(bDx * bDx + bDy * bDy);
-  const bp1x = xThroat + Math.cos(tNDeg * DEG) * bLen * 0.38;
-  const bp1r = Rt      + Math.sin(tNDeg * DEG) * bLen * 0.38;
-  const bp2x = xExit   - Math.cos(tEDeg * DEG) * bLen * 0.38;
-  const bp2r = Re      - Math.sin(tEDeg * DEG) * bLen * 0.38;
+  const bp1x = thrDownJctX  + Math.cos(tNDeg * DEG) * bLen * 0.38;
+  const bp1r = thrDownJctR  + Math.sin(tNDeg * DEG) * bLen * 0.38;
+  const bp2x = xExit        - Math.cos(tEDeg * DEG) * bLen * 0.38;
+  const bp2r = Re            - Math.sin(tEDeg * DEG) * bLen * 0.38;
 
   return {
     Rc, Rt, Re,
@@ -133,7 +161,10 @@ export function computeGeometry(
     tNDeg, tEDeg, convergentHalfDeg, divergentHalfDeg,
     ccx1, ccy1, ccx2, ccy2,
     bp1x, bp1r, bp2x, bp2r,
-    midY, pT, sy,
+    midY, pT, sx, sy,
+    thrUpR, thrDownR,
+    thrUpJctX, thrUpJctR,
+    thrDownJctX, thrDownJctR,
     px, pt, pb, mir,
   };
 }
@@ -184,33 +215,57 @@ function sampleWallProfile(
   nozzleType: NozzleType,
 ): { xLog: number; topY: number; botY: number }[] {
   const { px, pt, pb, midY, Rc, Rt, Re, xConvStart, xThroat, xExit,
-          ccx1, ccy1, ccx2, ccy2, bp1x, bp1r, bp2x, bp2r } = geom;
+          ccx1, ccy1, ccx2, ccy2, bp1x, bp1r, bp2x, bp2r,
+          thrUpR, thrDownR,
+          thrUpJctX, thrUpJctR, thrDownJctX, thrDownJctR,
+          tNDeg, divergentHalfDeg } = geom;
+
+  const junctionAngle = nozzleType === 'conical' ? divergentHalfDeg : tNDeg;
   const pts: { xLog: number; topY: number; botY: number }[] = [];
 
-  // Cylindrical chamber
-  for (let i = 0; i <= 20; i++) {
-    pts.push({ xLog: px((i / 20) * xConvStart), topY: pt(Rc), botY: pb(Rc) });
+  const push = (xMm: number, rMm: number) =>
+    pts.push({ xLog: px(xMm), topY: pt(rMm), botY: pb(rMm) });
+
+  // ── Cylindrical chamber (x: 0 → xConvStart) ──────────────────────────────
+  for (let i = 0; i <= 15; i++) {
+    push((i / 15) * xConvStart, Rc);
   }
-  // Convergent Bézier (skip i=0 to avoid duplicate at xConvStart)
-  for (let i = 1; i <= 40; i++) {
-    const t    = i / 40;
-    const xLog = cubicBez(t, px(xConvStart), ccx1, ccx2, px(xThroat));
-    const topY = cubicBez(t, pt(Rc), ccy1, ccy2, pt(Rt));
+
+  // ── Convergent Bézier (xConvStart → thrUpJct) — smooth bell ──────────────
+  for (let i = 1; i <= 30; i++) {
+    const t    = i / 30;
+    const xLog = cubicBez(t, px(xConvStart), ccx1, ccx2, px(thrUpJctX));
+    const topY = cubicBez(t, pt(Rc),         ccy1, ccy2, pt(thrUpJctR));
     pts.push({ xLog, topY, botY: 2 * midY - topY });
   }
-  // Divergent (skip i=0 to avoid duplicate at throat)
-  for (let i = 1; i <= 60; i++) {
-    const t = i / 60;
-    let xLog: number, topY: number;
+
+  // ── Upstream throat arc (thrUpJct → throat min) ───────────────────────────
+  for (let i = 1; i <= 5; i++) {
+    const φ = -junctionAngle * DEG + (i / 5) * junctionAngle * DEG;  // -junctionAngle → 0
+    push(xThroat + thrUpR * Math.sin(φ), Rt + thrUpR * (1 - Math.cos(φ)));
+  }
+
+  // ── Downstream throat arc (throat min → thrDownJct) ───────────────────────
+  for (let i = 1; i <= 5; i++) {
+    const φ = (i / 5) * junctionAngle * DEG;  // 0 → junctionAngle
+    push(xThroat + thrDownR * Math.sin(φ), Rt + thrDownR * (1 - Math.cos(φ)));
+  }
+
+  // ── Divergent (thrDownJct → xExit) ───────────────────────────────────────
+  for (let i = 1; i <= 55; i++) {
+    const t = i / 55;
     if (nozzleType === 'bell' || nozzleType === 'rao') {
-      xLog = cubicBez(t, px(xThroat), px(bp1x), px(bp2x), px(xExit));
-      topY = cubicBez(t, pt(Rt), pt(bp1r), pt(bp2r), pt(Re));
+      const xLog = cubicBez(t, px(thrDownJctX), px(bp1x), px(bp2x), px(xExit));
+      const topY = cubicBez(t, pt(thrDownJctR), pt(bp1r), pt(bp2r), pt(Re));
+      pts.push({ xLog, topY, botY: 2 * midY - topY });
     } else {
-      xLog = px(xThroat) + t * (px(xExit) - px(xThroat));
-      topY = pt(Rt) + t * (pt(Re) - pt(Rt));
+      push(
+        thrDownJctX + t * (xExit - thrDownJctX),
+        thrDownJctR + t * (Re    - thrDownJctR),
+      );
     }
-    pts.push({ xLog, topY, botY: 2 * midY - topY });
   }
+
   return pts;
 }
 

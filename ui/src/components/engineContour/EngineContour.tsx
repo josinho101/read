@@ -181,9 +181,13 @@ function renderEngine(
     convergentHalfDeg, divergentHalfDeg,
     ccx1, ccy1, ccx2, ccy2,
     bp1x, bp1r, bp2x, bp2r,
-    midY, pT,
+    midY, pT, sx, sy,
+    thrUpR, thrDownR,
+    thrUpJctX, thrUpJctR, thrDownJctX, thrDownJctR,
     px, pt, pb, mir,
   } = geom;
+
+  const junctionAngle = nozzleType === 'conical' ? divergentHalfDeg : tNDeg;
 
   const tConvDeg = convergentHalfDeg;
 
@@ -212,17 +216,25 @@ function renderEngine(
   ctx.globalAlpha = flowProfile ? 0.02 : 0.04;
   ctx.fillStyle = CYAN;
   ctx.beginPath();
-  ctx.moveTo(px(0), pt(Rc)); ctx.lineTo(px(xConvStart), pt(Rc));
-  ctx.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(xThroat), pt(Rt));
+  // Top half (forward, left → right)
+  ctx.moveTo(px(0), pt(Rc));
+  ctx.lineTo(px(xConvStart), pt(Rc));
+  ctx.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(thrUpJctX), pt(thrUpJctR));
+  ctx.ellipse(px(xThroat), pt(Rt + thrUpR), thrUpR * sx, thrUpR * sy, 0, Math.PI / 2 + junctionAngle * DEG, Math.PI / 2, true);
+  ctx.ellipse(px(xThroat), pt(Rt + thrDownR), thrDownR * sx, thrDownR * sy, 0, Math.PI / 2, Math.PI / 2 - junctionAngle * DEG, true);
   nozzleType !== 'conical'
     ? ctx.bezierCurveTo(px(bp1x), pt(bp1r), px(bp2x), pt(bp2r), px(xExit), pt(Re))
     : ctx.lineTo(px(xExit), pt(Re));
+  // Close via bottom half (backward, right → left)
   ctx.lineTo(px(xExit), pb(Re));
   nozzleType !== 'conical'
-    ? ctx.bezierCurveTo(px(bp2x), pb(bp2r), px(bp1x), pb(bp1r), px(xThroat), pb(Rt))
-    : ctx.lineTo(px(xThroat), pb(Rt));
+    ? ctx.bezierCurveTo(px(bp2x), pb(bp2r), px(bp1x), pb(bp1r), px(thrDownJctX), pb(thrDownJctR))
+    : ctx.lineTo(px(thrDownJctX), pb(thrDownJctR));
+  ctx.ellipse(px(xThroat), pb(Rt + thrDownR), thrDownR * sx, thrDownR * sy, 0, 3 * Math.PI / 2 + junctionAngle * DEG, 3 * Math.PI / 2, true);
+  ctx.ellipse(px(xThroat), pb(Rt + thrUpR), thrUpR * sx, thrUpR * sy, 0, 3 * Math.PI / 2, 3 * Math.PI / 2 - junctionAngle * DEG, true);
   ctx.bezierCurveTo(ccx2, mir(ccy2), ccx1, mir(ccy1), px(xConvStart), pb(Rc));
-  ctx.lineTo(px(0), pb(Rc)); ctx.closePath(); ctx.fill();
+  ctx.lineTo(px(0), pb(Rc));
+  ctx.closePath(); ctx.fill();
   ctx.restore();
 
   // ── Particles (after fill, before glow) ─────────────────────────────────
@@ -232,19 +244,25 @@ function renderEngine(
 
   // ── Helper: build contour path for top or bottom half ───────────────────
   const buildContour = (c: CanvasRenderingContext2D, top: boolean) => {
-    const rpt = (r: number) => top ? pt(r) : pb(r);
     c.beginPath();
-    c.moveTo(px(0), rpt(Rc));
-    c.lineTo(px(xConvStart), rpt(Rc));
-    top
-      ? c.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(xThroat), pt(Rt))
-      : c.bezierCurveTo(ccx1, mir(ccy1), ccx2, mir(ccy2), px(xThroat), pb(Rt));
-    if (nozzleType !== 'conical') {
-      top
+    if (top) {
+      c.moveTo(px(0), pt(Rc));
+      c.lineTo(px(xConvStart), pt(Rc));
+      c.bezierCurveTo(ccx1, ccy1, ccx2, ccy2, px(thrUpJctX), pt(thrUpJctR));
+      c.ellipse(px(xThroat), pt(Rt + thrUpR), thrUpR * sx, thrUpR * sy, 0, Math.PI / 2 + junctionAngle * DEG, Math.PI / 2, true);
+      c.ellipse(px(xThroat), pt(Rt + thrDownR), thrDownR * sx, thrDownR * sy, 0, Math.PI / 2, Math.PI / 2 - junctionAngle * DEG, true);
+      nozzleType !== 'conical'
         ? c.bezierCurveTo(px(bp1x), pt(bp1r), px(bp2x), pt(bp2r), px(xExit), pt(Re))
-        : c.bezierCurveTo(px(bp1x), pb(bp1r), px(bp2x), pb(bp2r), px(xExit), pb(Re));
+        : c.lineTo(px(xExit), pt(Re));
     } else {
-      c.lineTo(px(xExit), rpt(Re));
+      c.moveTo(px(0), pb(Rc));
+      c.lineTo(px(xConvStart), pb(Rc));
+      c.bezierCurveTo(ccx1, mir(ccy1), ccx2, mir(ccy2), px(thrUpJctX), pb(thrUpJctR));
+      c.ellipse(px(xThroat), pb(Rt + thrUpR), thrUpR * sx, thrUpR * sy, 0, 3 * Math.PI / 2 - junctionAngle * DEG, 3 * Math.PI / 2, false);
+      c.ellipse(px(xThroat), pb(Rt + thrDownR), thrDownR * sx, thrDownR * sy, 0, 3 * Math.PI / 2, 3 * Math.PI / 2 + junctionAngle * DEG, false);
+      nozzleType !== 'conical'
+        ? c.bezierCurveTo(px(bp1x), pb(bp1r), px(bp2x), pb(bp2r), px(xExit), pb(Re))
+        : c.lineTo(px(xExit), pb(Re));
     }
   };
 
@@ -316,12 +334,8 @@ function renderEngine(
     dimLine(ctx, px(0), dimY2, px(xExit), dimY2);
     txt(ctx, `Ltotal = ${f1(xExit)} cm`, (px(0) + px(xExit)) / 2, dimY2 - 7, 'center');
 
-    // ── θconv arc + label ────────────────────────────────────────────────────
+    // ── θconv label (controls convergent length) ─────────────────────────────
     txt(ctx, `θconv = ${tConvDeg}°`, px(xConvStart) + 10, pt(Rc) + 28);
-    ctx.save();
-    ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
-    ctx.beginPath(); ctx.arc(px(xConvStart), pt(Rc) + 6, 20, 0, tConvDeg * DEG); ctx.stroke();
-    ctx.restore();
 
     // ── Bell nozzle angle labels ─────────────────────────────────────────────
     if (nozzleType === 'bell') {
@@ -329,7 +343,7 @@ function renderEngine(
       ctx.save();
       ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
       ctx.beginPath();
-      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + tNDeg * DEG);
+      ctx.arc(px(xThroat), pt(Rt), 18, 0, -(tNDeg * DEG), true);
       ctx.stroke();
       ctx.restore();
       txt(ctx, `θe = ${tEDeg}°`, px(xExit) - 85, pt(Re) - 8);
@@ -341,7 +355,7 @@ function renderEngine(
       ctx.save();
       ctx.strokeStyle = AMBER; ctx.lineWidth = 1; ctx.globalAlpha = 0.75; ctx.setLineDash([]);
       ctx.beginPath();
-      ctx.arc(px(xThroat), pt(Rt), 18, -Math.PI / 2, -Math.PI / 2 + tNDeg * DEG);
+      ctx.arc(px(xThroat), pt(Rt), 18, 0, -(tNDeg * DEG), true);
       ctx.stroke();
       ctx.restore();
       txt(ctx, `θe = ${tEDeg.toFixed(1)}° (Rao)`, px(xExit) - 95, pt(Re) - 8);
