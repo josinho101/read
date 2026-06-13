@@ -35,7 +35,6 @@ interface Props {
   chamberTemperatureK?: number;
   molecularWeightGMol?: number;
   exitPressureBar?: number;
-  ambientPressureBar?: number;
   nozzleType: NozzleType;
   angleOverrides: AngleOverrides;
   onNozzleTypeChange: (t: NozzleType) => void;
@@ -439,7 +438,7 @@ export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
   expansionRatio, contractionRatio,
   gamma, chamberPressureBar, chamberTemperatureK, molecularWeightGMol,
-  exitPressureBar, ambientPressureBar,
+  exitPressureBar,
   nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange,
   showFlowSim, onShowFlowSimChange,
   flowProperty, onFlowPropertyChange,
@@ -477,7 +476,7 @@ export default function EngineContour({
     if (!showFlowSim || !showPlume || !flowProfile || !gamma) return null;
     const geom    = computeGeometry(nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio, angleOverrides);
     const exitPt  = flowProfile.points[flowProfile.points.length - 1];
-    const Pa      = (ambientPressureBar ?? exitPressureBar ?? 1.013) * 1e5;
+    const Pa      = (exitPressureBar ?? 1.013) * 1e5;
     return {
       exitX:          geom.px(geom.xExit),
       exitTopY:       geom.pt(geom.Re),
@@ -494,7 +493,7 @@ export default function EngineContour({
   }, [
     showFlowSim, showPlume, flowProfile, gamma,
     nozzleType, chamberRadius, throatRadius, exitRadius, expansionRatio, contractionRatio,
-    angleOverrides, ambientPressureBar, exitPressureBar,
+    angleOverrides, exitPressureBar,
   ]);
 
   const plumeGeom = useMemo<PlumeGeometry | null>(

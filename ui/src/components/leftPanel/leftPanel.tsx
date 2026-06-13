@@ -24,7 +24,6 @@ interface LeftPanelProps {
   onDesignResult: (result: EngineDesignResult) => void;
   onDesignError: () => void;
   onEngineMetaChange: (name: string, version: string) => void;
-  onAmbientPressureChange?: (value: number) => void;
   onFormChange?: (form: EngineFormInputs) => void;
   importData?: EngineFormInputs | null;
   lStarM?: number;

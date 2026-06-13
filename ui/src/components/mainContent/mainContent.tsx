@@ -40,7 +40,6 @@ interface MainContentProps {
   engineDesignResult: EngineDesignResult | null;
   engineName: string;
   engineVersion: string;
-  ambientPressureBar?: number;
   nozzleType: NozzleType;
   onNozzleTypeChange: (t: NozzleType) => void;
   angleOverrides: AngleOverrides;
@@ -66,7 +65,7 @@ interface MainContentProps {
 }
 
 export default function MainContent({
-  engineDesignResult, engineName, engineVersion, ambientPressureBar,
+  engineDesignResult, engineName, engineVersion,
   nozzleType, onNozzleTypeChange, angleOverrides, onAngleOverridesChange,
   showFlowSim, onShowFlowSimChange, flowProperty, onFlowPropertyChange,
   showParticles, onShowParticlesChange, showPlume, onShowPlumeChange,
@@ -263,7 +262,6 @@ export default function MainContent({
               chamberTemperatureK={displayValues.chamberTemperature}
               molecularWeightGMol={displayValues.molecularWeightGMol}
               exitPressureBar={performanceMode === 'sea_level' ? 1.01325 : 0.001}
-              ambientPressureBar={ambientPressureBar}
               nozzleType={nozzleType}
               onNozzleTypeChange={onNozzleTypeChange}
               angleOverrides={{ ...angleOverrides, cylindricalLengthMm: displayValues.cylindricalLengthMm }}

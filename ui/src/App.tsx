@@ -71,7 +71,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [engineName, setEngineName] = useState('Engine1');
   const [engineVersion, setEngineVersion] = useState('0.1');
-  const [ambientPressureBar, setAmbientPressureBar] = useState(1.013);
   const [nozzleType, setNozzleType] = useState<NozzleType>('rao');
   const [angleOverrides, setAngleOverrides] = useState<AngleOverrides>({});
   const [importData, setImportData] = useState<EngineFormInputs | null>(null);
@@ -123,9 +122,6 @@ export default function App() {
   const handleEngineMetaChange = useCallback((name: string, version: string) => {
     setEngineName(name);
     setEngineVersion(version);
-  }, []);
-  const handleAmbientPressureChange = useCallback((value: number) => {
-    setAmbientPressureBar(value);
   }, []);
 
   const handleExport = useCallback(() => {
@@ -232,7 +228,6 @@ export default function App() {
             onDesignResult={handleDesignResult}
             onDesignError={handleDesignError}
             onEngineMetaChange={handleEngineMetaChange}
-            onAmbientPressureChange={handleAmbientPressureChange}
             onFormChange={(f) => { formSnapshotRef.current = f; }}
             importData={importData}
             lStarM={lStarM}
@@ -245,7 +240,6 @@ export default function App() {
             engineDesignResult={engineDesignResult}
             engineName={engineName}
             engineVersion={engineVersion}
-            ambientPressureBar={ambientPressureBar}
             nozzleType={nozzleType}
             onNozzleTypeChange={setNozzleType}
             angleOverrides={angleOverrides}
