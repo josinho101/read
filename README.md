@@ -99,6 +99,54 @@ API docs: `http://localhost:5000/swagger/`
 
 ---
 
+## Storage Configuration
+
+Saved engine designs (`/api/v1/engines*`) can be persisted using one of two backends, selected via the `STORAGE_TYPE` variable in `api/.env`:
+
+| `STORAGE_TYPE` | Backend | Notes |
+|----------------|---------|-------|
+| `local-disk` (default) | JSON files under `ENGINE_STORAGE_PATH` (`./saved_engines`) | No setup required |
+| `firebase` | Firestore collection (`FIRESTORE_COLLECTION`, default `engines`) | Requires a Firebase project + service account credentials |
+
+### Firebase / Firestore Setup
+
+To use `STORAGE_TYPE=firebase`, you need a Firebase project with Firestore enabled and a service account key file.
+
+1. **Create a Firebase project**
+   - Go to the [Firebase Console](https://console.firebase.google.com/) and click **Add project** (or select an existing project).
+   - Follow the prompts to create the project (Google Analytics is optional).
+
+2. **Enable Firestore**
+   - In the project, open **Build → Firestore Database** in the left sidebar.
+   - Click **Create database**, choose **Native mode**, pick a location, and confirm.
+
+3. **Download a service account key**
+   - Click the gear icon next to **Project Overview** → **Project settings**.
+   - Go to the **Service accounts** tab.
+   - Ensure **Firebase Admin SDK** is selected, then click **Generate new private key**.
+   - Confirm the dialog — this downloads a JSON file (e.g. `your-project-12345-firebase-adminsdk-xxxxx.json`).
+
+4. **Place the credentials file in the project**
+   - Create a `secrets/` directory at the repo root (already in `.gitignore`, so it won't be committed).
+   - Move/rename the downloaded file to `secrets/firebase-service-account.json`.
+
+5. **Configure `api/.env`**
+   ```
+   STORAGE_TYPE=firebase
+   FIRESTORE_COLLECTION=engines
+   GOOGLE_APPLICATION_CREDENTIALS=./secrets/firebase-service-account.json
+   ```
+   - When running via `docker compose`, the `secrets/` folder is mounted into the container at `/app/secrets`, so use:
+     ```
+     GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/firebase-service-account.json
+     ```
+
+6. **Run the app** — engine designs will now be read from/written to the `engines` collection in Firestore instead of `saved_engines/`.
+
+To switch back to local JSON storage at any time, set `STORAGE_TYPE=local-disk` (or remove the variable).
+
+---
+
 ## Project Structure
 
 ```
