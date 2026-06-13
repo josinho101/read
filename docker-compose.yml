@@ -1,0 +1,12 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - api/.env
+    volumes:
+      - ./api/saved_engines:/app/saved_engines
+      - ./secrets:/app/secrets:ro

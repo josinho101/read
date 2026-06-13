@@ -1,2 +1,5 @@
 *.tar
 /.claude
+
+# Firebase service account credentials mounted into the container
+/secrets/
