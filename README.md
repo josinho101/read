@@ -97,6 +97,32 @@ API docs: `http://localhost:5000/swagger/`
 
 > Subsequent builds are fast because Docker caches the pip install layer.
 
+### Using Docker Compose
+
+A `docker-compose.yml` is provided at the repo root. It builds the same image, maps port 5000, loads environment variables from `api/.env`, and mounts `./api/saved_engines` and `./secrets` (used for Firebase credentials — see below).
+
+```bash
+# Build the image via Compose
+docker compose build
+
+# Start the container (detached)
+docker compose up -d
+
+# ...or build and start in one step
+docker compose up -d --build
+
+# Stop the container
+docker compose down
+```
+
+The default `docker-compose.yml` at the repo root is picked up automatically. To use a different file or run from another directory, pass `-f`:
+
+```bash
+docker compose -f docker-compose.yml up -d
+# or, from a different working directory:
+docker compose -f /path/to/read/docker-compose.yml up -d
+```
+
 ---
 
 ## Storage Configuration
