@@ -17,8 +17,10 @@ import InjectorRightPanel from '../injectorRightPanel/InjectorRightPanel';
 import './mainContent.css';
 import Reference from '../reference/reference';
 import LiftOfMass from '../reference/LiftOfMass';
+import Plumbing from '../plumbing/Plumbing';
+import { type PressurantGasKey, type TankShape } from '../plumbing/PlumbingRightPanel';
 
-const TABS = ['ENGINE CONTOUR', 'ENGINE STATIONS', 'INJECTOR FACE', 'COMBUSTION', 'LIFT OF MASS', 'REFERENCE'] as const;
+const TABS = ['ENGINE CONTOUR', 'ENGINE STATIONS', 'INJECTOR FACE', 'COMBUSTION', 'LIFT OF MASS', 'PLUMBING', 'REFERENCE'] as const;
 export type Tab = typeof TABS[number];
 
 interface StatsDisplayData {
@@ -62,6 +64,28 @@ interface MainContentProps {
   onDFuelMmChange: (v: number) => void;
   impingementHalfAngleDeg: number;
   onImpingementHalfAngleDegChange: (v: number) => void;
+  plumbingGas: PressurantGasKey;
+  onPlumbingGasChange: (g: PressurantGasKey) => void;
+  plumbingTankShape: TankShape;
+  onPlumbingTankShapeChange: (s: TankShape) => void;
+  plumbingAspectRatio: number;
+  onPlumbingAspectRatioChange: (v: number) => void;
+  plumbingOxMaterial: string;
+  onPlumbingOxMaterialChange: (m: string) => void;
+  plumbingFuelMaterial: string;
+  onPlumbingFuelMaterialChange: (m: string) => void;
+  plumbingPressurantMaterial: string;
+  onPlumbingPressurantMaterialChange: (m: string) => void;
+  plumbingInjectorDropPct: number;
+  onPlumbingInjectorDropPctChange: (v: number) => void;
+  plumbingLineLossBar: number;
+  onPlumbingLineLossBarChange: (v: number) => void;
+  plumbingUllageMarginBar: number;
+  onPlumbingUllageMarginBarChange: (v: number) => void;
+  plumbingPressurantTankBar: number;
+  onPlumbingPressurantTankBarChange: (v: number) => void;
+  plumbingBurnTimeSec: number;
+  onPlumbingBurnTimeSecChange: (v: number) => void;
 }
 
 export default function MainContent({
@@ -74,6 +98,17 @@ export default function MainContent({
   dOxMm, onDOxMmChange,
   dFuelMm, onDFuelMmChange,
   impingementHalfAngleDeg, onImpingementHalfAngleDegChange,
+  plumbingGas, onPlumbingGasChange,
+  plumbingTankShape, onPlumbingTankShapeChange,
+  plumbingAspectRatio, onPlumbingAspectRatioChange,
+  plumbingOxMaterial, onPlumbingOxMaterialChange,
+  plumbingFuelMaterial, onPlumbingFuelMaterialChange,
+  plumbingPressurantMaterial, onPlumbingPressurantMaterialChange,
+  plumbingInjectorDropPct, onPlumbingInjectorDropPctChange,
+  plumbingLineLossBar, onPlumbingLineLossBarChange,
+  plumbingUllageMarginBar, onPlumbingUllageMarginBarChange,
+  plumbingPressurantTankBar, onPlumbingPressurantTankBarChange,
+  plumbingBurnTimeSec, onPlumbingBurnTimeSecChange,
 }: MainContentProps) {
   const [sweepOpen, setSweepOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -85,6 +120,9 @@ export default function MainContent({
 
   // Engine Contour tab state
   const [engineContourRightCollapsed, setEngineContourRightCollapsed] = useState(true);
+
+  // Plumbing > Pressure Fed tab state
+  const [pressureFedRightCollapsed, setPressureFedRightCollapsed] = useState(true);
 
   useEffect(() => {
     setConfirmedRow(null);
@@ -287,6 +325,36 @@ export default function MainContent({
         {activeTab === 'COMBUSTION' && <CombustionAnalysis engineDesignResult={engineDesignResult} />}
         {activeTab === 'ENGINE STATIONS' && <EngineStations engineDesignResult={engineDesignResult} />}
         {activeTab === 'LIFT OF MASS' && <LiftOfMass engineDesignResult={engineDesignResult} />}
+        {activeTab === 'PLUMBING' && (
+          <Plumbing
+            engineDesignResult={engineDesignResult}
+            injectorSelectedRow={injectorSelectedRow}
+            pressureFedRightCollapsed={pressureFedRightCollapsed}
+            onPressureFedRightToggle={() => setPressureFedRightCollapsed((c) => !c)}
+            gas={plumbingGas}
+            onGasChange={onPlumbingGasChange}
+            tankShape={plumbingTankShape}
+            onTankShapeChange={onPlumbingTankShapeChange}
+            aspectRatio={plumbingAspectRatio}
+            onAspectRatioChange={onPlumbingAspectRatioChange}
+            oxMaterial={plumbingOxMaterial}
+            onOxMaterialChange={onPlumbingOxMaterialChange}
+            fuelMaterial={plumbingFuelMaterial}
+            onFuelMaterialChange={onPlumbingFuelMaterialChange}
+            pressurantMaterial={plumbingPressurantMaterial}
+            onPressurantMaterialChange={onPlumbingPressurantMaterialChange}
+            injectorDropPct={plumbingInjectorDropPct}
+            onInjectorDropPctChange={onPlumbingInjectorDropPctChange}
+            lineLossBar={plumbingLineLossBar}
+            onLineLossBarChange={onPlumbingLineLossBarChange}
+            ullageMarginBar={plumbingUllageMarginBar}
+            onUllageMarginBarChange={onPlumbingUllageMarginBarChange}
+            pressurantTankBar={plumbingPressurantTankBar}
+            onPressurantTankBarChange={onPlumbingPressurantTankBarChange}
+            burnTimeSec={plumbingBurnTimeSec}
+            onBurnTimeSecChange={onPlumbingBurnTimeSecChange}
+          />
+        )}
         {activeTab === 'REFERENCE' && <Reference engineDesignResult={engineDesignResult} />}
         {activeTab === 'INJECTOR FACE' && (
           engineDesignResult ? (

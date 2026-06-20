@@ -166,6 +166,19 @@ export interface EngineImportData {
     dFuelMm: number;
     impingementHalfAngleDeg: number;
   };
+  plumbingConfig?: {
+    gas: 'N2' | 'He';
+    tankShape: 'sphere' | 'cylinder';
+    aspectRatio: number;
+    oxMaterial: string;
+    fuelMaterial: string;
+    pressurantMaterial: string;
+    injectorDropPct: number;
+    lineLossBar: number;
+    ullageMarginBar: number;
+    pressurantTankBar: number;
+    burnTimeSec: number;
+  };
 }
 
 class EngineDesignService extends BaseApi {

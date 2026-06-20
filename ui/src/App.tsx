@@ -90,6 +90,19 @@ export default function App() {
   const [dFuelMm, setDFuelMm]                                     = useState(1.2);
   const [impingementHalfAngleDeg, setImpingementHalfAngleDeg]     = useState(45);
 
+  // Plumbing > Pressure Fed state (lifted here so export/import and tab-switches can persist it)
+  const [plumbingGas, setPlumbingGas]                             = useState<'N2' | 'He'>('N2');
+  const [plumbingTankShape, setPlumbingTankShape]                 = useState<'sphere' | 'cylinder'>('sphere');
+  const [plumbingAspectRatio, setPlumbingAspectRatio]             = useState(2.0);
+  const [plumbingOxMaterial, setPlumbingOxMaterial]               = useState('al6061');
+  const [plumbingFuelMaterial, setPlumbingFuelMaterial]           = useState('al6061');
+  const [plumbingPressurantMaterial, setPlumbingPressurantMaterial] = useState('ti6al4v');
+  const [plumbingInjectorDropPct, setPlumbingInjectorDropPct]     = useState(20);
+  const [plumbingLineLossBar, setPlumbingLineLossBar]             = useState(2);
+  const [plumbingUllageMarginBar, setPlumbingUllageMarginBar]     = useState(3);
+  const [plumbingPressurantTankBar, setPlumbingPressurantTankBar] = useState(250);
+  const [plumbingBurnTimeSec, setPlumbingBurnTimeSec]             = useState(10);
+
   // Server-save state
   const [showSavedModal, setShowSavedModal]     = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -109,6 +122,8 @@ export default function App() {
     nozzleType, angleOverrides, lStarM, contractionRatio,
     injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg,
     engineName, engineVersion,
+    plumbingGas, plumbingTankShape, plumbingAspectRatio, plumbingOxMaterial, plumbingFuelMaterial, plumbingPressurantMaterial,
+    plumbingInjectorDropPct, plumbingLineLossBar, plumbingUllageMarginBar, plumbingPressurantTankBar, plumbingBurnTimeSec,
   ]);
 
   const handleLeftToggle = useCallback(() => setLeftCollapsed(prev => !prev), []);
@@ -133,6 +148,19 @@ export default function App() {
       nozzleAdjustments: { nozzleType, angleOverrides },
       chamberDesign: { lStarM, contractionRatio },
       injectorConfig: { type: injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg },
+      plumbingConfig: {
+        gas: plumbingGas,
+        tankShape: plumbingTankShape,
+        aspectRatio: plumbingAspectRatio,
+        oxMaterial: plumbingOxMaterial,
+        fuelMaterial: plumbingFuelMaterial,
+        pressurantMaterial: plumbingPressurantMaterial,
+        injectorDropPct: plumbingInjectorDropPct,
+        lineLossBar: plumbingLineLossBar,
+        ullageMarginBar: plumbingUllageMarginBar,
+        pressurantTankBar: plumbingPressurantTankBar,
+        burnTimeSec: plumbingBurnTimeSec,
+      },
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -141,7 +169,11 @@ export default function App() {
     a.download = `${form.engineName || 'engine'}_v${form.engineVersion || '0'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [nozzleType, angleOverrides, lStarM, contractionRatio]);
+  }, [
+    nozzleType, angleOverrides, lStarM, contractionRatio, injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg,
+    plumbingGas, plumbingTankShape, plumbingAspectRatio, plumbingOxMaterial, plumbingFuelMaterial, plumbingPressurantMaterial,
+    plumbingInjectorDropPct, plumbingLineLossBar, plumbingUllageMarginBar, plumbingPressurantTankBar, plumbingBurnTimeSec,
+  ]);
 
   const handleImportData = useCallback((data: EngineImportData) => {
     setNozzleType(data.nozzleAdjustments.nozzleType);
@@ -157,6 +189,19 @@ export default function App() {
       setDFuelMm(data.injectorConfig.dFuelMm);
       setImpingementHalfAngleDeg(data.injectorConfig.impingementHalfAngleDeg);
     }
+    if (data.plumbingConfig) {
+      setPlumbingGas(data.plumbingConfig.gas);
+      setPlumbingTankShape(data.plumbingConfig.tankShape);
+      setPlumbingAspectRatio(data.plumbingConfig.aspectRatio);
+      setPlumbingOxMaterial(data.plumbingConfig.oxMaterial);
+      setPlumbingFuelMaterial(data.plumbingConfig.fuelMaterial);
+      setPlumbingPressurantMaterial(data.plumbingConfig.pressurantMaterial);
+      setPlumbingInjectorDropPct(data.plumbingConfig.injectorDropPct);
+      setPlumbingLineLossBar(data.plumbingConfig.lineLossBar);
+      setPlumbingUllageMarginBar(data.plumbingConfig.ullageMarginBar);
+      setPlumbingPressurantTankBar(data.plumbingConfig.pressurantTankBar);
+      setPlumbingBurnTimeSec(data.plumbingConfig.burnTimeSec);
+    }
     setHasUnsavedChanges(false);
   }, []);
 
@@ -171,6 +216,19 @@ export default function App() {
       nozzleAdjustments: { nozzleType, angleOverrides },
       chamberDesign: { lStarM, contractionRatio },
       injectorConfig: { type: injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg },
+      plumbingConfig: {
+        gas: plumbingGas,
+        tankShape: plumbingTankShape,
+        aspectRatio: plumbingAspectRatio,
+        oxMaterial: plumbingOxMaterial,
+        fuelMaterial: plumbingFuelMaterial,
+        pressurantMaterial: plumbingPressurantMaterial,
+        injectorDropPct: plumbingInjectorDropPct,
+        lineLossBar: plumbingLineLossBar,
+        ullageMarginBar: plumbingUllageMarginBar,
+        pressurantTankBar: plumbingPressurantTankBar,
+        burnTimeSec: plumbingBurnTimeSec,
+      },
     };
     try {
       await engineStorageService.saveEngine(name, version, data);
@@ -185,7 +243,11 @@ export default function App() {
         showNotification('Failed to save engine to server.', 'error');
       }
     }
-  }, [nozzleType, angleOverrides, lStarM, contractionRatio, injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg, showNotification]);
+  }, [
+    nozzleType, angleOverrides, lStarM, contractionRatio, injectorType, dOxMm, dFuelMm, impingementHalfAngleDeg, showNotification,
+    plumbingGas, plumbingTankShape, plumbingAspectRatio, plumbingOxMaterial, plumbingFuelMaterial, plumbingPressurantMaterial,
+    plumbingInjectorDropPct, plumbingLineLossBar, plumbingUllageMarginBar, plumbingPressurantTankBar, plumbingBurnTimeSec,
+  ]);
 
   const handleOpenSaved = useCallback(() => setShowSavedModal(true), []);
 
@@ -262,6 +324,28 @@ export default function App() {
             onDFuelMmChange={setDFuelMm}
             impingementHalfAngleDeg={impingementHalfAngleDeg}
             onImpingementHalfAngleDegChange={setImpingementHalfAngleDeg}
+            plumbingGas={plumbingGas}
+            onPlumbingGasChange={setPlumbingGas}
+            plumbingTankShape={plumbingTankShape}
+            onPlumbingTankShapeChange={setPlumbingTankShape}
+            plumbingAspectRatio={plumbingAspectRatio}
+            onPlumbingAspectRatioChange={setPlumbingAspectRatio}
+            plumbingOxMaterial={plumbingOxMaterial}
+            onPlumbingOxMaterialChange={setPlumbingOxMaterial}
+            plumbingFuelMaterial={plumbingFuelMaterial}
+            onPlumbingFuelMaterialChange={setPlumbingFuelMaterial}
+            plumbingPressurantMaterial={plumbingPressurantMaterial}
+            onPlumbingPressurantMaterialChange={setPlumbingPressurantMaterial}
+            plumbingInjectorDropPct={plumbingInjectorDropPct}
+            onPlumbingInjectorDropPctChange={setPlumbingInjectorDropPct}
+            plumbingLineLossBar={plumbingLineLossBar}
+            onPlumbingLineLossBarChange={setPlumbingLineLossBar}
+            plumbingUllageMarginBar={plumbingUllageMarginBar}
+            onPlumbingUllageMarginBarChange={setPlumbingUllageMarginBar}
+            plumbingPressurantTankBar={plumbingPressurantTankBar}
+            onPlumbingPressurantTankBarChange={setPlumbingPressurantTankBar}
+            plumbingBurnTimeSec={plumbingBurnTimeSec}
+            onPlumbingBurnTimeSecChange={setPlumbingBurnTimeSec}
           />
         </div>
       </div>
