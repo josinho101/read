@@ -84,6 +84,56 @@ function dimLine(
   ctx.restore();
 }
 
+function extensionLine(
+  ctx: CanvasRenderingContext2D,
+  fromX: number, fromY: number,
+  toX: number, toY: number,
+) {
+  ctx.save();
+  ctx.strokeStyle = AMBER;
+  ctx.lineWidth = 0.8;
+  ctx.setLineDash([3, 3]);
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSpacingDim(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  labelMm: number,
+  label?: string,
+  // True measured-edge anchors the dimension line's endpoints extend back
+  // to (e.g. the circle's centerline when the dimension line itself sits
+  // offset below the shape) — defaults to the dimension line's own
+  // endpoints, which draws a zero-length (i.e. no-op) extension.
+  anchor1?: { x: number; y: number },
+  anchor2?: { x: number; y: number },
+) {
+  if (anchor1) extensionLine(ctx, anchor1.x, anchor1.y, x1, y1);
+  if (anchor2) extensionLine(ctx, anchor2.x, anchor2.y, x2, y2);
+
+  dimLine(ctx, x1, y1, x2, y2);
+
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const offX = Math.sin(angle) * 10;
+  const offY = -Math.cos(angle) * 10;
+
+  ctx.save();
+  ctx.fillStyle = AMBER;
+  ctx.font = '10px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label ?? `${labelMm.toFixed(2)} mm`, midX + offX, midY + offY);
+  ctx.restore();
+}
+
 // ── Hole layout helpers ────────────────────────────────────────────────────────
 
 function packRings(
@@ -236,8 +286,30 @@ function drawFace(
       drawHole(ctx, pos[0], pos[1], isOx ? rOx : rFuel, isOx ? COLOR_OX : COLOR_FUEL);
     });
 
+    if (allPos.length > 1) {
+      const [x1, y1] = allPos[0];
+      const [x2, y2] = allPos[1];
+      const distMm = Math.hypot(x2 - x1, y2 - y1) / scale;
+      drawSpacingDim(ctx, x1, y1, x2, y2, distMm);
+    }
+
   } else if (injectorType === 'pintle') {
+    // Pintle: oxidizer flows axially through the central post; fuel sheets
+    // out radially through a continuous annular gap around the post — not
+    // discrete drilled holes, so draw a fuel annulus rather than a hole ring.
     const postR = Math.max(rOx * 3, usableR * 0.12);
+    const annulusOuterR = postR + Math.max(rFuel * 2, postR * 0.35);
+
+    // Pass 1: fuel annulus
+    ctx.beginPath();
+    ctx.arc(cx, cy, annulusOuterR, 0, 2 * Math.PI);
+    ctx.fillStyle = COLOR_FUEL;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,229,255,0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Pass 2: oxidizer post on top, punching out the center of the annulus
     ctx.beginPath();
     ctx.arc(cx, cy, postR, 0, 2 * Math.PI);
     ctx.fillStyle = COLOR_OX;
@@ -246,19 +318,45 @@ function drawFace(
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    const fuelRingR = postR * 2.5;
-    for (let i = 0; i < nFuel; i++) {
-      const angle = (2 * Math.PI * i) / nFuel - Math.PI / 2;
-      const fx = cx + fuelRingR * Math.cos(angle);
-      const fy = cy + fuelRingR * Math.sin(angle);
-      drawHole(ctx, fx, fy, rFuel, COLOR_FUEL);
-    }
+    // Radial gap: the clearance between the post edge and the annulus edge.
+    // The fuel film fills this gap on every side of the post at once, so the
+    // full annulus diameter is the post diameter PLUS the gap on *both*
+    // sides — label it explicitly as a per-side value (×2) so it isn't
+    // misread as a simple diameter-to-diameter delta. Drawn clear of the
+    // circle (above it) since the true gap is too narrow on-shape to hold a
+    // legible label, with vertical dashed extension lines tracing straight
+    // up from the actual post/annulus edges — mirroring the Ox ⌀/Fuel ⌀
+    // dimensions' style.
+    const fuelDimY = cy - annulusOuterR - 22;
+    const gapMm = (annulusOuterR - postR) / scale;
+    const gapDimY = fuelDimY - 34;
+    drawSpacingDim(
+      ctx,
+      cx + postR, gapDimY,
+      cx + annulusOuterR, gapDimY,
+      gapMm,
+      `Gap ${gapMm.toFixed(2)} mm`,
+      { x: cx + postR, y: cy }, { x: cx + annulusOuterR, y: cy },
+    );
+
+    drawSpacingDim(
+      ctx, cx - annulusOuterR, fuelDimY, cx + annulusOuterR, fuelDimY,
+      (annulusOuterR * 2) / scale, `Fuel ⌀ ${((annulusOuterR * 2) / scale).toFixed(2)} mm`,
+      { x: cx - annulusOuterR, y: cy }, { x: cx + annulusOuterR, y: cy },
+    );
+
+    const oxDimY = cy + annulusOuterR + 22;
+    drawSpacingDim(
+      ctx, cx - postR, oxDimY, cx + postR, oxDimY,
+      (postR * 2) / scale, `Ox ⌀ ${((postR * 2) / scale).toFixed(2)} mm`,
+      { x: cx - postR, y: cy }, { x: cx + postR, y: cy },
+    );
 
   } else if (injectorType === 'coaxial') {
     const elemPitch = Math.max(minPitch, (dOxMm + dFuelMm) * scale * 2.5);
     const positions = packRings(nOxidizer, usableR, elemPitch, cx, cy);
     const innerR = Math.max(3, rOx);
-    const outerR = Math.max(innerR + 3, rOx + rFuel * 1.5);
+    const outerR = Math.max(innerR, rOx + rFuel * 1.5);
     // Pass 1: all fuel annuli first
     positions.forEach(([ex, ey]) => {
       ctx.beginPath();
@@ -276,6 +374,11 @@ function drawFace(
       ctx.lineWidth = 1;
       ctx.stroke();
     });
+
+    if (positions.length > 0) {
+      const [ex, ey] = positions[0];
+      drawSpacingDim(ctx, ex, ey - innerR, ex, ey - outerR, (outerR - innerR) / scale);
+    }
 
   } else if (injectorType === 'impinging_fof') {
     // FOF triplet: 1 central oxidizer + 2 flanking fuel holes per element.
@@ -307,6 +410,15 @@ function drawFace(
       drawHole(ctx, oxX, oxY, rOx,   COLOR_OX);
     });
 
+    if (elemPositions.length > 0) {
+      const [px, py] = elemPositions[0];
+      const perpAngle = Math.atan2(py - cy, px - cx) + Math.PI / 2;
+      const f1X = px + Math.cos(perpAngle) * flankSpread;
+      const f1Y = py + Math.sin(perpAngle) * flankSpread;
+      const distMm = Math.hypot(f1X - px, f1Y - py) / scale;
+      drawSpacingDim(ctx, px, py, f1X, f1Y, distMm);
+    }
+
   } else if (injectorType === 'impinging_ofo') {
     // OFO triplet: 1 central fuel + 2 flanking oxidizer holes per element.
     // nFuel = element count (N_o = 2 × N_f enforced by BE).
@@ -337,6 +449,15 @@ function drawFace(
       drawHole(ctx, fX,  fY,  rFuel, COLOR_FUEL);
     });
 
+    if (elemPositions.length > 0) {
+      const [px, py] = elemPositions[0];
+      const perpAngle = Math.atan2(py - cy, px - cx) + Math.PI / 2;
+      const o1X = px + Math.cos(perpAngle) * flankSpread;
+      const o1Y = py + Math.sin(perpAngle) * flankSpread;
+      const distMm = Math.hypot(o1X - px, o1Y - py) / scale;
+      drawSpacingDim(ctx, px, py, o1X, o1Y, distMm);
+    }
+
   } else {
     // Impinging doublet: 1 ox + 1 fuel per pair, side by side.
     const nPairs = Math.min(nOxidizer, nFuel);
@@ -363,6 +484,17 @@ function drawFace(
       drawHole(ctx, oxX, oxY, rOx,   COLOR_OX);
       drawHole(ctx, fX,  fY,  rFuel, COLOR_FUEL);
     });
+
+    if (pairPositions.length > 0) {
+      const [px, py] = pairPositions[0];
+      const perpAngle = Math.atan2(py - cy, px - cx) + Math.PI / 2;
+      const oxX = px + Math.cos(perpAngle) * pairSpread / 2;
+      const oxY = py + Math.sin(perpAngle) * pairSpread / 2;
+      const fX  = px - Math.cos(perpAngle) * pairSpread / 2;
+      const fY  = py - Math.sin(perpAngle) * pairSpread / 2;
+      const distMm = Math.hypot(fX - oxX, fY - oxY) / scale;
+      drawSpacingDim(ctx, oxX, oxY, fX, fY, distMm);
+    }
 
     const extraOx   = nOxidizer - nPairs;
     const extraFuel = nFuel     - nPairs;

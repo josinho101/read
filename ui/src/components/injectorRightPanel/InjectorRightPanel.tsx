@@ -189,6 +189,11 @@ export default function InjectorRightPanel({
                 />
               </div>
             </div>
+            {injectorType === 'coaxial' && localDFuel <= localDOx && (
+              <div className="inj-rp-error">
+                Fuel diameter must exceed oxidizer diameter for coaxial — fuel flows in the annulus around the oxidizer post.
+              </div>
+            )}
           </div>
 
           {/* Impingement angle — only shown for impinging type */}

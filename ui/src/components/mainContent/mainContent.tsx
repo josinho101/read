@@ -360,11 +360,7 @@ export default function MainContent({
           engineDesignResult ? (
             <div className="injector-tab-layout">
               <InjectorFace
-                chamberRadiusMm={
-                  (injectorSelectedRow
-                    ? (opt?.chamberRadius.value ?? 0)
-                    : (opt?.chamberRadius.value ?? 0))
-                }
+                chamberRadiusMm={opt?.chamberRadius.value ?? 0}
                 nOxidizer={injectorSelectedRow?.oxidizer_hole_count ?? 0}
                 nFuel={injectorSelectedRow?.fuel_hole_count ?? 0}
                 dOxMm={dOxMm}
