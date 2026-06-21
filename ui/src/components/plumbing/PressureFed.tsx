@@ -48,6 +48,9 @@ interface PressureFedProps {
   onPressurantTankBarChange: (v: number) => void;
   burnTimeSec: number;
   onBurnTimeSecChange: (v: number) => void;
+
+  view: ViewState | null;
+  onViewChange: (v: ViewState) => void;
 }
 
 const FEASIBILITY_PC_LIMIT_BAR = 35;
@@ -56,9 +59,9 @@ const ULLAGE_FRACTION = 0.1;
 // ── Pan / zoom (mirrors EngineContour's hand-rolled view state) ────────────────
 const VIEWBOX_W = 1000;
 const VIEWBOX_H = 700;
-const DEFAULT_VIEW: ViewState = { panX: 0, panY: 0, vZoom: 1 };
+export const PRESSURE_FED_DEFAULT_VIEW: ViewState = { panX: 0, panY: 0, vZoom: 1 };
 
-interface ViewState { panX: number; panY: number; vZoom: number }
+export interface ViewState { panX: number; panY: number; vZoom: number }
 
 // ── Valve symbol (bowtie) ──────────────────────────────────────────────────────
 function ValveSymbol({ x, y, size = 14 }: { x: number; y: number; size?: number }) {
@@ -89,6 +92,7 @@ export default function PressureFed({
   injectorDropPct, onInjectorDropPctChange, lineLossBar, onLineLossBarChange,
   ullageMarginBar, onUllageMarginBarChange, pressurantTankBar, onPressurantTankBarChange,
   burnTimeSec, onBurnTimeSecChange,
+  view: viewProp, onViewChange: setView,
 }: PressureFedProps) {
   const injectorDropFromDesign = injectorSelectedRow != null;
 
@@ -103,7 +107,7 @@ export default function PressureFed({
   // ── Pan / zoom state (same model as EngineContour) ──────────────────────────
   const diagramRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [view, setView] = useState<ViewState>(DEFAULT_VIEW);
+  const view = viewProp ?? PRESSURE_FED_DEFAULT_VIEW;
   const viewRef = useRef(view);
   viewRef.current = view;
   const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
@@ -152,33 +156,31 @@ export default function PressureFed({
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!drag.current) return;
     const { startX, startY, startPanX, startPanY } = drag.current;
-    setView(v => ({ ...v, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY }));
+    setView({ ...viewRef.current, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY });
   };
 
   const handleMouseUp = () => { drag.current = null; setDragging(false); };
 
-  const handleResetView = () => setView(DEFAULT_VIEW);
+  const handleResetView = () => setView(PRESSURE_FED_DEFAULT_VIEW);
 
   const handleZoomIn = () => {
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    setView(v => {
-      const { x: worldX, y: worldY, mx, my } = clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2, v);
-      const newZoom = Math.min(20, v.vZoom * 1.2);
-      return { panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom };
-    });
+    const v = viewRef.current;
+    const { x: worldX, y: worldY, mx, my } = clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2, v);
+    const newZoom = Math.min(20, v.vZoom * 1.2);
+    setView({ panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom });
   };
 
   const handleZoomOut = () => {
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    setView(v => {
-      const { x: worldX, y: worldY, mx, my } = clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2, v);
-      const newZoom = Math.max(0.05, v.vZoom / 1.2);
-      return { panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom };
-    });
+    const v = viewRef.current;
+    const { x: worldX, y: worldY, mx, my } = clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2, v);
+    const newZoom = Math.max(0.05, v.vZoom / 1.2);
+    setView({ panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom });
   };
 
   const Pc = engineDesignResult?.engineInputs.chamberPressure.value ?? 0;

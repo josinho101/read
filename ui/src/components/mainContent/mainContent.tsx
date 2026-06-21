@@ -9,7 +9,7 @@ import { generateEngineDXF, downloadDXF } from '../../utils/dxfExport';
 import { type InjectorType, type InjectorSweepRow } from '../../services/injectorSweepService';
 import MrGraph from '../mrGraph/MrGraph';
 import MrSweepModal from '../mrSweepModal/MrSweepModal';
-import EngineContour from '../engineContour/EngineContour';
+import EngineContour, { type ViewState } from '../engineContour/EngineContour';
 import CombustionAnalysis from '../combustionAnalysis/CombustionAnalysis';
 import EngineStations from '../engineStations/EngineStations';
 import InjectorFace from '../injectorFace/InjectorFace';
@@ -18,6 +18,7 @@ import './mainContent.css';
 import Reference from '../reference/reference';
 import LiftOfMass from '../reference/LiftOfMass';
 import Plumbing from '../plumbing/Plumbing';
+import { PRESSURE_FED_DEFAULT_VIEW } from '../plumbing/PressureFed';
 import { type PressurantGasKey, type TankShape } from '../plumbing/PlumbingRightPanel';
 
 const TABS = ['ENGINE CONTOUR', 'ENGINE STATIONS', 'INJECTOR FACE', 'COMBUSTION', 'LIFT OF MASS', 'PLUMBING', 'REFERENCE'] as const;
@@ -123,6 +124,12 @@ export default function MainContent({
 
   // Plumbing > Pressure Fed tab state
   const [pressureFedRightCollapsed, setPressureFedRightCollapsed] = useState(true);
+
+  // Pan/zoom view state per tab — kept here (rather than inside each tab component) so it
+  // survives tab switches, since MainContent unmounts the inactive tab's component.
+  const [engineContourView, setEngineContourView] = useState<ViewState | null>(null);
+  const [injectorFaceView, setInjectorFaceView] = useState<ViewState | null>(null);
+  const [pressureFedView, setPressureFedView] = useState<ViewState | null>(PRESSURE_FED_DEFAULT_VIEW);
 
   useEffect(() => {
     setConfirmedRow(null);
@@ -314,6 +321,8 @@ export default function MainContent({
               onShowPlumeChange={onShowPlumeChange}
               rightCollapsed={engineContourRightCollapsed}
               onRightToggle={() => setEngineContourRightCollapsed(c => !c)}
+              view={engineContourView}
+              onViewChange={setEngineContourView}
             />
           ) : (
             <div className="canvas-placeholder">
@@ -353,6 +362,8 @@ export default function MainContent({
             onPressurantTankBarChange={onPlumbingPressurantTankBarChange}
             burnTimeSec={plumbingBurnTimeSec}
             onBurnTimeSecChange={onPlumbingBurnTimeSecChange}
+            view={pressureFedView}
+            onViewChange={setPressureFedView}
           />
         )}
         {activeTab === 'REFERENCE' && <Reference engineDesignResult={engineDesignResult} />}
@@ -369,6 +380,8 @@ export default function MainContent({
                 impingementHalfAngleDeg={impingementHalfAngleDeg}
                 selectedRow={injectorSelectedRow}
                 chamberPressureBar={engineDesignResult?.engineInputs.chamberPressure.value}
+                view={injectorFaceView}
+                onViewChange={setInjectorFaceView}
               />
               <InjectorRightPanel
                 engineDesignResult={engineDesignResult}

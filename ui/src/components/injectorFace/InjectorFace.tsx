@@ -26,17 +26,19 @@ interface InjectorFaceProps {
   selectedRow?: InjectorSweepRow | null;
   /** Chamber pressure in bar — used to derive propellant inlet pressure */
   chamberPressureBar?: number;
+  view: ViewState | null;
+  onViewChange: (v: ViewState) => void;
 }
 
-interface ViewState { panX: number; panY: number; vZoom: number }
+export interface ViewState { panX: number; panY: number; vZoom: number }
 
-const DEFAULT_ZOOM = 0.8;
+export const INJECTOR_FACE_DEFAULT_ZOOM = 0.8;
 
-function centeredView(cW: number, cH: number, z = DEFAULT_ZOOM): ViewState {
+export function centeredView(cW: number, cH: number, z = INJECTOR_FACE_DEFAULT_ZOOM): ViewState {
   return { panX: (cW / 2) * (1 - z), panY: (cH / 2) * (1 - z), vZoom: z };
 }
 
-const DEFAULT_VIEW: ViewState = { panX: 0, panY: 0, vZoom: DEFAULT_ZOOM };
+const FALLBACK_VIEW: ViewState = { panX: 0, panY: 0, vZoom: INJECTOR_FACE_DEFAULT_ZOOM };
 
 const COLOR_OX   = '#ffb300';  // orange — oxidizer
 const COLOR_FUEL = '#00e5ff';  // cyan   — fuel
@@ -529,10 +531,10 @@ function fmt(v: number | null | undefined, dec = 2): string {
 }
 
 export default function InjectorFace(props: InjectorFaceProps) {
-  const { selectedRow, dOxMm, dFuelMm, chamberPressureBar } = props;
+  const { selectedRow, dOxMm, dFuelMm, chamberPressureBar, view: viewProp, onViewChange: setView } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
-  const [view, setView] = useState<ViewState>(DEFAULT_VIEW);
+  const view = viewProp ?? FALLBACK_VIEW;
   const viewRef = useRef(view);
   viewRef.current = view;
   const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
@@ -557,6 +559,7 @@ export default function InjectorFace(props: InjectorFaceProps) {
 
   // Set centered view once dimensions are known — retry each frame until layout is ready
   useEffect(() => {
+    if (viewProp) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     let rafId: number;
@@ -570,6 +573,7 @@ export default function InjectorFace(props: InjectorFaceProps) {
     };
     rafId = requestAnimationFrame(tryCenter);
     return () => cancelAnimationFrame(rafId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -614,7 +618,7 @@ export default function InjectorFace(props: InjectorFaceProps) {
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!drag.current) return;
     const { startX, startY, startPanX, startPanY } = drag.current;
-    setView(v => ({ ...v, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY }));
+    setView({ ...viewRef.current, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY });
   };
 
   const handleMouseUp = () => { drag.current = null; setDragging(false); };
@@ -630,26 +634,24 @@ export default function InjectorFace(props: InjectorFaceProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    setView(v => {
-      const newZoom = Math.min(20, v.vZoom * 1.2);
-      const cx = rect.width / 2, cy = rect.height / 2;
-      const wx = (cx - v.panX) / v.vZoom;
-      const wy = (cy - v.panY) / v.vZoom;
-      return { panX: cx - wx * newZoom, panY: cy - wy * newZoom, vZoom: newZoom };
-    });
+    const v = viewRef.current;
+    const newZoom = Math.min(20, v.vZoom * 1.2);
+    const cx = rect.width / 2, cy = rect.height / 2;
+    const wx = (cx - v.panX) / v.vZoom;
+    const wy = (cy - v.panY) / v.vZoom;
+    setView({ panX: cx - wx * newZoom, panY: cy - wy * newZoom, vZoom: newZoom });
   };
 
   const handleZoomOut = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    setView(v => {
-      const newZoom = Math.max(0.05, v.vZoom / 1.2);
-      const cx = rect.width / 2, cy = rect.height / 2;
-      const wx = (cx - v.panX) / v.vZoom;
-      const wy = (cy - v.panY) / v.vZoom;
-      return { panX: cx - wx * newZoom, panY: cy - wy * newZoom, vZoom: newZoom };
-    });
+    const v = viewRef.current;
+    const newZoom = Math.max(0.05, v.vZoom / 1.2);
+    const cx = rect.width / 2, cy = rect.height / 2;
+    const wx = (cx - v.panX) / v.vZoom;
+    const wy = (cy - v.panY) / v.vZoom;
+    setView({ panX: cx - wx * newZoom, panY: cy - wy * newZoom, vZoom: newZoom });
   };
 
   return (

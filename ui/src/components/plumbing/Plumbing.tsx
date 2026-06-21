@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type EngineDesignResult } from '../../services/engineDesignService';
 import { type InjectorSweepRow } from '../../services/injectorSweepService';
-import PressureFed from './PressureFed';
+import PressureFed, { type ViewState } from './PressureFed';
 import { type PressurantGasKey, type TankShape } from './PlumbingRightPanel';
 import './plumbing.css';
 
@@ -36,6 +36,9 @@ interface PlumbingProps {
   onPressurantTankBarChange: (v: number) => void;
   burnTimeSec: number;
   onBurnTimeSecChange: (v: number) => void;
+
+  view: ViewState | null;
+  onViewChange: (v: ViewState) => void;
 }
 
 export default function Plumbing({
@@ -45,6 +48,7 @@ export default function Plumbing({
   injectorDropPct, onInjectorDropPctChange, lineLossBar, onLineLossBarChange,
   ullageMarginBar, onUllageMarginBarChange, pressurantTankBar, onPressurantTankBarChange,
   burnTimeSec, onBurnTimeSecChange,
+  view, onViewChange,
 }: PlumbingProps) {
   const [subTab, setSubTab] = useState<SubTab>('PRESSURE FED');
 
@@ -91,6 +95,8 @@ export default function Plumbing({
             onPressurantTankBarChange={onPressurantTankBarChange}
             burnTimeSec={burnTimeSec}
             onBurnTimeSecChange={onBurnTimeSecChange}
+            view={view}
+            onViewChange={onViewChange}
           />
         )}
       </div>

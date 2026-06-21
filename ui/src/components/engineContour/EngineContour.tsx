@@ -24,6 +24,8 @@ const switchSx = {
   '& .MuiSwitch-thumb': { boxShadow: '0 0 4px rgba(0,229,255,0.5)' },
 };
 
+export interface ViewState { panX: number; panY: number; vZoom: number }
+
 interface Props {
   chamberRadius: number;
   throatRadius: number;
@@ -49,6 +51,8 @@ interface Props {
   onShowPlumeChange: (v: boolean) => void;
   rightCollapsed: boolean;
   onRightToggle: () => void;
+  view: ViewState | null;
+  onViewChange: (v: ViewState) => void;
 }
 
 const DEG   = Math.PI / 180;
@@ -424,15 +428,15 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number, nozzleT
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-interface ViewState { panX: number; panY: number; vZoom: number }
+export const ENGINE_CONTOUR_DEFAULT_ZOOM = 0.75;
 
-const DEFAULT_ZOOM = 0.75;
-
-const centeredView = (cW: number, cH: number, z = DEFAULT_ZOOM): ViewState => ({
+export const centeredView = (cW: number, cH: number, z = ENGINE_CONTOUR_DEFAULT_ZOOM): ViewState => ({
   panX: (cW / 2) * (1 - z),
   panY: (cH / 2) * (1 - z),
   vZoom: z,
 });
+
+const FALLBACK_VIEW: ViewState = { panX: 0, panY: 0, vZoom: ENGINE_CONTOUR_DEFAULT_ZOOM };
 
 export default function EngineContour({
   chamberRadius, throatRadius, exitRadius,
@@ -445,11 +449,12 @@ export default function EngineContour({
   showParticles, onShowParticlesChange,
   showPlume, onShowPlumeChange,
   rightCollapsed, onRightToggle,
+  view: viewProp, onViewChange: setView,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const [showLabels, setShowLabels] = useState(true);
-  const [view, setView] = useState<ViewState>({ panX: 0, panY: 0, vZoom: DEFAULT_ZOOM });
+  const view = viewProp ?? FALLBACK_VIEW;
   const viewRef = useRef(view);
   viewRef.current = view;
   const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
@@ -588,10 +593,12 @@ export default function EngineContour({
   redrawRef.current = redraw;
 
   useEffect(() => {
+    if (viewProp) return;
     const container = containerRef.current;
     if (!container) return;
     const { width: cW, height: cH } = container.getBoundingClientRect();
     if (cW > 0 && cH > 0) setView(centeredView(cW, cH));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -672,7 +679,7 @@ export default function EngineContour({
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!drag.current) return;
     const { startX, startY, startPanX, startPanY } = drag.current;
-    setView(v => ({ ...v, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY }));
+    setView({ ...viewRef.current, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY });
   };
 
   const handleMouseUp = () => { drag.current = null; setDragging(false); };
@@ -688,24 +695,22 @@ export default function EngineContour({
     const container = containerRef.current;
     if (!container) return;
     const { width: cW, height: cH } = container.getBoundingClientRect();
-    setView(v => {
-      const newZoom = Math.min(20, v.vZoom * 1.2);
-      const worldX = (cW / 2 - v.panX) / v.vZoom;
-      const worldY = (cH / 2 - v.panY) / v.vZoom;
-      return { panX: cW / 2 - worldX * newZoom, panY: cH / 2 - worldY * newZoom, vZoom: newZoom };
-    });
+    const v = viewRef.current;
+    const newZoom = Math.min(20, v.vZoom * 1.2);
+    const worldX = (cW / 2 - v.panX) / v.vZoom;
+    const worldY = (cH / 2 - v.panY) / v.vZoom;
+    setView({ panX: cW / 2 - worldX * newZoom, panY: cH / 2 - worldY * newZoom, vZoom: newZoom });
   };
 
   const handleZoomOut = () => {
     const container = containerRef.current;
     if (!container) return;
     const { width: cW, height: cH } = container.getBoundingClientRect();
-    setView(v => {
-      const newZoom = Math.max(0.05, v.vZoom / 1.2);
-      const worldX = (cW / 2 - v.panX) / v.vZoom;
-      const worldY = (cH / 2 - v.panY) / v.vZoom;
-      return { panX: cW / 2 - worldX * newZoom, panY: cH / 2 - worldY * newZoom, vZoom: newZoom };
-    });
+    const v = viewRef.current;
+    const newZoom = Math.max(0.05, v.vZoom / 1.2);
+    const worldX = (cW / 2 - v.panX) / v.vZoom;
+    const worldY = (cH / 2 - v.panY) / v.vZoom;
+    setView({ panX: cW / 2 - worldX * newZoom, panY: cH / 2 - worldY * newZoom, vZoom: newZoom });
   };
 
   return (
