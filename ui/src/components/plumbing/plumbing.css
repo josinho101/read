@@ -144,6 +144,54 @@
   max-height: 720px;
 }
 
+/* ─── Pan / zoom controls (mirrors EngineContour's ec2-zoom-* styling) ────────── */
+.plumb-zoom-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plumb-zoom-btn.MuiIconButton-root {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: rgba(5, 14, 24, 0.88);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  color: #00e5ff;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.plumb-zoom-btn.MuiIconButton-root:hover {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.55);
+}
+
+.plumb-info-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.plumb-info-tooltip kbd {
+  display: inline-block;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 3px;
+  padding: 0 5px;
+  font-family: inherit;
+  font-size: 10px;
+  color: #00e5ff;
+  margin-right: 5px;
+}
+
 .plumb-pipe {
   stroke: rgba(200, 220, 230, 0.5);
   stroke-width: 2.5;

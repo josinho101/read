@@ -1,5 +1,9 @@
-import { useEffect, useMemo } from 'react';
-import { Tooltip } from '@mui/material';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { IconButton, Tooltip } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import RestoreIcon from '@mui/icons-material/Restore';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { type EngineDesignResult } from '../../services/engineDesignService';
 import { type InjectorSweepRow } from '../../services/injectorSweepService';
 import {
@@ -49,6 +53,13 @@ interface PressureFedProps {
 const FEASIBILITY_PC_LIMIT_BAR = 35;
 const ULLAGE_FRACTION = 0.1;
 
+// ── Pan / zoom (mirrors EngineContour's hand-rolled view state) ────────────────
+const VIEWBOX_W = 1000;
+const VIEWBOX_H = 700;
+const DEFAULT_VIEW: ViewState = { panX: 0, panY: 0, vZoom: 1 };
+
+interface ViewState { panX: number; panY: number; vZoom: number }
+
 // ── Valve symbol (bowtie) ──────────────────────────────────────────────────────
 function ValveSymbol({ x, y, size = 14 }: { x: number; y: number; size?: number }) {
   const h = size;
@@ -88,6 +99,87 @@ export default function PressureFed({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [injectorSelectedRow]);
+
+  // ── Pan / zoom state (same model as EngineContour) ──────────────────────────
+  const diagramRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [view, setView] = useState<ViewState>(DEFAULT_VIEW);
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const drag = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  // Converts a client-space mouse position into SVG viewBox ("world") units,
+  // accounting for the viewBox-to-container scale that preserveAspectRatio applies
+  // on top of panX/panY/vZoom.
+  const clientToWorld = (clientX: number, clientY: number, v: ViewState) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0, mx: 0, my: 0 };
+    const rect = svg.getBoundingClientRect();
+    const fitScale = Math.min(rect.width / VIEWBOX_W, rect.height / VIEWBOX_H);
+    const offsetX = (rect.width - VIEWBOX_W * fitScale) / 2;
+    const offsetY = (rect.height - VIEWBOX_H * fitScale) / 2;
+    const mx = (clientX - rect.left - offsetX) / fitScale;
+    const my = (clientY - rect.top - offsetY) / fitScale - 15;
+    return { x: (mx - v.panX) / v.vZoom, y: (my - v.panY) / v.vZoom, mx, my };
+  };
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const v = viewRef.current;
+      const { x: worldX, y: worldY, mx, my } = clientToWorld(e.clientX, e.clientY, v);
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+      const newZoom = Math.max(0.05, Math.min(20, v.vZoom * factor));
+      setView({ panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom });
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    drag.current = {
+      startX: e.clientX, startY: e.clientY,
+      startPanX: viewRef.current.panX, startPanY: viewRef.current.panY,
+    };
+    setDragging(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!drag.current) return;
+    const { startX, startY, startPanX, startPanY } = drag.current;
+    setView(v => ({ ...v, panX: startPanX + e.clientX - startX, panY: startPanY + e.clientY - startY }));
+  };
+
+  const handleMouseUp = () => { drag.current = null; setDragging(false); };
+
+  const handleResetView = () => setView(DEFAULT_VIEW);
+
+  const handleZoomIn = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    setView(v => {
+      const { x: worldX, y: worldY, mx, my } = clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2, v);
+      const newZoom = Math.min(20, v.vZoom * 1.2);
+      return { panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom };
+    });
+  };
+
+  const handleZoomOut = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    setView(v => {
+      const { x: worldX, y: worldY, mx, my } = clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2, v);
+      const newZoom = Math.max(0.05, v.vZoom / 1.2);
+      return { panX: mx - worldX * newZoom, panY: my - worldY * newZoom, vZoom: newZoom };
+    });
+  };
 
   const Pc = engineDesignResult?.engineInputs.chamberPressure.value ?? 0;
 
@@ -286,8 +378,56 @@ export default function PressureFed({
           </div>
         )}
 
-        <div className="plumb-diagram">
-          <svg className="plumb-svg" viewBox="0 -15 1000 700" preserveAspectRatio="xMidYMid meet">
+        <div
+          className="plumb-diagram"
+          ref={diagramRef}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <div className="plumb-zoom-controls">
+            <Tooltip title="Zoom in" placement="right" arrow>
+              <IconButton className="plumb-zoom-btn" onClick={handleZoomIn} size="small" disableRipple>
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Zoom out" placement="right" arrow>
+              <IconButton className="plumb-zoom-btn" onClick={handleZoomOut} size="small" disableRipple>
+                <RemoveIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Reset view" placement="right" arrow>
+              <IconButton className="plumb-zoom-btn" onClick={handleResetView} size="small" disableRipple>
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title={
+                <div className="plumb-info-tooltip">
+                  <div><kbd>Scroll</kbd> Zoom in / out</div>
+                  <div><kbd>Drag</kbd> Pan view</div>
+                  <div><kbd>Double-click</kbd> Reset view</div>
+                </div>
+              }
+              placement="right"
+              arrow
+            >
+              <IconButton className="plumb-zoom-btn" size="small" disableRipple>
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </div>
+
+          <svg
+            className="plumb-svg"
+            ref={svgRef}
+            viewBox="0 -15 1000 700"
+            preserveAspectRatio="xMidYMid meet"
+            style={{ cursor: dragging ? 'grabbing' : 'grab', userSelect: dragging ? 'none' : undefined }}
+            onMouseDown={handleMouseDown}
+            onDoubleClick={handleResetView}
+          >
+          <g transform={`translate(${view.panX} ${view.panY}) scale(${view.vZoom})`}>
             {/* ── Pressurant tank ── */}
             {renderTank(pressurantTankDef.cx, pressurantTankDef.cy, pressurantTankDef.w, pressurantTankDef.h)}
             <text className="plumb-component-label" x="500" y="80">PRESSURANT</text>
@@ -390,18 +530,19 @@ export default function PressureFed({
             {/* Downward profile: chamber (top, wide) -> converging section -> throat -> diverging nozzle (bottom) */}
             <path
               className="plumb-component"
-              d="M 455 608
-                 L 455 630
-                 L 488 648
-                 L 466 668
-                 L 534 668
-                 L 512 648
-                 L 545 630
-                 L 545 608
+              d="M 475 608
+                 L 475 630
+                 L 492 648
+                 L 480 668
+                 L 520 668
+                 L 508 648
+                 L 525 630
+                 L 525 608
                  Z"
             />
             <text className="plumb-component-label" x="500" y="598">Engine</text>
             <text className="plumb-pressure-label" x="558" y="660">{Pc.toFixed(1)} bar</text>
+          </g>
           </svg>
 
           <div className="plumb-legend">
