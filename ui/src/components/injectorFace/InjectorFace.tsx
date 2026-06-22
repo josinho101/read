@@ -40,16 +40,16 @@ export function centeredView(cW: number, cH: number, z = INJECTOR_FACE_DEFAULT_Z
 
 const FALLBACK_VIEW: ViewState = { panX: 0, panY: 0, vZoom: INJECTOR_FACE_DEFAULT_ZOOM };
 
-const COLOR_OX   = '#ffb300';  // orange — oxidizer
-const COLOR_FUEL = '#00e5ff';  // cyan   — fuel
-const COLOR_WALL = 'rgba(0,229,255,0.25)';
-const COLOR_WALL_STROKE = 'rgba(0,229,255,0.6)';
-const COLOR_IMP_LINE = 'rgba(255,179,0,0.35)';
-const AMBER = '#ffb300';
+export const COLOR_OX   = '#ffb300';  // orange — oxidizer
+export const COLOR_FUEL = '#00e5ff';  // cyan   — fuel
+export const COLOR_WALL = 'rgba(0,229,255,0.25)';
+export const COLOR_WALL_STROKE = 'rgba(0,229,255,0.6)';
+export const COLOR_IMP_LINE = 'rgba(255,179,0,0.35)';
+export const AMBER = '#ffb300';
 
 // ── Dimension helpers ──────────────────────────────────────────────────────────
 
-function arrowHead(
+export function arrowHead(
   ctx: CanvasRenderingContext2D,
   fromX: number, fromY: number,
   toX: number, toY: number,
@@ -68,7 +68,7 @@ function arrowHead(
   ctx.restore();
 }
 
-function dimLine(
+export function dimLine(
   ctx: CanvasRenderingContext2D,
   x1: number, y1: number,
   x2: number, y2: number,
@@ -86,7 +86,7 @@ function dimLine(
   ctx.restore();
 }
 
-function extensionLine(
+export function extensionLine(
   ctx: CanvasRenderingContext2D,
   fromX: number, fromY: number,
   toX: number, toY: number,
@@ -103,7 +103,7 @@ function extensionLine(
   ctx.restore();
 }
 
-function drawSpacingDim(
+export function drawSpacingDim(
   ctx: CanvasRenderingContext2D,
   x1: number, y1: number,
   x2: number, y2: number,
@@ -168,7 +168,7 @@ function packRings(
   return positions;
 }
 
-function drawHole(
+export function drawHole(
   ctx: CanvasRenderingContext2D,
   x: number, y: number,
   radius: number,
@@ -182,7 +182,7 @@ function drawHole(
 
 // ── Grid ──────────────────────────────────────────────────────────────────────
 
-function drawGrid(
+export function drawGrid(
   ctx: CanvasRenderingContext2D,
   cW: number, cH: number,
   panX: number, panY: number, vZoom: number,
@@ -213,32 +213,19 @@ function drawGrid(
 
 // ── Main draw function ─────────────────────────────────────────────────────────
 
-function drawFace(
-  canvas: HTMLCanvasElement,
-  cssW: number,
-  cssH: number,
-  view: ViewState,
+function drawFaceHalf(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
   props: InjectorFaceProps,
 ) {
   const { chamberRadiusMm, nOxidizer, nFuel, dOxMm, dFuelMm, injectorType } = props;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
 
-  ctx.clearRect(0, 0, cssW, cssH);
-
-  if (chamberRadiusMm <= 0) return;
-
-  ctx.save();
-  ctx.translate(view.panX, view.panY);
-  ctx.scale(view.vZoom, view.vZoom);
-
-  drawGrid(ctx, cssW, cssH, view.panX, view.panY, view.vZoom);
-
-  const cx = cssW / 2;
-  const cy = cssH / 2;
+  const cx = w / 2;
+  const cy = h / 2;
 
   const padding = 40;
-  const scale = (Math.min(cssW, cssH) / 2 - padding) / chamberRadiusMm;
+  const scale = (Math.min(w, h) / 2 - padding) / chamberRadiusMm;
 
   const faceR = chamberRadiusMm * scale;
   const usableR = faceR * 0.85;
@@ -509,6 +496,299 @@ function drawFace(
       extras.forEach(([x, y]) => drawHole(ctx, x, y, rFuel, COLOR_FUEL));
     }
   }
+}
+
+// ── Cross-section helpers ──────────────────────────────────────────────────────
+
+// Stylized proportionality constants — there is no manifold-depth or bore-length
+// data in the model, so these pick fixed, visually-reasonable proportions rather
+// than depicting a to-scale technical drawing (mirrors how drawFaceHalf already
+// invents the pintle annulus gap from postR alone).
+const BORE_LENGTH_FACTOR = 6;
+const POST_HEIGHT_FACTOR = 2.5;
+const CONVERGENCE_DEPTH_FACTOR = 8;
+
+function drawBore(
+  ctx: CanvasRenderingContext2D,
+  x: number, yTop: number, halfWidth: number, length: number,
+  color: string,
+) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x - halfWidth, yTop, halfWidth * 2, length);
+}
+
+/** Convergence half-angle (rad) and depth for a pair/triplet of jets spread `spreadPx` apart at the face. */
+function convergenceGeometry(
+  spreadPx: number,
+  impingementHalfAngleDeg: number | undefined,
+): { angleRad: number; depthPx: number } {
+  if (impingementHalfAngleDeg != null && impingementHalfAngleDeg > 0) {
+    const angleRad = (impingementHalfAngleDeg * Math.PI) / 180;
+    return { angleRad, depthPx: spreadPx / Math.tan(angleRad) };
+  }
+  const depthPx = spreadPx * CONVERGENCE_DEPTH_FACTOR;
+  const angleRad = Math.atan2(spreadPx, depthPx);
+  return { angleRad, depthPx };
+}
+
+function drawCrossSectionHalf(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  props: InjectorFaceProps,
+) {
+  const { chamberRadiusMm, nOxidizer, nFuel, dOxMm, dFuelMm, injectorType, impingementHalfAngleDeg } = props;
+
+  const faceY = h / 2;
+  const padding = 40;
+  // Reserve a margin on the left (next to the divider) so the drawing can be
+  // shifted right without its right edge overflowing the half's clip region.
+  const leftMargin = (Math.min(w, h) / 2 - padding) * 0.35;
+  const scale = (Math.min(w, h) / 2 - padding - leftMargin) / chamberRadiusMm;
+  const faceHalfWidth = chamberRadiusMm * scale;
+  const cx = w / 2 + leftMargin;
+
+  const rOx = Math.max(2, (dOxMm / 2) * scale);
+  const rFuel = Math.max(2, (dFuelMm / 2) * scale);
+  const minPitch = Math.max(rOx, rFuel) * 3 * 2;
+
+  const wallExtent = faceHalfWidth * 0.6;
+
+  // --- Face plate ---
+  ctx.save();
+  ctx.strokeStyle = COLOR_WALL_STROKE;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx - faceHalfWidth, faceY);
+  ctx.lineTo(cx + faceHalfWidth, faceY);
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Chamber wall stubs ---
+  ctx.save();
+  ctx.strokeStyle = COLOR_WALL_STROKE;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - faceHalfWidth, faceY);
+  ctx.lineTo(cx - faceHalfWidth, faceY + wallExtent);
+  ctx.moveTo(cx + faceHalfWidth, faceY);
+  ctx.lineTo(cx + faceHalfWidth, faceY + wallExtent);
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Centerline ---
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([8, 4, 2, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cx, faceY - wallExtent * 0.6);
+  ctx.lineTo(cx, faceY + wallExtent * 1.6);
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Ø dimension ---
+  const yDim = faceY + wallExtent + 18;
+  dimLine(ctx, cx - faceHalfWidth, yDim, cx + faceHalfWidth, yDim);
+  ctx.save();
+  ctx.fillStyle = AMBER;
+  ctx.font = '11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(`Ø ${(chamberRadiusMm * 2).toFixed(1)} mm`, cx, yDim - 2);
+  ctx.restore();
+
+  // ---- Layout by injector type ----
+
+  if (injectorType === 'showerhead') {
+    const total = Math.min(7, nOxidizer + nFuel);
+    if (total > 0) {
+      const span = faceHalfWidth * 1.4;
+      const step = total > 1 ? span / (total - 1) : 0;
+      const startX = cx - span / 2;
+      for (let i = 0; i < total; i++) {
+        const isOx = i % 2 === 0;
+        const r = isOx ? rOx : rFuel;
+        const x = total > 1 ? startX + step * i : cx;
+        drawBore(ctx, x, faceY, r, r * BORE_LENGTH_FACTOR, isOx ? COLOR_OX : COLOR_FUEL);
+      }
+    }
+
+  } else if (injectorType === 'pintle') {
+    const postR = Math.max(rOx * 3, faceHalfWidth * 0.12);
+    const annulusOuterR = postR + Math.max(rFuel * 2, postR * 0.35);
+    const postHeight = postR * POST_HEIGHT_FACTOR;
+
+    // Fuel annulus: thin slabs flanking the post, flush with the face
+    ctx.fillStyle = COLOR_FUEL;
+    ctx.fillRect(cx - annulusOuterR, faceY - postHeight * 0.4, annulusOuterR - postR, postHeight * 0.4);
+    ctx.fillRect(cx + postR, faceY - postHeight * 0.4, annulusOuterR - postR, postHeight * 0.4);
+
+    // Oxidizer post protruding upstream through the face
+    ctx.fillStyle = COLOR_OX;
+    ctx.fillRect(cx - postR, faceY - postHeight, postR * 2, postHeight);
+
+    // Axial oxidizer flow arrow, straight through the post
+    ctx.strokeStyle = COLOR_OX;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, faceY - postHeight * 0.85);
+    ctx.lineTo(cx, faceY + wallExtent * 0.3);
+    ctx.stroke();
+    arrowHead(ctx, cx, faceY - postHeight * 0.85, cx, faceY + wallExtent * 0.3, COLOR_OX);
+
+    // Radial fuel-exit arrows at the face, both sides
+    const fuelArrowY = faceY - postHeight * 0.2;
+    ctx.strokeStyle = COLOR_FUEL;
+    ctx.beginPath();
+    ctx.moveTo(cx - postR, fuelArrowY);
+    ctx.lineTo(cx - annulusOuterR * 1.3, fuelArrowY);
+    ctx.stroke();
+    arrowHead(ctx, cx - postR, fuelArrowY, cx - annulusOuterR * 1.3, fuelArrowY, COLOR_FUEL);
+    ctx.beginPath();
+    ctx.moveTo(cx + postR, fuelArrowY);
+    ctx.lineTo(cx + annulusOuterR * 1.3, fuelArrowY);
+    ctx.stroke();
+    arrowHead(ctx, cx + postR, fuelArrowY, cx + annulusOuterR * 1.3, fuelArrowY, COLOR_FUEL);
+
+  } else if (injectorType === 'coaxial') {
+    const innerR = Math.max(3, rOx);
+    const outerR = Math.max(innerR, rOx + rFuel * 1.5);
+    const boreLength = outerR * BORE_LENGTH_FACTOR;
+    const nElements = Math.min(2, Math.max(1, nOxidizer));
+    const span = nElements > 1 ? outerR * 4 : 0;
+    const startX = cx - span / 2;
+
+    for (let i = 0; i < nElements; i++) {
+      const ex = nElements > 1 ? startX + span * i : cx;
+      drawBore(ctx, ex, faceY, outerR, boreLength, COLOR_FUEL);
+      drawBore(ctx, ex, faceY, innerR, boreLength, COLOR_OX);
+    }
+
+  } else if (injectorType === 'impinging_fof' || injectorType === 'impinging_ofo') {
+    const isFof = injectorType === 'impinging_fof';
+    const centerColor = isFof ? COLOR_OX : COLOR_FUEL;
+    const flankColor = isFof ? COLOR_FUEL : COLOR_OX;
+    const centerR = isFof ? rOx : rFuel;
+    const flankR = isFof ? rFuel : rOx;
+    const flankSpread = rOx + rFuel + minPitch * 0.5;
+
+    const { angleRad, depthPx } = convergenceGeometry(flankSpread, impingementHalfAngleDeg);
+    const apexX = cx;
+    const apexY = faceY + depthPx;
+
+    drawBore(ctx, cx, faceY, centerR, Math.min(depthPx * 0.3, centerR * BORE_LENGTH_FACTOR), centerColor);
+    [-1, 1].forEach((side) => {
+      const fx = cx + side * flankSpread;
+      drawBore(ctx, fx, faceY, flankR, Math.min(depthPx * 0.3, flankR * BORE_LENGTH_FACTOR), flankColor);
+      ctx.strokeStyle = COLOR_IMP_LINE;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(fx, faceY);
+      ctx.lineTo(apexX, apexY);
+      ctx.stroke();
+    });
+    ctx.save();
+    ctx.strokeStyle = COLOR_IMP_LINE;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(apexX, apexY);
+    ctx.lineTo(apexX, apexY + wallExtent * 0.4);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = AMBER;
+    ctx.font = '10px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${(angleRad * 180 / Math.PI).toFixed(1)}°`, apexX + 6, apexY);
+    ctx.restore();
+
+  } else {
+    // Impinging doublet (default case): 1 ox + 1 fuel jet converging.
+    const pairSpread = rOx + rFuel + minPitch * 0.4;
+    const { angleRad, depthPx } = convergenceGeometry(pairSpread / 2, impingementHalfAngleDeg);
+    const apexX = cx;
+    const apexY = faceY + depthPx;
+
+    const oxX = cx - pairSpread / 2;
+    const fX = cx + pairSpread / 2;
+    drawBore(ctx, oxX, faceY, rOx, Math.min(depthPx * 0.3, rOx * BORE_LENGTH_FACTOR), COLOR_OX);
+    drawBore(ctx, fX, faceY, rFuel, Math.min(depthPx * 0.3, rFuel * BORE_LENGTH_FACTOR), COLOR_FUEL);
+
+    ctx.strokeStyle = COLOR_IMP_LINE;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(oxX, faceY);
+    ctx.lineTo(apexX, apexY);
+    ctx.moveTo(fX, faceY);
+    ctx.lineTo(apexX, apexY);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.strokeStyle = COLOR_IMP_LINE;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(apexX, apexY);
+    ctx.lineTo(apexX, apexY + wallExtent * 0.4);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = AMBER;
+    ctx.font = '10px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${(angleRad * 180 / Math.PI).toFixed(1)}°`, apexX + 6, apexY);
+    ctx.restore();
+  }
+}
+
+// ── Outer orchestrator: splits the canvas into face view (left) + cross-section (right) ──
+
+function drawFace(
+  canvas: HTMLCanvasElement,
+  cssW: number,
+  cssH: number,
+  view: ViewState,
+  props: InjectorFaceProps,
+) {
+  const { chamberRadiusMm } = props;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  if (chamberRadiusMm <= 0) return;
+
+  ctx.save();
+  ctx.translate(view.panX, view.panY);
+  ctx.scale(view.vZoom, view.vZoom);
+
+  drawGrid(ctx, cssW, cssH, view.panX, view.panY, view.vZoom);
+
+  const halfW = cssW / 2;
+  const gap = 2;
+
+  // Left half: face view
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, halfW - gap / 2, cssH);
+  ctx.clip();
+  drawFaceHalf(ctx, halfW, cssH, props);
+  ctx.restore();
+
+  // Right half: cross-section view
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(halfW + gap / 2, 0, halfW - gap / 2, cssH);
+  ctx.clip();
+  ctx.translate(halfW, 0);
+  drawCrossSectionHalf(ctx, halfW, cssH, props);
+  ctx.restore();
 
   ctx.restore();
 
